@@ -1,7 +1,17 @@
 body
 {
-    background-color: rgb(16, 16, 24);
+    --bg-root: rgb(255, 255, 255);
+    --text-primary: rgb(0, 0, 0);
 }
+body
+{
+    background-color: var(--bg-root);
+}
+h1, h2, h3, h4, h5, h6, p, label
+{
+    color: var(--text-primary);
+}
+
 body, *, *::before, *::after
 {
     color: white;

@@ -15,7 +15,7 @@ interface ErrorInterface
 
 let     cPool: impl.Pool | null = null;
 let     cHost = "127.0.0.1";
-let     cPort = "51001";
+let     cPort = "51100";
 let     cUser = "root";
 let     cPwd = "root";
 let     cDb = "project";

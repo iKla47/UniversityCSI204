@@ -14,9 +14,9 @@ services:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_DATABASE=project
     ports:
-      - "44102:3306"
+      - "51100:3306"
     volumes:
-      - "./../Persistent/Sql:/var/lib/mysql"
+      - "./backend/data/sql:/var/lib/mysql"
     networks:
       - DbNetwork
 
@@ -29,7 +29,7 @@ services:
     image: phpmyadmin:latest
     restart: always
     ports:
-      - "44001:80"
+      - "50001:80"
     environment:
       - PMA_HOST=DbMySQL
       - PMA_PORT=3306

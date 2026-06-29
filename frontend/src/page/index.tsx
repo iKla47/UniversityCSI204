@@ -8,8 +8,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 // โหลดหน้าต่างเมื่อจำเป็นเท่านั้น
 //
 const Init = react.lazy (() => import ("./init.tsx"));
-const Auth = react.lazy (() => import ("./auth.tsx"));
 const Home = react.lazy (() => import ("./home.tsx"));
+const Doc = react.lazy (() => import ("./doc.tsx"));
+const Auth = react.lazy (() => import ("./auth.tsx"));
 const Product = react.lazy (() => import ("./product.tsx"));
 const Settings = react.lazy (() => import ("./settings.tsx"));
 
@@ -27,7 +28,8 @@ function Main ()
           <Routes>
             <Route Component={() => <Init/>}>
               <Route path="/" index element={<Home/>}/>
-              <Route path="/product" index element={<Product/>}/>
+              <Route path="/doc" element={<Doc/>}/>
+              <Route path="/product" element={<Product/>}/>
               <Route path="/auth" element={<Auth/>}/>
               <Route path="/settings" element={<Settings/>}/>
             </Route>
