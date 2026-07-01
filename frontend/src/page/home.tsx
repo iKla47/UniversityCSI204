@@ -1,7 +1,7 @@
 import react, { useState } from "react";
 import styled from "styled-components";
 import image from "#asset/image/home.testImage.jpg"
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 export default function Home ()
 {
@@ -41,7 +41,7 @@ export default function Home ()
       <img src={image} height={384}/>
       <h1>สวัสดีชาวออกซิเจน</h1>
       <p>เวลาของเซิร์ฟเวอร์: {uptime}</p>
-      <button onClick={() => void navigate ("/docs")}>ไปหน้าเอกสาร</button>
+      <button onClick={() => void navigate ("/doc   ")}>ไปหน้าเอกสาร</button>
       <button onClick={() => void navigate ("/auth")}>ไปหน้าล็อคอิน</button>
       <button onClick={() => void navigate ("/product")}>ไปร้านค้า</button>
       <button onClick={() => void navigate ("/settings")}>ไปตั้งค่า</button>

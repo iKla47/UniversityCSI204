@@ -3,7 +3,7 @@
 //
 import react from "react";
 import reactDom from "react-dom/client";
-import { Routes, Route, HashRouter } from "react-router-dom";
+import { Routes, Route, HashRouter } from "react-router";
 
 import Splash from "#page/splash.tsx";
 
@@ -12,12 +12,11 @@ import Splash from "#page/splash.tsx";
 //
 const Init = react.lazy (() => import ("./init.tsx"));
 const Home = react.lazy (() => import ("./home.tsx"));
-const Doc = react.lazy (() => import ("./doc.tsx"));
 const Auth = react.lazy (() => import ("./auth.tsx"));
 const Product = react.lazy (() => import ("./product.tsx"));
 const Settings = react.lazy (() => import ("./settings.tsx"));
 
-const Element = document.getElementById ("app")!;
+const Element = document.getElementById ("app") as HTMLDivElement;
 const DOM = reactDom.createRoot (Element);
 
 
@@ -28,7 +27,6 @@ DOM.render (
         <Routes>
           <Route Component={() => <Init/>}>
             <Route path="/" index element={<Home/>}/>
-            <Route path="/doc/*" element={<Doc/>}/>
             <Route path="/product" element={<Product/>}/>
             <Route path="/auth" element={<Auth/>}/>
             <Route path="/settings" element={<Settings/>}/>

@@ -3,8 +3,7 @@ import { defineConfig } from "vite";
 
 export default defineConfig (
 {
-    base: "/UniversityCSI204/",
-    assetsInclude: ['**/*.md'],
+    base: "/UniversityCSI204", 
     plugins: 
     [
         react (),
@@ -12,6 +11,11 @@ export default defineConfig (
     resolve:
     {
         tsconfigPaths: true,
+    },
+    build:
+    {
+        outDir: "build",
+        ssr: false,
     },
     server: 
     {
@@ -25,5 +29,9 @@ export default defineConfig (
             credentials: true,
             origin: /^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/ 
         },
+        watch:
+        {
+            ignored: ["src/doc/**"]
+        }
     },
 });

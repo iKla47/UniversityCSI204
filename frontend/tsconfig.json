@@ -46,6 +46,7 @@
     "include": [
         "src",
         "src/**/*", 
+        "src/doc/.vitepress/config.ts",
         "vite.config.ts",
         "eslint.config.ts",
     ],
