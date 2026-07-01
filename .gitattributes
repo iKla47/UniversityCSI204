@@ -1,0 +1,5 @@
+#
+# ตั้งค่าให้การขึ้นบรรทัดใหม่เป็นแบบ LF (line feed) แทน CRLF (carriage return + line feed)
+# เพิ่มการรองรับบนระบบอื่น ๆ เช่น Linux
+#
+* text=auto eol=lf
