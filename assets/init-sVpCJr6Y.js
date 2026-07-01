@@ -1,0 +1,1 @@
+import{r as e,t}from"./jsx-runtime-DGeXAQPT.js";import{n,o as r,t as i}from"./index-D-ZP0JHA.js";var a=e(r(),1),o=t();function s(){let[e,t]=(0,a.useState)(!1);return(0,a.useEffect)(()=>{new Promise(()=>{try{t(!0)}catch(e){console.error(e)}})},[]),(0,o.jsx)(o.Fragment,{children:e?(0,o.jsx)(n,{}):(0,o.jsx)(i,{})})}export{s as default};
