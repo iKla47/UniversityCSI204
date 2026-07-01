@@ -4,6 +4,7 @@ import { defineConfig } from "vite";
 export default defineConfig (
 {
     base: "/UniversityCSI204/",
+    assetsInclude: ['**/*.md'],
     plugins: 
     [
         react (),

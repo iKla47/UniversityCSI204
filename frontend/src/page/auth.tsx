@@ -6,7 +6,6 @@ export default function Auth ()
       <LoginComponent/>
   </View>;
 }
-
 const View = styled.div `
   
       position: absolute;

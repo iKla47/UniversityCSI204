@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
-
-import Splash from "./index.tsx"
+import Splash from "#page/splash.tsx";
 
 /**
  * หน้าต่างที่ไม่มีการแสดงผลเป็นของตัวเอง

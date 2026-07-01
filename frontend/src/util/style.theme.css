@@ -1,6 +1,8 @@
 body
 {
     --bg-root: rgb(255, 255, 255);
+    --bg-primary: rgb(225, 225, 225);
+
     --text-primary: rgb(0, 0, 0);
 }
 body
@@ -8,6 +10,10 @@ body
     background-color: var(--bg-root);
 }
 h1, h2, h3, h4, h5, h6, p, label
+{
+    color: var(--text-primary);
+}
+li
 {
     color: var(--text-primary);
 }

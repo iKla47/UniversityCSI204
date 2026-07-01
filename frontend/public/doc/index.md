@@ -1,34 +1,12 @@
-![](./README_HEAD.jpg)
+![](./index_headline.jpg)
 
 > ⚠☢💥 กิตนี้บังคับปล่อย (force push) เพื่อลองของใหม่ ๆ (แม้ว่ามันจะพัง) ผมจะไม่รับผิดชอบใด ๆ เลยนะถ้าระบบนี้ทำให้เกิดสงครามโลกครั้งที่ 3 ถือว่าเตือนแล้วนะ!
 
 # 🏷️ ชื่อโครงงาน (รอกำหนดหัวข้อ)
+
 ระบบขายสินค้าแผ่นและตลับเกม
 
 (รอเติมคำอธิบายสั้นๆ ว่าโปรเจกต์นี้ทำอะไร แก้ปัญหาอะไร)
-
-## เนื้อหา
-- [จุดประสงค์ของโครงงาน]()
-- [แนวทางการพัฒนาระบบ (SDLC)]()
-    - [การว่างแผน (Planning)]()
-        - [ความต้องการ (Requirement)]()
-        - [การดำเนินงาน (Team Management)]()
-    - [การวิเคราห์ (Analysis)]()
-        - [ความต้องการระบบ (System Requirement)]()
-    - [การออกแบบ (Design)]()
-        - [ส่วนติดต่อผู้ใช้ (Wireframe)]()
-        - [Use Cases Diagram]()
-        - [Sequence Diagram]()
-        - [Activity Diagram]()
-    - [การพัฒนา (Development)]()
-        - [Frontend]()
-        - [Backend]()
-        - [Database]()
-    - [การทดสอบ (Testing)]()
-    - [การติตตั้ง (Deployment)]()
-    - [การบำรุงรักษา (Maintainance)]()
-- [วิธีการใช้งาน]()
-- [สมาชิกผู้จัดทำ]()
 
 ## วิธีการใช้งาน
 
@@ -39,12 +17,11 @@
 
 โคลนโปรเจคด้วยคำสั่ง `git clone` หลังจากนั้นเปิด Visual Studio Code แล้วเลือกเมนู Run > Debugging (หรือกด F5) เพื่อรันตัวโปรเจค
 
-## 🛠️ เทคโนโลยีที่คาดว่าจะใช้ (Tech Stack)
-- Frontend: (เช่น React, Vue, HTML/CSS)
-- Backend: (เช่น Node.js, Python Django)
-- Database: (เช่น MySQL, MongoDB)
-
 ## 👥 สมาชิกผู้จัดทำ
 - 67168514 ปิยะบุตร อิ่มทอง - [iKla47](https://github.com/iKla47)
 - (ชื่อ-นามสกุล รหัสนักศึกษา)
   
+## 🛠️ เทคโนโลยีที่คาดว่าจะใช้ (Tech Stack)
+- Frontend: (เช่น React, Vue, HTML/CSS)
+- Backend: (เช่น Node.js, Python Django)
+- Database: (เช่น MySQL, MongoDB)
