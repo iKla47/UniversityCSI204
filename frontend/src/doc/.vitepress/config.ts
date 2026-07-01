@@ -17,18 +17,20 @@ export default defineConfig (
         //   { text: 'Examples', link: '/markdown-examples' }
         // ],
 
-        sidebar: 
-        {
-            '/dev':
-            [{
+        sidebar: {
+        '/dev':
+        [{
+            items: 
+            [{ text: 'หน้าแรก', link: '/dev-home' },
+            { text: 'เงื่อนไขการใช้งาน', link: '/dev-license' },
+            { text: 'วิธีการติดตั้ง', link: '/dev-setup' },
+            { 
+                text: "การพัฒนา", 
                 items: 
-                [
-                    { text: 'หน้าแรก', link: '/dev-home' },
-                    { text: 'เงื่อนไขการใช้งาน', link: '/dev-license' },
-                    { text: 'วิธีการติดตั้ง', link: '/dev-setup' }
-                ]
+                [{ text: "แนวทางการพัฒนาระบบ (SDLC)", link: "/dev-sdlc" },
+                { text: "สถานะความคืบหน้า", link: "/dev-progress"}]
             }],
-        },
+        }]},
 
         socialLinks: 
         [
