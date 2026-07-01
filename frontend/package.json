@@ -16,11 +16,11 @@
     },
     "scripts": 
     {
-        "site:dev": "vite --debug hmr",
+        "site:dev": "vite --host --debug hmr",
         "site:build": "tsc && vite build",
         "site:preview": "vite preview",
         "site:predeloy": "npm run build",
-        "doc:dev": "vitepress dev src/doc --port 50001",
+        "doc:dev": "vitepress dev src/doc --port 50001 --host",
         "doc:build": "vitepress build src/doc",
         "doc:preview": "vitepress preview src/doc",
 
