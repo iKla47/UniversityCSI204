@@ -54,15 +54,7 @@ function formatMessage (data: unknown)
     }
     if (data instanceof Error)
     {
-        let output = "";
-
-        // output += data.message + "\n";
-        // output += "--- Cause ---\n"
-        // output += String (data.cause) + "\n";
-        // output += "--- Stack ---\n"
-        output += String (data.stack) + "\n";
-
-        return output;
+        return String (data.stack) + "\n";
     }
     return JSON.stringify (data, null, 4);
 }

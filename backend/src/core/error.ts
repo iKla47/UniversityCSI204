@@ -50,3 +50,31 @@ export class ErrorForbidden extends Error
 {
     /* ไม่ระบุ */
 };
+/**
+ * คลาสข้อผิดพลาด ในกรณีที่ระบบพบข้อมูลซ้ำกัน
+*/
+export class ErrorDuplicate extends Error
+{
+    /* ไม่ระบุ */
+};
+/**
+ * คลาสข้อผิดพลาด ในกรณีที่ระบบปฎิเสธการทำงานเนื่องจากข้อจำกัด
+*/
+export class ErrorConstraint extends Error
+{
+    /* ไม่ระบุ */
+};
+/**
+ * คลาสข้อผิดพลาด ในกรณีที่ระบบปฎิเสธการทำงานเนื่องจากคำสั่งไม่ถูกต้อง
+*/
+export class ErrorCommand extends Error
+{
+    /* ไม่ระบุ */
+};
+/**
+ * คลางข้อผิดพลาด จากสาเหตุที่ระบุไม่ได้
+*/
+export class ErrorUnknown extends Error
+{
+    /* ไม่ระบุ */
+};
