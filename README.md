@@ -8,7 +8,7 @@
 ||||
 ||||
 ||||
-||||
+| 67173119 | สุวิจักขณ์ ทัพเจริญ | Frontend Developer / UI Designer |
 
 ## ชื่อโครงการ ระบบร้านขายแผ่นและตลับเกม (Game Disc and Cartridge E-Commerce System)
 
