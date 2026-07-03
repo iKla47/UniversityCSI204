@@ -1,4 +1,4 @@
-import{t as e}from"./index-CBWIj0JZ.js";import{t}from"./styled-components.browser.esm-B2zWX8Nk.js";var n=`/UniversityCSI204/assets/home.testImage-Biv9CYx4.jpg`,r=e(),i=function(){return(0,r.jsx)(r.Fragment,{children:(0,r.jsxs)(a,{children:[(0,r.jsx)(o,{src:n}),(0,r.jsxs)(s,{children:[(0,r.jsx)(`h1`,{children:`สวัสดีชาวออกซิเจน`}),(0,r.jsx)(`p`,{children:`เวอร์เซิร์ฟเวอร์ 00:00:00`})]})]})})},a=t.div`
+import{t as e}from"./index-BmYnWj4Q.js";import{t}from"./styled-components.browser.esm-DBcz4uMM.js";var n=`/UniversityCSI204/assets/home.testImage-Biv9CYx4.jpg`,r=e(),i=function(){return(0,r.jsx)(r.Fragment,{children:(0,r.jsxs)(a,{children:[(0,r.jsx)(o,{src:n}),(0,r.jsxs)(s,{children:[(0,r.jsx)(`h1`,{children:`สวัสดีชาวออกซิเจน`}),(0,r.jsx)(`p`,{children:`เวอร์เซิร์ฟเวอร์ 00:00:00`})]})]})})},a=t.div`
   width: 100%;
   height: 100%;
   border-radius: 8px;
