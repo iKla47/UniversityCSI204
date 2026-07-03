@@ -25,10 +25,10 @@ export default defineConfig (
             { text: 'เงื่อนไขการใช้งาน', link: '/dev-license' },
             { text: 'วิธีการติดตั้ง', link: '/dev-setup' },
             { 
-                text: "การพัฒนา", 
+                text: "API", 
                 items: 
-                [{ text: "แนวทางการพัฒนาระบบ (SDLC)", link: "/dev-sdlc" },
-                { text: "สถานะความคืบหน้า", link: "/dev-progress"}]
+                [{ text: "ยืนยันตัวตน", link: "/dev-api-auth" },
+                { text: "บัญชี", link: "/dev-api-account" }]
             }],
         }]},
 
