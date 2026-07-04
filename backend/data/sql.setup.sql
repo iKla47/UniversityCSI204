@@ -21,49 +21,49 @@ FLUSH PRIVILEGES;
 --
 -- สร้างข้อมูลบัญชี
 --
-CREATE TABLE IF NOT EXISTS `project`.`Account` 
+CREATE TABLE IF NOT EXISTS `project`.`account` 
 (
-    `Id`        BIGINT NOT NULL AUTO_INCREMENT COMMENT 'รหัสบัญชี' , 
-    `Name`      CHAR(32) NOT NULL DEFAULT "" COMMENT 'ชื่อผู้ใช้',
-    `Icon`      CHAR(255) NOT NULL DEFAULT "" COMMENT 'รูปบัญชี' ,
-    `Role`      INT NOT NULL DEFAULT 1 COMMENT 'บทบาทบัญชี' , 
+    `id`        BIGINT NOT NULL AUTO_INCREMENT COMMENT 'รหัสบัญชี' , 
+    `name`      CHAR(32) NOT NULL DEFAULT "" COMMENT 'ชื่อผู้ใช้',
+    `icon`      CHAR(255) NOT NULL DEFAULT "" COMMENT 'รูปบัญชี' ,
+    `role`      INT NOT NULL DEFAULT 1 COMMENT 'บทบาทบัญชี' , 
 
-    `Created`   DATETIME DEFAULT CURRENT_TIMESTAMP 
+    `created`   DATETIME DEFAULT CURRENT_TIMESTAMP 
                 COMMENT 'เวลาที่บัญชีถูกสร้าง' ,
 
-    `Modified`  DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
+    `modified`  DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
                 COMMENT 'เวลาที่แก้ไข' ,
 
-    `Email`     CHAR(32) DEFAULT "" COMMENT 'อีเมล' ,
+    `email`     CHAR(32) DEFAULT "" COMMENT 'อีเมล' ,
     
-    CONSTRAINT PK_Account PRIMARY KEY (`Id`)
+    CONSTRAINT PK_Account PRIMARY KEY (`id`)
 ) 
 ENGINE = InnoDB COMMENT = 'ข้อมูลบัญชีผู้ใช้';
 
 --
 -- สร้างข้อมูลการเข้าสู่ระบบ (ชื่อ/รหัสผ่าน)
 --
-CREATE TABLE IF NOT EXISTS `project`.`Auth` 
+CREATE TABLE IF NOT EXISTS `project`.`auth` 
 (
-    `Id`        CHAR(16) NOT NULL   COMMENT 'รหัสประจำตัว' , 
-    `Password`  CHAR(128) NOT NULL  COMMENT 'รหัสผ่าน' , 
-    `Link`      BIGINT NOT NULL     COMMENT 'รหัสบัญชี' , 
+    `id`        CHAR(16) NOT NULL   COMMENT 'รหัสประจำตัว' , 
+    `password`  CHAR(128) NOT NULL  COMMENT 'รหัสผ่าน' , 
+    `link`      BIGINT NOT NULL     COMMENT 'รหัสบัญชี' , 
     
-    CONSTRAINT PK_Auth PRIMARY KEY (`Id`), 
-    CONSTRAINT FK_Auth FOREIGN KEY (`Link`) REFERENCES Account (`Id`) ,
-    CONSTRAINT UC_Auth UNIQUE (`Link`)
+    CONSTRAINT PK_Auth PRIMARY KEY (`id`), 
+    CONSTRAINT FK_Auth FOREIGN KEY (`link`) REFERENCES Account (`id`) ,
+    CONSTRAINT UC_Auth UNIQUE (`link`)
 ) 
 ENGINE = InnoDB COMMENT = 'ข้อมูลการเข้าสู่ระบบ';
 
 -- 
 -- สร้างข้อมูลการยืนยันสองชั้น
 -- 
-CREATE TABLE IF NOT EXISTS `project`.`AuthMfa`
+CREATE TABLE IF NOT EXISTS `project`.`authMfa`
 (
-    `Id`        BIGINT NOT NULL                 COMMENT 'รหัสบัญชี' ,
-    `Totp`      CHAR(64) NOT NULL DEFAULT ""    COMMENT 'ข้อมูล TOTP' ,
+    `id`        BIGINT NOT NULL                 COMMENT 'รหัสบัญชี' ,
+    `totp`      CHAR(64) NOT NULL DEFAULT ""    COMMENT 'ข้อมูล TOTP' ,
     
-    CONSTRAINT PK_AuthMfa PRIMARY KEY (`Id`) ,
-    CONSTRAINT FK_AuthMfa FOREIGN KEY (`Id`) REFERENCES Account (`Id`) ,
+    CONSTRAINT PK_AuthMfa PRIMARY KEY (`id`) ,
+    CONSTRAINT FK_AuthMfa FOREIGN KEY (`id`) REFERENCES Account (`id`) ,
 )
 ENGINE = InnoDB COMMENT = 'ข้อมูลการยืนยันตัวตนสองชั้น (MFA)';
