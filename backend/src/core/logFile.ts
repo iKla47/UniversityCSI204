@@ -39,9 +39,11 @@ content.init = async function ()
     //
     await fsa.stat (file).then (async (x) =>
     {
-        if (x.isFile () == false)
+        if (!x.isFile ())
         {
+            //
             // ไฟล์อาจจะยังไม่ได้ถูกสร้าง
+            //
             return;
         }
         const time = x.birthtime;
@@ -63,7 +65,7 @@ content.init = async function ()
         //
         await fsa.rename (file, newPath);
     })
-    .catch ((error) =>
+    .catch ((error: unknown) =>
     {
         // (ไม่สนใจ)
         log.warn ("An error down below will be ignored:");
@@ -104,7 +106,7 @@ content.init = async function ()
             stream.write (out);
             stream.write ("\n");
         });
-        log.info ("Backlog: " + backlog);
+        log.info (`Backlog: ${String (backlog)}`);
         log.info ("Started");
     }
     catch (error)
@@ -131,18 +133,24 @@ content.init = async function ()
     {
         return (a.stat.birthtimeMs > b.stat.birthtimeMs) ? -1 : 1;
     });
-    if (logSort.length >= backlog)
+    for (let index = backlog; index < logSort.length; index ++)
     {
-        for (let index = backlog; index < logSort.length; index ++)
+        const value = logSort[index] as 
         {
-            const value = logSort[index];
-
-            if (value)
-            {
-                fsa.rm (value.location);
-                log.info (`Cleared log-file: ${value.location}`);
-            }
-        }
+            location: string;
+            stat: fs.Stats;
+        };
+        const location = value.location;
+        
+        await fsa.rm (location).then (() =>
+        {
+            log.info (`Cleared log-file: ${location}`);
+        })
+        .catch ((error: unknown) =>
+        {
+            log.warn (`Cannot delete the old log file: ${location}`);
+            log.warn (error);
+        });
     }
 }
 /**
