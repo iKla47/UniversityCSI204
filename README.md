@@ -4,7 +4,7 @@
 
 | เลขประจำตัว | ชื่อและนามสกุล | ตำแหน่ง |
 |---|---|---|
-| 6711762503 | ชนันธร สะอาดจินดา | Project Manager / System Analyst |
+| 67117502 | ชนันธร สะอาดจินดา | Project Manager / System Analyst |
 | 67168514 | ปิยะบุตร อิ่มทอง | Backend Developer & Database Administrator |
 | 67163266 | สิรภพ อ่วมแก้ว| Backend Developer & API |
 | 67151039 | ณัฐดนัย แสงศรี | Frontend Developer / UI Designer |
