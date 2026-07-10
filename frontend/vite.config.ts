@@ -3,7 +3,9 @@ import { defineConfig } from "vite";
 
 export default defineConfig (
 {
-    base: "/UniversityCSI204", 
+    base: "/UniversityCSI204",
+    envDir: "./../",
+    envPrefix: ["F_"],
     plugins: 
     [
         react (),
@@ -27,6 +29,7 @@ export default defineConfig (
         {
             methods: "GET",
             credentials: true,
+            preflightContinue: true,
             origin: /^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/ 
         },
         watch:
