@@ -16,8 +16,10 @@
 }
 body
 {
-    --bg-root: rgb(16, 16, 32);
-    --bg-primary: rgb(225, 225, 225);
+    --bg-root: #111A3F;
+    --bg-primary: #263653;
+    --bg-primary-border: #98B0FF;
+
     --bg-code: rgb(214, 237, 255);
 
     --text-primary: rgb(255, 255, 255);
