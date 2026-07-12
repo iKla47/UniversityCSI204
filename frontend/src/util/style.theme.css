@@ -22,7 +22,22 @@ body
 
     --bg-code: rgb(214, 237, 255);
 
+    --btn-primary: #365493;
+    --btn-primary-text: #FFFFFF;
+    --btn-primary-hover: #4469b8;
+    --btn-primary-hover-text: #FFFFFF;
+    --btn-primary-active: #204fb4;
+    --btn-primary-active-text: #FFFFFF;
+
+    --input-primary: #263653;
+    --input-primary-border: #4d6fb8;
+    --input-primary-hover: #263653;
+    --input-primary-hover-border: #7e9ee4;
+    --input-primary-active: #263653;
+    --input-primary-active-border: #588af7;
+
     --text-primary: rgb(255, 255, 255);
+    --text-warning: rgb(255, 236, 174);
     --text-code: rgb(13, 52, 84);
 }
 body
@@ -48,6 +63,48 @@ code
     background-color: var(--bg-code);
     color: var(--text-code);
     padding: 0px 4px;
+}
+button
+{
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 1rem;
+    padding: 8px 16px;
+    background-color: var(--btn-primary);
+    border-radius: 4px;
+    border: none;
+    outline: none;
+    color: var(--btn-primary-text);
+
+    &:hover, &:focus {
+        background-color: var(--btn-primary-hover);
+        color: var(--btn-primary-hover-text);
+    }
+    &:active {
+        background-color: var(--btn-primary-active);
+        color: var(--btn-primary-active-text);
+    }
+}
+input
+{
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 1rem;
+    padding: 8px;
+    background-color: var(--input-primary);
+    border: 2px solid var(--input-primary-border);
+    border-radius: 4px;
+    outline: none;
+    color: var(--btn-primary-text);
+
+    &:hover {
+        background-color: var(--input-primary-hover);
+        border: 2px solid var(--input-primary-hover-border);
+    }
+    &:active, &:focus {
+        background-color: var(--input-primary-active);
+        border: 2px solid var(--input-primary-active-border);
+    }
 }
 
 #app-splash

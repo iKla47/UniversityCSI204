@@ -36,11 +36,15 @@ const ContentContext = react.createContext<ContentContextProperty> ({
 });
 const content = function NavBar (prop: ContentProperty)
 {
-  const [width, setWidth] = react.useState (0);
+  const [context, setContext] = react.useState<ContentContextProperty> ({
+    width: 0
+  });
   const reference = react.useRef (HTMLDivElement.prototype);
   const resize = () =>
   {
-    setWidth (reference.current.clientWidth);
+    setContext ({
+      width: reference.current.clientWidth
+    });
   }
   react.useEffect (() =>
   {
@@ -55,7 +59,7 @@ const content = function NavBar (prop: ContentProperty)
   []);
 
   return <Root ref={reference}>
-    <ContentContext value={{ width: width }}>
+    <ContentContext value={context}>
       {prop.children}
     </ContentContext>
   </Root>;
@@ -89,6 +93,10 @@ content.Profile = function NavBarProfile ()
   return <Profile>
     <ProfileImg/>
   </Profile>
+}
+content.SignIn = function NavBarSignIn ()
+{
+  return <SignIn>ลงชื่อเข้าใช้</SignIn>;
 }
 content.Menu = function NavBarMenu (prop: MenuProperty)
 {
@@ -191,6 +199,26 @@ const ProfileImg = styled.img`
   &:hover
   {
     border-width: 2px;
+  }
+`;
+const SignIn = styled.button`
+  min-width: 32px;
+  min-height: 32px;
+  font-size: 1rem;
+  padding: 0px 16px;
+  background-color: var(--btn-primary);
+  border-radius: 4px;
+  border: none;
+  outline: none;
+  color: var(--btn-primary-text);
+
+  &:hover, &:focus {
+    background-color: var(--btn-primary-hover);
+    color: var(--btn-primary-hover-text);
+  }
+  &:active {
+    background-color: var(--btn-primary-active);
+    color: var(--btn-primary-active-text);
   }
 `;
 const Menu = styled.div`

@@ -21,7 +21,8 @@ content.NavBar = function PresetNavBar ()
       <NavBar.MenuItem text="ช่วยเหลือ" onClick={toDoc}/>
       <NavBar.MenuItem text="เกี่ยวกับ"/>
     </NavBar.Menu>
-    <NavBar.Profile/>
+    {/* <NavBar.Profile/> */}
+    <NavBar.SignIn/>
   </NavBar>
   </>;
 }

@@ -9,6 +9,7 @@ const content = function ()
     return;
 }
 content.PATH_INDEX = "/";
+content.PATH_AUTH = "/auth";
 content.PATH_DOC = "/doc";
 content.PATH_PRODUCT = "/product";
 content.PATH_PRODUCT_BROWSER = "/product-browser";
@@ -26,6 +27,10 @@ content.terminate = function ()
 content.toIndex = function () 
 {
     return router (content.PATH_INDEX);
+}
+content.toAuth = function ()
+{
+    return router (content.PATH_AUTH);
 }
 content.toDoc = function ()
 {

@@ -35,6 +35,18 @@ h6
     font-weight: bold;
     font-size: 0.75rem;
 }
+button
+{
+    font-weight: normal;
+    font-size: 1rem;
+    padding: 8px;
+}
+input
+{
+    font-weight: normal;
+    font-size: 1rem;
+    padding: 8px;
+}
 
 #app-splash
 {
