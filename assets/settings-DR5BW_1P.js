@@ -1,0 +1,1 @@
+import{t as e}from"./index-CgijNJ2O.js";var t=e();function n(){return(0,t.jsx)(t.Fragment,{children:(0,t.jsx)(`h1`,{children:`Hello There!`})})}export{n as default};

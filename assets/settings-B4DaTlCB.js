@@ -1,1 +1,0 @@
-import{t as e}from"./index-BmYnWj4Q.js";var t=e();function n(){return(0,t.jsx)(t.Fragment,{children:(0,t.jsx)(`h1`,{children:`Hello There!`})})}export{n as default};
