@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy } from "react";
-import { HashRouter, Routes, Route, Outlet } from "react-router";
+import { HashRouter, Routes, Route, Outlet, useNavigate } from "react-router";
 import log from "#util/common.log.ts";
+import navigation from "#util/common.navigation.ts";
 import InitDebug from "#page/initDebug.tsx";
 
 //
@@ -9,6 +10,7 @@ import InitDebug from "#page/initDebug.tsx";
 const Home = lazy (() => import ("./home.tsx"));
 const Auth = lazy (() => import ("./auth.tsx"));
 const Product = lazy (() => import ("./product.tsx"));
+const ProductBrowser = lazy (() => import ("./productBrowser.tsx"));
 const Settings = lazy (() => import ("./settings.tsx"));
 
 /**
@@ -17,14 +19,25 @@ const Settings = lazy (() => import ("./settings.tsx"));
 */
 export default function Init ()
 {
+  return <>
+    <HashRouter>
+      <Loader/>
+    </HashRouter>
+  </>;
+}
+function Loader ()
+{
+  const navigator = useNavigate ();
   const [completed, setCompleted] = useState (false);
 
   const onInit = () =>
   {
     log.init ();
+    navigation.init (navigator);
   }
   const onTerminate = () =>
   {
+    navigation.terminate ();
     log.terminate ();
   }
 
@@ -80,16 +93,13 @@ export default function Init ()
     return <></>;
   };
 
-  return <>
-    <HashRouter>
-      <Routes>
-        <Route Component={() => <View/>}>
-          <Route path="/" index element={<Home/>}/>
-          <Route path="/product" element={<Product/>}/>
-          <Route path="/auth" element={<Auth/>}/>
-          <Route path="/settings" element={<Settings/>}/>
-        </Route>
-      </Routes>
-    </HashRouter>
-  </>;
+  return <Routes>
+    <Route Component={() => <View/>}>
+      <Route path="/" index element={<Home/>}/>
+      <Route path="/product" element={<Product/>}/>
+      <Route path="/product-browser" element={<ProductBrowser/>}/>
+      <Route path="/auth" element={<Auth/>}/>
+      <Route path="/settings" element={<Settings/>}/>
+    </Route>
+  </Routes>
 }

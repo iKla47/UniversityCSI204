@@ -6,6 +6,12 @@ interface ContentProperty
 {
   children ?: react.ReactNode;
 }
+interface BrandingProperty
+{
+  icon ?: string;
+  text ?: string;
+  onClick ?: () => void;
+}
 interface MenuProperty
 {
   children ?: react.ReactNode;
@@ -47,11 +53,6 @@ const content = function NavBar (prop: ContentProperty)
     }
   },
   []);
-  react.useEffect (() =>
-  {
-    console.log (width);
-  },
-  [width]);
 
   return <Root ref={reference}>
     <ContentContext value={{ width: width }}>
@@ -59,14 +60,24 @@ const content = function NavBar (prop: ContentProperty)
     </ContentContext>
   </Root>;
 }
-content.Branding = function NavBarBranding ()
+content.Branding = function NavBarBranding (prop: BrandingProperty)
 {
   const context = react.useContext (ContentContext);
   const readable = context.width >= 768;
 
-  return <Branding>
-    <BrandingImg src={undefined}/>
-    <BrandingLabel $show={readable}>ร้านขายแผ่นและตลับเกม</BrandingLabel>
+  const onClick = (event: react.MouseEvent) =>
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+
+    if (prop.onClick) {
+      prop.onClick ();
+    }
+  }
+
+  return <Branding onClick={onClick}>
+    <BrandingImg src={prop.icon}/>
+    <BrandingLabel $show={readable}>{prop.text}</BrandingLabel>
   </Branding>;
 }
 content.Search = function NavBarSearch ()
@@ -109,7 +120,7 @@ content.Spacing = function NavBarSpacing (prop: SpacingProperty)
 }
 
 const Root = styled.div`
-  position: absolute;
+  position: fixed;
   inset: 0px 0px auto 0px;
   height: 48px;
 
@@ -128,9 +139,11 @@ const Root = styled.div`
   & > *:first-child { margin: 0px 0px 0px 32px; }
   & > *:last-child { margin: 0px 32px 0px 0px; }
 `;
-const Branding = styled.div`
+const Branding = styled.button`
   min-width: 32px;
   max-height: 32px;
+  background-color: transparent;
+  border: transparent;
 `;
 const BrandingImg = styled.img`
   width: 32px;

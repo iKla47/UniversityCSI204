@@ -1,16 +1,14 @@
-import NavBar from "#component/navbar.tsx";
 import Self from "#component/home.tsx";
+import Preset from "#component/common.preset.tsx";
 
 const content = function Home ()
 {
   return <>
-    <NavBar>
-      <NavBar.Branding/>
-      <NavBar.Spacing/>
-      <NavBar.Search/>
-      <NavBar.Profile/>
-    </NavBar>
     <Self.Intro/>
+    <Self.Recommendation/>
+    <Self.Favorite/>
+    <Self.Ending/>
+    <Preset.NavBar/>
   </>;
 }
 export default content;
