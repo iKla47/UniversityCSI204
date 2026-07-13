@@ -1,30 +1,33 @@
 import http from "#core/http.ts";
-import logging from "#core/log.ts";
 import control from "#controller/auth.ts";
 
-const log = logging.scoped ("Auth");
 const content = function ()
 {
     return;
 }
-content.init = function ()
+content.getController = function ()
 {
-    http.route ("/auth", (router) =>
-    {
-        router.get ("/sign-in", http.useRateLimit ({
-            window: 60000,
-            limit: 3
-        }),
-        control.routeSignIn);
-        
-        router.post ("/sign-in-mfa", control.routeSignInMfa);
-        router.post ("/sign-out", control.routeSignOut);
-        router.post ("/sign-up", control.routeSignUp);
-
-        router.post ("/deactivate", control.routeDeactivate);
-        router.post ("/delete", control.routeDelete);
+    return control;
+}
+content.getRouter = function ()
+{
+    const route = http.router ();
+    const limiter = http.useRateLimit ({
+        window: 60000,
+        limit: 3
     });
-    log.info ("Started");
+
+    route.post ("/sign-in", limiter, control.routeSignIn);
+    route.post ("/sign-in-password", limiter, control.routeSignInPwd);
+    route.post ("/sign-in-totp", control.routeSignInTotp);
+    route.post ("/sign-out", control.routeSignOut);
+    
+    route.post ("/sign-up", control.routeSignUp);
+
+    route.post ("/deactivate", control.routeDeactivate);
+    route.post ("/delete", control.routeDelete);
+
+    return route;
 }
 
 Object.freeze (content);

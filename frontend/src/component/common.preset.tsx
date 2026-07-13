@@ -3,13 +3,14 @@ import navigation from "#util/common.navigation.ts";
 
 const content = function ()
 {
-  return;
+  return <></>;
 }
 content.NavBar = function PresetNavBar ()
 {
   const toHome = () => { void navigation.toIndex (); }
   const toProductBrowser = () => { void navigation.toProductBrowser (); }
   const toDoc = () => { navigation.toDoc (); }
+  const toSignIn = () => { void navigation.toAuth (); }
 
   return <>
   <NavBar>
@@ -22,7 +23,7 @@ content.NavBar = function PresetNavBar ()
       <NavBar.MenuItem text="เกี่ยวกับ"/>
     </NavBar.Menu>
     {/* <NavBar.Profile/> */}
-    <NavBar.SignIn/>
+    <NavBar.SignIn onClick={toSignIn}/>
   </NavBar>
   </>;
 }

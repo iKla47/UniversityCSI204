@@ -22,6 +22,10 @@ interface MenuItemProperty
   text ?: string;
   onClick ?: () => void;
 }
+interface SignInProperty
+{
+  onClick ?: () => void;
+}
 interface SpacingProperty
 {
   level ?: number;
@@ -94,9 +98,18 @@ content.Profile = function NavBarProfile ()
     <ProfileImg/>
   </Profile>
 }
-content.SignIn = function NavBarSignIn ()
+content.SignIn = function NavBarSignIn (prop: SignInProperty)
 {
-  return <SignIn>ลงชื่อเข้าใช้</SignIn>;
+  function onClick (event: react.MouseEvent)
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+
+    if (prop.onClick) {
+      prop.onClick ();
+    }
+  }
+  return <SignIn onClick={onClick}>ลงชื่อเข้าใช้</SignIn>;
 }
 content.Menu = function NavBarMenu (prop: MenuProperty)
 {
@@ -150,12 +163,14 @@ const Root = styled.div`
 const Branding = styled.button`
   min-width: 32px;
   max-height: 32px;
+  padding: 0px 8px;
   background-color: transparent;
   border: transparent;
 `;
 const BrandingImg = styled.img`
   width: 32px;
   height: 32px;
+  vertical-align: middle;
 `;
 const BrandingLabel = styled.label<{ $show: boolean }>`
   width: auto;

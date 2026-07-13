@@ -1,54 +1,95 @@
 import http from "#core/http.ts";
+import logging from "#core/log.ts";
+import objreader from "#core/objectReader.ts";
+import model from "#model/auth.ts";
+import
+{
+    ErrorNotFound,
+    ErrorConflict,
+}
+from "#core/error.ts"
+import type 
+{ 
+    Request, 
+    Response 
+} 
+from "#core/http.ts";
 
-import type { Request, Response } from "#core/http.ts";
-
+const log = logging.scoped ("Auth");
 const content = function ()
 {
     return;
 }
-
-content.routeSignIn = function (request: Request, response: Response)
+content.init = function ()
 {
+    return;
+}
+content.terminate = function ()
+{
+    return;
+}
+content.routeSignIn = async function (request: Request, response: Response)
+{
+    if (!request.body)
+    {
+        response.status (http.STATUS_BAD_REQUEST)
+        response.end ();
+        return;
+    }
+    const read = objreader (request.body);
+    let id: string;
+
+
     try
     {
-        if (!request.body)
-        {
-            response.status (http.STATUS_BAD_REQUEST)
-            response.end ();
-            return;
-        }
-        const inBody = request.body as Record<string, unknown>;
-        const inId = String (inBody ["identifier"]);
-        const inPwd = String (inBody ["password"]);
-
-        if (inId.length < 4 || inPwd.length < 8)
-        {
-            response.status (http.STATUS_BAD_REQUEST)
-            response.end ();
-            return;
-        }
-
-        if (inId === "admin" && inPwd === "password")
-        {
-            response.status (http.STATUS_OK);
-            response.end ({
-                nameId: inId,
-                nameDisplay: inId,
-                session: "",
-                sessionExpire: 0
-            });
-            return;
-        }
-        response.status (http.STATUS_NOT_FOUND);
-        response.end ();
+        id = read.requireString ("identifier");
     }
     catch
     {
+        response.status (http.STATUS_BAD_REQUEST);
+        response.end ();
+        return;
+    }
+    try
+    {
+        await model.signIn (id);
+    }
+    catch (error: unknown)
+    {
+        if (error instanceof ErrorNotFound)
+        {
+            response.status (http.STATUS_NOT_FOUND);
+            response.end ();
+            return;
+        }
+        if (error instanceof ErrorConflict)
+        {
+            response.status (http.STATUS_CONFLICT);
+            response.end ();
+            return;
+        }
+        response.status (http.STATUS_BAD_REQUEST);
+        response.end ();
+        return;
+    }
+}
+content.routeSignInPwd = function (request: Request, response: Response)
+{
+    try
+    {
+        response.status (http.STATUS_NOT_IMPLEMENTED);
+        response.end ();
+    }
+    catch (error: unknown)
+    {
+        log.error ("Unhandled initiated exception: /sign-in");
+        log.error (error);
+
         response.status (http.STATUS_SERVICE_UNAVAILABLE);
         response.end ();
     }
 }
-content.routeSignInMfa = function (request: Request, response: Response)
+content.routeSignInTotp = function (request: Request, response: Response)
 {
     response.status (200);
     response.end ();

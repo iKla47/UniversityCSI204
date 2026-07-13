@@ -1,5 +1,14 @@
-import { useState, useEffect, lazy } from "react";
-import { HashRouter, Routes, Route, Outlet, useNavigate } from "react-router";
+import react from "react";
+import 
+{
+  useNavigate,
+  HashRouter,
+  Outlet,
+  Route,
+  Routes
+} 
+from "react-router";
+
 import log from "#util/common.log.ts";
 import navigation from "#util/common.navigation.ts";
 import InitDebug from "#page/initDebug.tsx";
@@ -7,99 +16,151 @@ import InitDebug from "#page/initDebug.tsx";
 //
 // โหลดหน้าต่างเมื่อจำเป็นเท่านั้น
 //
-const Home = lazy (() => import ("./home.tsx"));
-const Auth = lazy (() => import ("./auth.tsx"));
-const Product = lazy (() => import ("./product.tsx"));
-const ProductBrowser = lazy (() => import ("./productBrowser.tsx"));
-const Settings = lazy (() => import ("./settings.tsx"));
+const CoAuth 
+  = react.lazy (() => import ("./auth.tsx"));
+const CoSettings 
+  = react.lazy (() => import ("./settings.tsx"));
+
+const CsHome 
+  = react.lazy (() => import ("./customer.home.tsx"));
+const CsProduct 
+  = react.lazy (() => import ("./customer.product.tsx"));
+const CsProductBrowser 
+  = react.lazy (() => import ("./customer.productBrowser.tsx"));
+
+interface PropSplash
+{
+  visible: boolean;
+}
+interface PropBootstrap
+{
+  onComplete: () => void;
+  onError: () => void;
+}
 
 /**
  * หน้าต่างที่ไม่มีการแสดงผลเป็นของตัวเอง
  * แต่ใช้สำหรับการโหลดโค็ดและเริ่มการทำงานระบบส่วนต่าง ๆ
 */
-export default function Init ()
+const content = function Init ()
 {
+  const [completed, setCompleted] = react.useState (false);
+
+  function onComplete ()
+  {
+    setCompleted (true);
+    return;
+  }
+  function onError ()
+  {
+    return;
+  }
   return <>
     <HashRouter>
-      <Loader/>
+      <content.Splash visible={!completed}/>
+      <content.Bootstrap onComplete={onComplete} onError={onError}/>
     </HashRouter>
   </>;
 }
-function Loader ()
+content.Splash = function InitSplash (prop: PropSplash)
+{
+  const root = react.useRef (document.getElementById ("app-splash"));
+  const text = react.useRef (document.getElementById ("app-splash-text"));
+
+  react.useEffect (() =>
+  {
+    if (text.current)
+    {
+      const comment = [
+        "ยินดีต้อนรับ",
+        "กำลังโหลด ...",
+        "ถล่มให้ยับเลย!",
+        "วันนี้ฉันมาทำอะไรนะะ"
+      ];
+      const random = Math.trunc (Math.random () * comment.length);
+      const selected = comment[random];
+
+      text.current.textContent = selected;
+    }
+  },
+  []);
+  react.useEffect (() =>
+  {
+    if (root.current)
+    {
+      root.current.style.opacity = (prop.visible ? "1.0" : "0.0");
+      root.current.style.pointerEvents = (prop.visible ? "all" : "none");
+    }
+  },
+  [prop]);
+
+  return <></>;
+}
+content.Bootstrap = function InitBootstrap (prop: PropBootstrap)
 {
   const navigator = useNavigate ();
-  const [completed, setCompleted] = useState (false);
 
-  const onInit = () =>
+  function onInit ()
   {
     log.init ();
     navigation.init (navigator);
   }
-  const onTerminate = () =>
+  function onTerminate ()
   {
     navigation.terminate ();
     log.terminate ();
   }
-
-  useEffect (() =>
+  function onComplete ()
+  {
+    prop.onComplete ();
+  }
+  function onError ()
+  {
+    prop.onError ();
+  }
+  react.useEffect (() =>
   {
     try
     {
       onInit ();
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCompleted (true);
+      onComplete ();
     }
     catch (except)
     {
       console.error (except);
-      setCompleted (false);
       onTerminate ();
+      onError ();
       return;
     }
     return () =>
     {
-      setCompleted (false);
       onTerminate ();
     }
   },
   []);
-  useEffect (() =>
-  {
-    const element = document.getElementById ("app-splash");
-
-    if (element)
-    {
-      element.style.opacity = (completed ? "0.0" : "1.0");
-      element.style.pointerEvents = (completed ? "none" : "all");
-    }
-  },
-  [completed]);
-
-  const View = () =>
-  {
-    if (completed && import.meta.env.DEV)
-    {
-      return <>
-        <Outlet/>
-        <InitDebug/>
-      </>;
-    }
-    if (completed && import.meta.env.PROD)
-    {
-      return <>
-        <Outlet/>
-      </>
-    }
-    return <></>;
-  };
-
-  return <Routes>
-    <Route Component={() => <View/>}>
-      <Route path="/" index element={<Home/>}/>
-      <Route path="/product" element={<Product/>}/>
-      <Route path="/product-browser" element={<ProductBrowser/>}/>
-      <Route path="/auth" element={<Auth/>}/>
-      <Route path="/settings" element={<Settings/>}/>
+  return (
+  <Routes>
+    <Route caseSensitive Component={content.Outlet}>
+      <Route path="/auth" element={<CoAuth/>}/>
+      <Route path="/settings" element={<CoSettings/>}/>
     </Route>
+    <Route caseSensitive>
+      <Route index element={<CsHome/>}/>
+      <Route path="/product" element={<CsProduct/>}/>
+      <Route path="/product-browser" element={<CsProductBrowser/>}/>
+    </Route>;
   </Routes>
+  );
 }
+content.Outlet = function InitOutlet ()
+{
+  if (import.meta.env.DEV)
+  {
+    return <>
+      <Outlet/>
+      <InitDebug/>
+    </>;
+  }
+  return <Outlet/>
+}
+export default content;

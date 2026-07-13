@@ -58,6 +58,13 @@ export class ErrorDuplicate extends Error
     /* ไม่ระบุ */
 };
 /**
+ * คลาสข้อผิดพลาด ในกรณีที่ระบบพบข้อมูลซ้ำซ้อนกัน
+*/
+export class ErrorConflict extends Error
+{
+    /* ไม่ระบุ */
+};
+/**
  * คลาสข้อผิดพลาด ในกรณีที่ระบบปฎิเสธการทำงานเนื่องจากข้อจำกัด
 */
 export class ErrorConstraint extends Error

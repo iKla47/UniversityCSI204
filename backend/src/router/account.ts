@@ -1,18 +1,21 @@
 import http from "#core/http.ts";
-
-import type { Request, Response } from "#core/http.ts";
+import control from "#controller/account.ts";
 
 const content = function ()
 {
-    http.route ("/account", (router) =>
-    {
-        router.get ("/:id", content.routeBasic);
-    });
+    return;
 }
-content.routeBasic = function (request: Request, response: Response)
+content.getController = function ()
 {
-    response.status (http.STATUS_NOT_IMPLEMENTED);
-    response.end ();
+    return control;
+}
+content.getRouter = function ()
+{
+    const router = http.router ();
+
+    router.get ("/:id", control.routeBasic);
+
+    return router;
 }
 
 Object.freeze (content);

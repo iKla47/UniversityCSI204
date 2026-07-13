@@ -1,21 +1,12 @@
-import styled from "styled-components";
-import LoginComponent from "#component/auth.tsx";
-export default function Auth ()
+import Self from "#component/auth.tsx";
+
+/**
+ * ส่วนประกอบแสดงผลสำหรับหน้าจอลงชื่อเข้าใช้งานบัญชี
+*/
+const content = function Auth ()
 {
-  return <View>
-      <LoginComponent/>
-  </View>;
+  return <>
+    <Self/>
+  </>;
 }
-const View = styled.div `
-  
-      position: absolute;
-      inset: 0px;
-      width: 100%;
-      height: 100%;
-  
-      display: flex; 
-      flex-direction: column;
-      flex-wrap: nowrap;
-      align-items: center;
-      justify-content: center;
-`
+export default content;

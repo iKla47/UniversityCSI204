@@ -18,18 +18,19 @@ import express,
     type Request as ExpReq, 
     type RequestHandler as ExpReqHandler,
     type Response as ExpRes,
-    type NextFunction as ExpNext
+    type NextFunction as ExpNext,
+    type Router as ExpRouter
 } 
 from "express";
 
 /**
  * การเชื่อมต่อตัวกลางระหว่างระบบอื่น ๆ เช่น HTTP และ HTTPS
 */
-const connection = express ();
+const netMiddleware = express ();
 /**
  * ตัวประมวลเส้นทาง
 */
-const connectionRouter = express.Router ({
+const netRouter = express.Router ({
     caseSensitive: true,
     strict: true,
     mergeParams: false,
@@ -37,11 +38,11 @@ const connectionRouter = express.Router ({
 /**
  *  การเชื่อมต่อหลักของระบบ HTTP
 */
-const connectionHttp = http.createServer (connection);
+const netHttp = http.createServer (netMiddleware);
 /**
  *  การเชื่อมต่อหลักของระบบ HTTPS
 */
-const connectionHttps = https.createServer (connection);
+const netHttps = https.createServer (netMiddleware);
 /**
  * ระบบบันทึกกิจกรรมการทำงาน
 */
@@ -54,8 +55,8 @@ const content = function ()
 {
     return;
 }
-content.http = connectionHttp;
-content.https = connectionHttps;
+content.http = netHttp;
+content.https = netHttps;
 /**
  * ติดตั้งตัวจำกัดการใช้งาน สิ่งนี้ช่วยเรื่องการทำ DDoS
 */
@@ -311,23 +312,23 @@ content.STATUS_NETWORK_AUTH_REQUIRED = 511;
 /**
  * เริ่มต้นการทำงานของระบบ HTTP/HTTPS
 */
-content.init = async function ()
+content.init = async function (cb: () => void)
 {
-    connection.use (useHelment ());
-    connection.use (useCors ());
-    connection.use (useRateLimit ());
-    connection.use (useCompression ());
-    connection.use (express.json ({
+    netMiddleware.use (useHelment ());
+    netMiddleware.use (useCors ());
+    netMiddleware.use (useRateLimit ());
+    netMiddleware.use (useCompression ());
+    netMiddleware.use (express.json ({
         strict: true,
         inflate: true,
     }))
-    connection.use (connectionRouter);
+    netMiddleware.use (netRouter);
 
-    const enableHttp = dotenv.getBoolean ("B_HTTP_INSECURE_ENABLED", true);
-    const enableHttps = dotenv.getBoolean ("B_HTTP_SECURE_ENABLED", false);
+    const useInsecured = dotenv.getBoolean ("B_HTTP_INSECURE_ENABLED", true);
+    const useSecured = dotenv.getBoolean ("B_HTTP_SECURE_ENABLED", false);
 
-    const portHttp = dotenv.getInteger ("B_HTTP_INSECURE_PORT", 51000);
-    const portHttps = dotenv.getInteger ("B_HTTP_SECURE_PORT", 51001);
+    const portInsecured = dotenv.getInteger ("B_HTTP_INSECURE_PORT", 51000);
+    const portSecured = dotenv.getInteger ("B_HTTP_SECURE_PORT", 51001);
 
     const serverName = dotenv.getString ("B_HTTP_SERVER", "");
 
@@ -335,24 +336,35 @@ content.init = async function ()
     {
         log.info ("Name:", serverName);
     }
-    connection.use ((request: express.Request, response: express.Response) =>
+    try
+    {
+        cb ();
+    }
+    catch (error)
+    {
+        log.error ("Error occurred during callback initialization");
+        log.error ("---------------------------------------------");
+        log.error (error);
+    }
+    netMiddleware.use ((request: express.Request, response: express.Response) =>
     {
         void request;
         void response;
     
         const path = request.path;
+        const method = request.method;
         const socket = request.socket;
-        const address = (typeof socket.remoteAddress !==  "undefined") ? 
+        const addr = (typeof socket.remoteAddress !==  "undefined") ? 
             socket.remoteAddress : "(unknown address)";
 
-        log.warn (`${address} initiated unhandled endpoint: ${path}`);
+        log.warn (`${addr} initiated unhandled endpoint: ${method} ${path}`);
 
         request.socket.destroy ();
 
         // response.status (content.STATUS_NOT_FOUND);
         // response.end ();
     });
-    connection.use ((
+    netMiddleware.use ((
         error: Error, 
         request: express.Request, 
         response: express.Response,
@@ -365,11 +377,12 @@ content.init = async function ()
         void next;
 
         const path = request.path;
+        const method = request.method;
         const socket = request.socket;
-        const address = (typeof socket.remoteAddress !==  "undefined") ? 
+        const addr = (typeof socket.remoteAddress !==  "undefined") ? 
             socket.remoteAddress : "(unknown address)";
 
-        log.error (`${address} initiated unhandled exception: ${path}`);
+        log.error (`${addr} initiated unhandled exception: ${method} ${path}`);
         log.error (error);
 
         response.status (content.STATUS_INTERNAL_SERVER_ERROR);
@@ -378,16 +391,16 @@ content.init = async function ()
 
     await new Promise ((resolve, reject) =>
     {
-        if (!enableHttp) 
+        if (!useInsecured) 
         {
             resolve (undefined);
             return;
         }
         try
         {
-            connectionHttp.listen (portHttp, "0.0.0.0", 128, () =>
+            netHttp.listen (portInsecured, "0.0.0.0", 128, () =>
             {
-                const info = connectionHttp.address () as net.AddressInfo;
+                const info = netHttp.address () as net.AddressInfo;
                 const addr = info.address;
                 const port = String (info.port);
                 
@@ -408,16 +421,16 @@ content.init = async function ()
     });
     await new Promise ((resolve, reject) =>
     {
-        if (!enableHttps) 
+        if (!useSecured) 
         {
             resolve (undefined);
             return;
         }
         try
         {
-            connectionHttps.listen (portHttps, "0.0.0.0", 128, () =>
+            netHttps.listen (portSecured, "0.0.0.0", 128, () =>
             {
-                const info = connectionHttps.address () as net.AddressInfo;
+                const info = netHttps.address () as net.AddressInfo;
                 const addr = info.address;
                 const port = String (info.port);
                 
@@ -445,12 +458,12 @@ content.terminate = async function ()
 {
     await new Promise ((resolve) =>
     {
-        if (!connectionHttp.listening) 
+        if (!netHttp.listening) 
         {
             resolve (undefined);
             return;
         }
-        connectionHttp.close ((error ?: Error) =>
+        netHttp.close ((error ?: Error) =>
         {
             if (error) 
             {
@@ -461,18 +474,18 @@ content.terminate = async function ()
             {
                 log.info ("Closed connection: HTTP");
             }
-            connectionHttp.closeAllConnections ();
+            netHttp.closeAllConnections ();
             resolve (undefined);
         });
     });
     await new Promise ((resolve) =>
     {
-        if (!connectionHttps.listening) 
+        if (!netHttps.listening) 
         {
             resolve (undefined);
             return;
         }
-        connectionHttps.close ((error ?: Error) =>
+        netHttps.close ((error ?: Error) =>
         {
             if (error) 
             {
@@ -483,7 +496,7 @@ content.terminate = async function ()
             {
                 log.info ("Closed connection: HTTPS");
             }
-            connectionHttps.closeAllConnections ();
+            netHttps.closeAllConnections ();
             resolve (undefined);
         });
     });
@@ -492,50 +505,63 @@ content.terminate = async function ()
 /**
  * สร้างการเชื่อมต่อเส้นทางย่อยจากตำแหน่งที่กำหนดไว้
 */
-content.route = function (path: string, callback: (route: express.Router) => void)
+content.route = function (router: ExpRouter)
+{
+    netMiddleware.use (router);
+}
+/**
+ * สร้างการเชื่อมต่อเส้นทางย่อยจากตำแหน่งที่กำหนดไว้
+*/
+content.routeTo = function (path: string, router: ExpRouter)
+{
+    netMiddleware.use (path, router);
+}
+/**
+ * สร้างการเชื่อมต่อเส้นทางย่อยจากตำแหน่งที่กำหนดไว้
+*/
+content.router = function ()
 {
     const router = express.Router ({
         caseSensitive: true,
         strict: true,
         mergeParams: false
     });
-    callback (router);
-    connection.use (path, router);
+    return router;
 }
 /**
  * สร้างการเชื่อมต่อรูปแบบการดึงข้อมูล (GET) จากตำแหน่งที่กำหนดไว้
 */
 content.get = function (path: string, routeHandler: RequestHandler)
 {
-    return connectionRouter.get (path, routeHandler);
+    return netRouter.get (path, routeHandler);
 }
 /**
  * สร้างการเชื่อมต่อรูปแบบการสร้างข้อมูล (POST) จากตำแหน่งที่กำหนดไว้
 */
 content.post = function (path: string, routeHandler: RequestHandler)
 {
-    return connectionRouter.post (path, routeHandler);
+    return netRouter.post (path, routeHandler);
 }
 /**
  * สร้างการเชื่อมต่อรูปแบบการแก้ไขข้อมูล (PUT) จากตำแหน่งที่กำหนดไว้
 */
 content.put = function (path: string, routeHandler: RequestHandler)
 {
-    return connectionRouter.put (path, routeHandler);
+    return netRouter.put (path, routeHandler);
 }
 /**
  * สร้างการเชื่อมต่อรูปแบบการแก้ไขข้อมูล (เพียงบางส่วน) (PATCH) จากตำแหน่งที่กำหนดไว้
 */
 content.patch = function (path: string, routeHandler: RequestHandler)
 {
-    return connectionRouter.patch (path, routeHandler);
+    return netRouter.patch (path, routeHandler);
 }
 /**
  * สร้างการเชื่อมต่อรูปแบบการลบข้อมูล (DELETE) จากตำแหน่งที่กำหนดไว้
 */
 content.delete = function (path: string, routeHandler: RequestHandler)
 {
-    return connectionRouter.delete (path, routeHandler);
+    return netRouter.delete (path, routeHandler);
 }
 content.useRateLimit = function ({ window = 10000, limit = 100 })
 {

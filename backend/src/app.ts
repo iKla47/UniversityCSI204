@@ -47,8 +47,12 @@ await logConsole.init ();
 await logFile.init ();
 await logInject.init ();
 await logRemote.init ();
-await http.init ();
-await webSocket.init ();
 await sql.init ();
+await webSocket.init ();
+await http.init (() =>
+{
+    http.routeTo ("/auth", auth.getRouter ());
+    return;
+});
 
-auth.init ();
+auth.getRouter ();
