@@ -53,27 +53,33 @@ const log = logging.scoped ("MySQL");
 /**
  * ดักจับข้อผิดพลาดที่เกิดขึ้นในระหว่างการทำงานของคำสั่ง
 */
-const mediate = function (info: ResultError) : number
+const mediate = function (info: ResultError) : Error
 {
     switch (info.code)
     {
         case "ER_DUP_ENTRY": 
-            return error.DUPLICATE;
+            return new error.Duplicate (info.sqlMessage, { cause: info });
         case "ER_NO_REFERENCED_ROW":
-        case "ER_NO_REFERENCED_ROW_2": 
-            return error.CONSTRAINT;
+        case "ER_NO_REFERENCED_ROW_2":
+            return new error.Constraint (info.sqlMessage, { cause: info }); 
         case "ER_PARSE_ERROR":
-        case "ER_BAD_FIELD_ERROR": 
-            return error.COMMAND;
+        case "ER_BAD_FIELD_ERROR":
+            return new error.Command (info.sqlMessage, { cause: info }); 
         case "ER_NO_SUCH_TABLE": 
-            return error.NOT_FOUND;
+            return new error.NotFound (info.sqlMessage, { cause: info }); 
         case "ER_ACCESS_DENIED_ERROR": 
         case "ER_DBACCESS_DENIED_ERROR":
-            return error.NOT_AUTHORIZED;
+            return new error.NotAuthorized (info.sqlMessage, { cause: info }); 
         case "ECONNREFUSED":
-            return error.NETWORK;
+        case "CR_CONNECTION_ERROR":
+            return new error.Network (info.sqlMessage, { cause: info }); 
+        case "ER_CON_COUNT_ERROR":
+            return new error.NetworkLimit (info.sqlMessage, { cause: info });
+        case "CR_SERVER_GONE_AWAY":
+            return new error.NetworkGone (info.sqlMessage, { cause: info });
+        default:
+            return new error.Unknown (info.sqlMessage, { cause: info }); 
     }
-    return error.UNKNOWN;
 }
 /**
  * 
@@ -97,7 +103,6 @@ content.init = async function ()
     const data = env.getString ("SqlDb", "project");
     const user = env.getString ("SqlUser", "project");
     const pwd = env.getString ("SqlPassword", "project");
-    const multi = env.getBoolean ("SqlMutliStatement", false);
     
     client = mysql.createPool ({
         host: host,
@@ -107,7 +112,6 @@ content.init = async function ()
         password: pwd,
         enableCleartextPlugin: false,
         enableKeepAlive: true,
-        multipleStatements: multi
     });
     running = true;
     log.info ("Started");
@@ -146,7 +150,7 @@ content.select = async function
         //
         // ระบบไม่สามารถใช้งานได้
         //
-        throw error.NOT_AVAILABLE;
+        throw new error.NotAvailable ();
     }
 
     try
@@ -155,41 +159,6 @@ content.select = async function
             = await client.execute (command, value);
         const row = raw[0];
         
-        return row;
-    }
-    catch (info: unknown)
-    {
-        throw mediate (info as ResultError);
-    }
-}
-/**
- * เริ่มการดึงหนนึ่งข้อมูลหรือชุดข้อมูลหลายจำนวน จากในตารางที่กำหนดไว้
- * คำสั่งนี้จะคืนค่าข้อมูลเป็นรายการข้อมูลที่ผู้ใช้ร้องขอ
- * 
- * @param command คำสั่งภาษา SQL
- * @param value ข้อมูลเพิ่มเติมที่ป้อนสำหรับการดึงข้อมูล
-*/
-content.selectMultiple = async function
-(
-    command: InputCommand,
-    value: InputValue = []
-
-) : Promise<Record<string, unknown>[]>
-{
-    if (!client) 
-    {
-        //
-        // ระบบไม่สามารถใช้งานได้
-        //
-        throw error.NOT_AVAILABLE;
-    }
-
-    try
-    {
-        const raw: [RowDataPacket[], FieldPacket[]] 
-            = await client.query (command, value);
-        const row = raw[0];
-
         return row;
     }
     catch (info: unknown)
@@ -216,7 +185,7 @@ content.insert = async function
         //
         // ระบบไม่สามารถใช้งานได้
         //
-        throw error.NOT_AVAILABLE;
+        throw new error.NotAvailable ();
     }
     try
     {
@@ -224,39 +193,6 @@ content.insert = async function
         const id = raw [0].insertId;
 
         return id;
-    }
-    catch (info: unknown)
-    {
-        throw mediate (info as ResultError);
-    }
-}
-/**
- * เริ่มการแทรกข้อมูลหลายจำนวนลงไปในหลายตารางที่กำหนดไว้
- * คำสั่งนี้จะคืนค่าข้อมูลเป็นรหัสกุญแจหลัก (PRIMARY KEY)
- * 
- * @param command คำสั่งภาษา SQL
- * @param field ข้อมูลเพิ่มเติมที่ป้อนสำหรับการแทรกข้อมูล
-*/
-content.insertMultiple =  async function
-(
-    command: InputCommand,
-    field: InputValue = []
-    
-) : Promise<unknown []>
-{
-    if (!client) 
-    {
-        //
-        // ระบบไม่สามารถใช้งานได้
-        //
-        throw error.NOT_AVAILABLE;
-    }
-    try
-    {
-        const raw = await client.query<ResultSetHeader[]> (command, field);
-        const ids = raw [0].map ((x) => x.insertId);
-
-        return ids;
     }
     catch (info: unknown)
     {
@@ -282,45 +218,12 @@ content.update = async function
         //
         // ระบบไม่สามารถใช้งานได้
         //
-        throw error.NOT_AVAILABLE;
+        throw new error.NotAvailable ();
     }
     try
     {
         const raw = await client.execute<ResultSetHeader> (command, field);
         const affected = raw [0].affectedRows;
-
-        return affected;
-    }
-    catch (info: unknown)
-    {
-        throw mediate (info as ResultError);
-    }
-}
-/**
- * เริ่มการแก้ไขข้อมูลหนึ่งจำนวน (หรือมากกว่า) ลงไปในหลายตารางที่กำหนดไว้
- * คำสั่งนี้จะคืนค่าข้อมูลเป็นจำนวนข้อมูลที่ถูกกระทบ (affected rows)
- * 
- * @param command คำสั่งภาษา SQL
- * @param field ข้อมูลเพิ่มเติมที่ป้อนสำหรับการแทรกข้อมูล
-*/
-content.updateMultiple = async function
-(
-    command: InputCommand, 
-    value: InputValue = []
-
-) : Promise<number[]>
-{
-    if (!client) 
-    {
-        //
-        // ระบบไม่สามารถใช้งานได้
-        //
-        throw error.NOT_AVAILABLE;
-    }
-    try
-    {
-        const raw = await client.query<ResultSetHeader[]> (command, value);
-        const affected = raw [0].map ((x) => x.affectedRows);
 
         return affected;
     }
@@ -347,45 +250,12 @@ content.delete = async function (
         //
         // ระบบไม่สามารถใช้งานได้
         //
-        throw error.NOT_AVAILABLE;
+        throw new error.NotAvailable ();
     }
     try
     {
         const raw = await client.execute<ResultSetHeader> (command, value);
         const affected = raw [0].affectedRows;
-
-        return affected;
-    }
-    catch (info: unknown)
-    {
-        throw mediate (info as ResultError);
-    }
-}
-/**
- * เริ่มการลบข้อมูลหนึ่งจำนวน (หรือมากกว่า) จากไปในหลายตารางที่กำหนดไว้
- * คำสั่งนี้จะคืนค่าข้อมูลเป็นจำนวนข้อมูลที่ถูกกระทบ (affected rows)
- * 
- * @param command คำสั่งภาษา SQL
- * @param value ข้อมูลเพิ่มเติมที่ป้อนสำหรับการแทรกข้อมูล
-*/
-content.deleteMultiple = async function
-(
-    command: InputCommand, 
-    value: InputValue = []
-
-) : Promise<number[]>
-{
-    if (!client) 
-    {
-        //
-        // ระบบไม่สามารถใช้งานได้
-        //
-        throw error.NOT_AVAILABLE;
-    }
-    try
-    {
-        const raw = await client.query<ResultSetHeader[]> (command, value);
-        const affected = raw [0].map ((x) => x.affectedRows);
 
         return affected;
     }
@@ -405,7 +275,7 @@ content.transaction = async function ()
         //
         // ระบบไม่สามารถใช้งานได้
         //
-        throw error.NOT_AVAILABLE;
+        throw new error.NotAvailable ();
     }
 
     const subject = await client.getConnection ().catch ((info: unknown) => 

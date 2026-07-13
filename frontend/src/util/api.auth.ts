@@ -6,6 +6,16 @@ const content = function ()
     return;
 }
 
+content.ErrorUnknown = class ErrorUnknown extends Error {};
+content.ErrorNetwork = class ErrorNetwork extends Error {};
+content.ErrorJson = class ErrorJson extends Error {};
+content.ErrorJsonData = class ErrorJsonData extends Error {};
+content.ErrorNotAuthorized = class ErrorNotAuthorized extends Error {};
+content.ErrorNotAvailable = class ErrorNotAvailable extends Error {};
+content.ErrorNotFound = class ErrorNotFound extends Error {};
+content.ErrorTooManyRequest = class ErrorTooManyRequest extends Error {};
+
+
 content.ERROR_UNKNOWN = 0;
 content.ERROR_NETWORK = 1;
 content.ERROR_JSON = 2;
