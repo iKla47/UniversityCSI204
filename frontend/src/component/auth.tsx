@@ -241,12 +241,13 @@ const content = function Auth (prop: PropContent)
 
   const onSignedIn = () =>
   {
-    api.saveSetPrefered (api.saveAdd ({
+    const saved = api.saveAdd ({
       name: id.current,
       secret: session.current.secret,
       issued: session.current.issued,
       expired: session.current.expire,
-    }));
+    });
+    api.saveSetPrefered (saved);
     api.saveWrite ();
 
     if (prop.onSignedIn) {

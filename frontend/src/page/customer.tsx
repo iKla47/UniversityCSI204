@@ -1,9 +1,19 @@
+import { Outlet } from "react-router";
 import NavBar from "#component/navbar.tsx";
 import navigation from "#util/common.navigation.ts";
+import ctx from "#context/common.ts";
 
+/**
+ * ส่วนประกอบแสดงผลเส้นทางของลูกค้า
+*/
 const content = function ()
 {
-  return <></>;
+  return (
+  <>
+    <Outlet/>
+    <content.NavBar/>
+  </>
+  );
 }
 content.NavBar = function PresetNavBar ()
 {
@@ -11,6 +21,10 @@ content.NavBar = function PresetNavBar ()
   const toProductBrowser = () => { void navigation.toProductBrowser (); }
   const toDoc = () => { navigation.toDoc (); }
   const toSignIn = () => { void navigation.toAuth (); }
+  const auth = ctx.useAuth ();
+  const authSigned = ctx.authSigned (auth);
+
+  console.log (auth);
 
   return <>
   <NavBar>
@@ -22,8 +36,7 @@ content.NavBar = function PresetNavBar ()
       <NavBar.MenuItem text="ช่วยเหลือ" onClick={toDoc}/>
       <NavBar.MenuItem text="เกี่ยวกับ"/>
     </NavBar.Menu>
-    {/* <NavBar.Profile/> */}
-    <NavBar.SignIn onClick={toSignIn}/>
+    {authSigned ? <NavBar.Profile/> : <NavBar.SignIn onClick={toSignIn}/> }
   </NavBar>
   </>;
 }

@@ -12,7 +12,7 @@ from "react-router";
 import log from "#util/common.log.ts";
 import navigation from "#util/common.navigation.ts";
 
-import ctxAuth from "#context/auth.tsx";
+import ctxAuth from "#context/common.ts";
 
 //
 // โหลดหน้าต่างเมื่อจำเป็นเท่านั้น
@@ -30,7 +30,7 @@ const CoError404
   = react.lazy (() => import ("./error.404.tsx"));
 
 const CsAbout
-  = react.lazy (() => import ("./about.tsx"));
+  = react.lazy (() => import ("./customer.about.tsx"));
 const CsHome 
   = react.lazy (() => import ("./customer.home.tsx"));
 const CsProduct 
@@ -151,7 +151,7 @@ content.Bootstrap = function InitBootstrap (prop: PropBootstrap)
   },
   []);
   return (
-  <ctxAuth.Provider value={ctxAuth.initial ()}>
+  <ctxAuth.ProviderAuth value={ctxAuth.init ()}>
     <Routes>
       <Route caseSensitive Component={content.Outlet}>
         <Route path="/auth" element={<CoAuth/>}/>
@@ -168,7 +168,7 @@ content.Bootstrap = function InitBootstrap (prop: PropBootstrap)
         <Route path="*" element={<CoError404/>}/>
       </Route>
     </Routes>
-  </ctxAuth.Provider>
+  </ctxAuth.ProviderAuth>
   );
 }
 content.Outlet = function InitOutlet ()

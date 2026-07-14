@@ -3,12 +3,12 @@
 //
 import React from "react";
 import ReactDOM from "react-dom/client";
+import Component from "#page/initV2.tsx";
 
-const DomElement = document.getElementById ("app") as HTMLDivElement;
-const DomReact = ReactDOM.createRoot (DomElement);
-const Component = React.lazy (() => import ("./initV2.tsx"));
+const domElement = document.getElementById ("app") as HTMLDivElement;
+const domReact = ReactDOM.createRoot (domElement);
 
-DomReact.render (
+domReact.render (
   <React.StrictMode>
     <Component/>
   </React.StrictMode>
