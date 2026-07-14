@@ -1,6 +1,13 @@
+import sql from "#core/sql.ts";
 
 export type AccountId = number;
 export type AccountRole = number;
+
+export interface CreateAccount
+{
+    name: string;
+    role: number;
+}
 
 const content = function ()
 {
@@ -23,22 +30,28 @@ content.ROLE_MANAGER = 3;
 */
 content.ROLE_DEVELOPER = 4;
 /**
- * ไม่มีข้อจำกัดใด ๆ ในการใช้งานระบบ
+ * เริ่มต้นการทำงานของระบบ
 */
-content.RESTRICTION_NONE = 0;
+content.init = async () =>
+{
+    return Promise.resolve ();
+}
 /**
- * จำเป็นต้องยืนยันตัวตนก่อนใช้งานระบบ
+ * ยุติการทำงานของระบบ
 */
-content.RESTRICTION_CHALLENGE = 1;
-/**
- * บัญชีถูกปิดใช้งานชั่วคราว
-*/
-content.RESTRICTION_DISABLED = 2;
-/**
- * บัญชีถูกระงับโดยระบบหรือผู้ดูแล
-*/
-content.RESTRICTION_SUSPENDED = 4;
-
+content.terminate = async () =>
+{
+    return Promise.resolve ();
+}
+content.getRole = () =>
+{
+    return [
+        content.ROLE_USER,
+        content.ROLE_STAFF,
+        content.ROLE_MANAGER,
+        content.ROLE_DEVELOPER
+    ];
+}
 content.getBasic = () =>
 {
     return;
@@ -55,9 +68,34 @@ content.putContact = () =>
 {
     return;
 }
-content.create = () =>
+content.create = async (info: CreateAccount) : Promise<AccountId> =>
 {
-    return;
+    const ctx = await sql.transaction ();
+
+    try
+    {
+        const id = await ctx.insert (`
+            INSERT INTO Account (Name, Role)
+            VALUES (?, ?)`,
+            [info.name, info.role]
+        ) as AccountId;
+        await ctx.insert (`
+            INSERT INTO AccountContact (Id)
+            VALUES (?)`,
+            [id]
+        );
+        await ctx.commit ();
+        return id;
+    }
+    catch (e)
+    {
+        await ctx.rollback ();
+        throw e;
+    }
+    finally
+    {
+        ctx.release ();
+    }
 }
 content.delete = () =>
 {

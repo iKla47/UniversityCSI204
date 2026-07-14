@@ -9,6 +9,11 @@ import
     type InputValue as SqlInputValue
 }
 from "#core/sql.ts"
+import
+{
+    type AccountId
+}
+from "#model/account.ts";
 
 /**
  * ระบบจัดการระบบยืนยันตัวตนผู้ใช้
@@ -34,12 +39,34 @@ interface ResultSession
     sessionIssued: Date;
     sessionExpire: Date;
     restriction: Restriction;
+    step: number;
 }
 
 let EXPIRE_SESSION: number;
 let EXPIRE_CHALLENGE: number;
 let JWT_ISSUER: string;
 let JWT_SECRET: Uint8Array;
+
+/**
+ * ขั้นตอนการลงชื่อเข้าใช้: ไม่ทราบ
+*/
+content.STEP_UNKNOWN = 0;
+/**
+ * ขั้นตอนการลงชื่อเข้าใช้: ระบุรหัสประจำตัว
+*/
+content.STEP_IDENTIFIER = 1;
+/**
+ * ขั้นตอนการลงชื่อเข้าใช้: ระบุรหัสผ่าน
+*/
+content.STEP_PASSWORD = 2;
+/**
+ * ขั้นตอนการลงชื่อเข้าใช้: ยืนยันตัวตนแบบสองชั้น
+*/
+content.STEP_MFA = 3;
+/**
+ * ขั้นตอนการลงชื่อเข้าใช้: เสร็จสิ้น
+*/
+content.STEP_COMPLETE = 4;
 
 content.getExpireSession = function () { return EXPIRE_SESSION; }
 content.getExpireChallenge = function () { return EXPIRE_CHALLENGE; }
@@ -73,6 +100,22 @@ content.terminate = async () =>
 {
     return Promise.resolve ();
 }
+/**
+ * ไม่มีข้อจำกัดใด ๆ ในการใช้งานระบบ
+*/
+content.RESTRICTION_NONE = 0;
+/**
+ * จำเป็นต้องยืนยันตัวตนก่อนใช้งานระบบ
+*/
+content.RESTRICTION_CHALLENGE = 1;
+/**
+ * บัญชีถูกปิดใช้งานชั่วคราว
+*/
+content.RESTRICTION_DISABLED = 2;
+/**
+ * บัญชีถูกระงับโดยระบบหรือผู้ดูแล
+*/
+content.RESTRICTION_SUSPENDED = 4;
 /**
  * ลงชื่อให้กับชุดข้อมูลดังกล่าวโดยใช้รูปแบบ JWT
  * 
@@ -153,7 +196,7 @@ content.signIn = async (authId: string) : Promise<ResultSession> =>
     let reader = objreader (auth.at (0));
     const outLink = reader.requireInteger ("Link");
 
-    cmd = `SELECT Role FROM Account WHERE = ?`;
+    cmd = `SELECT Role FROM Account WHERE Id = ?`;
     val = [outLink];
 
     const account = await sql.select (cmd, val);
@@ -169,7 +212,9 @@ content.signIn = async (authId: string) : Promise<ResultSession> =>
     const seExpire = new Date (Date.now () + EXPIRE_CHALLENGE);
     const seValue = await content.jwtSign ({
         "Id": outLink,
-        "Role": outRole
+        "Role": outRole,
+        "Restriction": content.RESTRICTION_CHALLENGE,
+        "AuthStep": content.STEP_PASSWORD
     }, 
     seIssued, seExpire);
 
@@ -180,7 +225,8 @@ content.signIn = async (authId: string) : Promise<ResultSession> =>
         session: seValue,
         sessionIssued: seIssued,
         sessionExpire: seExpire,
-        restriction: 0,
+        restriction: content.RESTRICTION_CHALLENGE,
+        step: content.STEP_PASSWORD
     };
     return output;
 }
@@ -191,16 +237,61 @@ content.signIn = async (authId: string) : Promise<ResultSession> =>
  * @param authId รหัสประจำตัว
  * @param value รหัสผ่าน
 */
-content.signInPwd = (
+content.signInPwd = async (
     authLink: number,
     authId: string, 
+    role: number,
     value: string,
-) =>
+) : Promise<ResultSession> =>
 {
-    void authLink;
-    void authId;
-    void value;
+    const cmd: SqlInputCommand = `SELECT Password FROM Auth WHERE Id = ?`;
+    const val: SqlInputValue = [authId];
+    const result = await sql.select (cmd, val);
+
+    if (result.length == 0) {
+        throw new error.NotFound ();
+    }
+    if (result.length >= 2) {
+        throw new error.Conflict ();
+    }
+    const reader = objreader (result.at (0));
+    const outPwd = reader.requireString ("Password");
+
+    if (outPwd !== value) {
+        throw new error.NotAuthorized ();
+    }
+    const seIssued = new Date (Date.now ());
+    const seExpire = new Date (Date.now () + EXPIRE_CHALLENGE);
+    const seValue = await content.jwtSign ({
+        "Id": authLink,
+        "Role": role,
+        "Restriction": 0,
+        "AuthStep": content.STEP_MFA
+    }, 
+    seIssued, seExpire);
+
+    const output: ResultSession =
+    {
+        authId: authId,
+        authLink: authLink,
+        session: seValue,
+        sessionIssued: seIssued,
+        sessionExpire: seExpire,
+        restriction: 0,
+        step: content.STEP_COMPLETE
+    };
+    return output;
 }
+
+content.create = async (id: string, pwd: string, link: AccountId) =>
+{
+    await sql.insert (`
+        INSERT INTO Auth (Id, Password, Link) 
+        VALUES (?, ?, ?)`, 
+        [id, pwd, link]
+    );
+}
+
 /**
  * แข็งวัตถุ (ความปลอดภัย)
 */

@@ -1,423 +1,715 @@
-import react  from "react";
-import styled from "styled-components";
-import api    from "#util/api.auth.ts";
-import error  from "#util/common.error.ts";
+import react    from "react";
+import styled   from "styled-components";
+import api      from "#util/api.auth.ts";
+import error    from "#util/common.error.ts";
 
+import { Activity }  from "react";
 import { keyframes } from "styled-components";
+import { ArrowLeft, RotateCcw, UserRoundPlus } from "lucide-react";
+import { type Session } from "#util/api.auth.ts";
 
+type ActivityMode = "visible" | "hidden" | undefined;
 
-interface PropContainer
+interface PropContent
+{
+  visible ?: boolean;
+  visibleAnimation ?: number;
+  page ?: number;
+  transparent ?: boolean;
+  title ?: string;
+  description ?: string;
+
+  onSignedIn ?: () => void;
+  onSignedUp ?: () => void;
+  onCancel ?: () => void;
+}
+interface PropView
 {
   children ?: react.ReactNode;
 }
-interface PropHvSignInId
+interface PropViewForm
 {
-  visible ?: number;
-
-  onContinue ?: () => void;
-  onCancel ?: () => void;
+  children ?: react.ReactNode;
+  transparent ?: boolean;
 }
-interface PropHvSignInPwd
+interface PropFormSignInId
 {
-  visible ?: number;
-
-  onContinue ?: () => void;
-  onCancel ?: () => void;
-}
-interface PropLvSignInId
-{
-  visible ?: number;
+  visible ?: boolean;
+  visibleAnimation ?: number;
   title ?: string;
   description ?: string;
-  feedback ?: string;
-  feedbackType ?: number;
-  onContinue ?: (input: string) => void;
-  onCreate ?: () => void;
-  onRecovery ?: () => void;
+  pending ?: boolean;
+  feedback ?: PropTemplateFeedback;
+  onSubmit ?: (value: string) => void;
+  onBack ?: (last: string) => void;
 }
-interface PropLvSignInPwd
+interface PropFormSignInPwd
 {
-  visible ?: number;
-  feedback ?: string;
-  feedbackType ?: number;
-  onContinue ?: (input: string) => void;
-  onCancel ?: () => void;
+  visible ?: boolean;
+  visibleAnimation ?: number;
+  pending ?: boolean;
+  feedback ?: PropTemplateFeedback;
+  onSubmit ?: (value: string) => void;
+  onBack ?: (last: string) => void;
+}
+interface PropTemplateHeader
+{
+  title ?: string;
+  description ?: string;
+  onBack ?: () => void;
+}
+interface PropTemplateMain
+{
+  children ?: react.ReactNode;
+}
+interface PropTemplateFooter
+{
+  children ?: react.ReactNode;
+}
+interface PropTemplateOption
+{
+  icon ?: string | react.JSX.Element;
+  text ?: string;
+  disabled ?: boolean;
+}
+interface PropTemplateFeedback
+{
+  type ?: number;
+  text ?: string;
 }
 
-const content = function Auth ()
+const checkInputSignInId = (input: string) : PropTemplateFeedback | null =>
 {
-  
-  return <>
-  <content.Container>
-    <content.HvSignIn/>
-  </content.Container>
-  </>
-}
+  const compliant = api.checkCompliantId (input);
 
-content.VISIBLE_UNDEFINED = 0;
-content.VISIBLE_HIDDEN = 1;
-content.VISIBLE_SHOWN = 2;
-
-content.VIEW_UNDEFINED = 0;
-content.VIEW_SIGN_IN = 1;
-content.VIEW_SIGN_IN_ID = 2;
-content.VIEW_SIGN_IN_PWD = 3;
-content.VIEW_SIGN_IN_TOTP = 4;
-
-content.FEEDBACK_UNDEFINED = 0;
-content.FEEDBACK_WARNING = 1;
-content.FEEDBACK_ERROR = 2;
-
-content.Container = function AuthContainer (prop: PropContainer)
-{
-  return <>
-  <FormView>
-    <FormBox>
-      {prop.children}
-    </FormBox>
-  </FormView>
-  </>;
-}
-content.HvSignIn = function AuthHvSignIn ()
-{
-  const [view, setView] = react.useState (content.VIEW_SIGN_IN_ID);
-  const visibleId = view == content.VIEW_SIGN_IN_ID ? 
-    content.VISIBLE_SHOWN : content.VISIBLE_HIDDEN;
-  const visiblePwd = view == content.VIEW_SIGN_IN_PWD ? 
-    content.VISIBLE_SHOWN : content.VISIBLE_HIDDEN;
-  
-
-  function enterId ()
+  if (!compliant.lengthEmpty)
   {
-    setView (content.VIEW_SIGN_IN_ID);
+    return {
+      type: content.FEEDBACK_WARNING,
+      text: "รหัสประจำตัวต้องไม่เว้นว่าง"
+    }
   }
-  function enterPwd ()
+  if (!compliant.lengthMin) 
   {
-    setView (content.VIEW_SIGN_IN_PWD);
+    return {
+      type: content.FEEDBACK_WARNING, 
+      text: "รหัสประจำตัวต้องยาวอย่างน้อย 2 ตัวอักษร"
+    }
   }
-  function enterMfa ()
+  if (!compliant.lengthMax)
   {
-    return;
+    return {
+      type: content.FEEDBACK_WARNING, 
+      text: "รหัสประจำตัวต้องยาวไม่เกิน 32 ตัวอักษร"
+    }
   }
-
-  return <>
-    <content.HvSignInId 
-      visible={visibleId} 
-      onContinue={enterPwd}/>
-    <content.HvSignInPwd 
-      visible={visiblePwd} 
-      onContinue={enterMfa} onCancel={enterId}/>
-  </>;
+  return null;
 }
-content.HvSignInId = function AuthHvSignInId (prop: PropHvSignInId)
+const checkInputSignInPwd = (input: string) : PropTemplateFeedback | null =>
 {
-  const [feedback, setFeedback] = react.useState ({
+  const compliant = api.checkCompliantPwd (input);
+
+  if (!compliant.lengthEmpty)
+  {
+    return { 
+      type: content.FEEDBACK_WARNING, 
+      text: "รหัสผ่านต้องไม่เว้นว่าง" 
+    };
+  }
+  if (!compliant.lengthMin) 
+  {
+    return { 
+      type: content.FEEDBACK_WARNING, 
+      text: "รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร" 
+    };
+  }
+  if (!compliant.lengthMax)
+  {
+    return { 
+      type: content.FEEDBACK_WARNING, 
+      text: "รหัสผ่านต้องยาวไม่เกิน 32 ตัวอักษร" 
+    };
+  }
+  return null;
+}
+const checkResSignInId = (input: unknown) : PropTemplateFeedback =>
+{
+  if (input instanceof error.Network) 
+  {
+    return { 
+      type: content.FEEDBACK_ERROR, 
+      text: 
+      `เกิดข้อผิดพลาดทางด้านเครือข่าย โปรดตรวจสอบการเชื่อมต่อเครือข่ายของคุณ` 
+    };
+  }
+  if (input instanceof error.NotFound) 
+  {
+    return { 
+      type: content.FEEDBACK_ERROR, 
+      text: "ไม่พบบัญชีผู้ใช้งาน โปรดตรวจสอบรหัสประจำตัวของคุณอีกครั้ง" 
+    };
+  }
+  if (input instanceof error.NetworkLimit) 
+  {
+    return { 
+      type: content.FEEDBACK_ERROR, 
+      text: "ระบบปฏิเสธคำขอของคุณ โปรดรอสักครู่แล้วลองใหม่อีกครั้ง" 
+    };
+  }
+  if (input instanceof error.NotAvailable) 
+  {
+    return { 
+      type: content.FEEDBACK_ERROR, 
+      text: "ระบบไม่สามารถทำงานได้ในเวลานี้ โปรดลองใหม่อีกครั้งในภายหลัง" 
+    };
+  }
+  return { 
+    type: content.FEEDBACK_ERROR, 
+    text: "เกิดข้อผิดพลาดบางอย่าง โปรดลองใหม่อีกครั้ง" 
+  };
+}
+const checkResSignInPwd = (input: unknown) : PropTemplateFeedback =>
+{
+  if (input instanceof error.Network) 
+  {
+    return { 
+      type: content.FEEDBACK_ERROR, 
+      text: 
+      `เกิดข้อผิดพลาดทางด้านเครือข่าย โปรดตรวจสอบการเชื่อมต่อเครือข่ายของคุณ` 
+    };
+  }
+  if (input instanceof error.NotFound) 
+  {
+    return { 
+      type: content.FEEDBACK_ERROR, 
+      text: "ไม่พบบัญชีผู้ใช้งาน โปรดตรวจสอบรหัสประจำตัวของคุณอีกครั้ง" 
+    };
+  }
+  if (input instanceof error.NetworkLimit) 
+  {
+    return { 
+      type: content.FEEDBACK_ERROR, 
+      text: "ระบบปฏิเสธคำขอของคุณ โปรดรอสักครู่แล้วลองใหม่อีกครั้ง" 
+    };
+  }
+  if (input instanceof error.NotAuthorized)
+  {
+    return { 
+      type: content.FEEDBACK_ERROR, 
+      text: "รหัสผ่านของคุณไม่ถูกต้อง โปรดตรวจสอบแล้วลองใหม่อีกครั้ง" 
+    };
+  }
+  if (input instanceof error.NotAvailable) 
+  {
+    return { 
+      type: content.FEEDBACK_ERROR, 
+      text: "ระบบไม่สามารถทำงานได้ในเวลานี้ โปรดลองใหม่อีกครั้งในภายหลัง" 
+    };
+  }
+  return { 
+    type: content.FEEDBACK_ERROR, 
+    text: "เกิดข้อผิดพลาดบางอย่าง โปรดลองใหม่อีกครั้ง" 
+  };
+}
+
+const emptyFeedback = () : PropTemplateFeedback =>
+{
+  return {
     type: content.FEEDBACK_UNDEFINED,
     text: ""
-  });
+  }
+}
+const emptySession = () : Session =>
+{
+  return {
+    secret: "",
+    issued: Date.prototype,
+    expire: Date.prototype
+  }
+}
 
-  function onContinue (input: string)
+/**
+ * ส่วนประกอบแสดงผลแบบหน้าต่าง
+*/
+const content = function Auth (prop: PropContent)
+{
+  const [page, setPage] = react.useState (content.PAGE_SIGN_IN_ID);
+  const [pending, setPending] = react.useState (false);
+  const [feedback, setFeedback] = react.useState (emptyFeedback ());
+  const id = react.useRef ("");
+  const session = react.useRef (emptySession ()); 
+
+  const onSignedIn = () =>
   {
-    const compliant = api.checkCompliantId (input);
+    api.saveSetPrefered (api.saveAdd ({
+      name: id.current,
+      secret: session.current.secret,
+      issued: session.current.issued,
+      expired: session.current.expire,
+    }));
+    api.saveWrite ();
 
-    if (!compliant.lengthEmpty)
-    {
-      setFeedback ({ 
-        type: content.FEEDBACK_WARNING, 
-        text: "รหัสประจำตัวต้องไม่เว้นว่าง" 
-      });
-      return;
+    if (prop.onSignedIn) {
+      prop.onSignedIn ();
     }
-    if (!compliant.lengthMin) 
-    {
-      setFeedback ({ 
-        type: content.FEEDBACK_WARNING, 
-        text: "รหัสประจำตัวต้องยาวอย่างน้อย 2 ตัวอักษร" 
-      });
-      return;
-    }
-    if (!compliant.lengthMax)
-    {
-      setFeedback ({ 
-        type: content.FEEDBACK_WARNING, 
-        text: "รหัสประจำตัวต้องยาวไม่เกิน 32 ตัวอักษร" 
-      });
-      return;
-    }
-    setFeedback ({ type: content.FEEDBACK_UNDEFINED, text: "" });
+  }
+  const onSubmitId = (value: string) =>
+  {
+    const invalid = checkInputSignInId (value);
 
-    api.signIn (input).then (() =>
+    if (invalid)
     {
-      if (prop.onContinue) {
-        prop.onContinue ();
+      setFeedback (invalid);
+      return;
+    }
+    else
+    {
+      setFeedback (emptyFeedback ());
+      setPending (true);
+    }
+    api.signIn (value).then (([se, ch]) =>
+    {
+      id.current = value;
+      session.current = se;
+
+      switch (ch.step)
+      {
+        case api.STEP_PASSWORD: setPage (content.PAGE_SIGN_IN_PWD); break;
       }
+      setPending (false);
     })
     .catch ((e: unknown) =>
     {
-      if (e instanceof error.Network) 
-      {
-        setFeedback ({ 
-          type: content.FEEDBACK_ERROR, 
-          text: "เกิดข้อผิดพลาดทางด้านเครือข่าย โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ตของคุณ" 
-        });
-        return;
-      }
-      if (e instanceof error.NotFound) 
-      {
-        setFeedback ({ 
-          type: content.FEEDBACK_ERROR, 
-          text: "ไม่พบบัญชีผู้ใช้งาน โปรดตรวจสอบรหัสประจำตัวของคุณอีกครั้ง" 
-        });
-        return;
-      }
-      if (e instanceof error.NetworkLimit) 
-      {
-        setFeedback ({ 
-          type: content.FEEDBACK_ERROR, 
-          text: "ระบบปฏิเสธคำขอของคุณ โปรดรอสักครู่" 
-        });
-        return;
-      }
-      if (e instanceof error.NotAvailable) 
-      {
-        setFeedback ({ 
-          type: content.FEEDBACK_ERROR, 
-          text: "ระบบไม่สามารถทำงานได้ในเวลานี้ โปรดลองใหม่อีกครั้งในภายหลัง" 
-        });
-        return;
-      }
-      setFeedback ({ 
-        type: content.FEEDBACK_ERROR, 
-        text: "เกิดข้อผิดพลาดบางอย่าง โปรดลองใหม่อีกครั้ง" 
-      });
+      setFeedback (checkResSignInId (e));
+      setPending (false);
     });
   }
-  function onCreate ()
+  const onSubmitPwd = (value: string) =>
   {
-    setFeedback ({ 
-      type: content.FEEDBACK_ERROR, 
-      text: "ขออภัย ระบบไม่สามารถใช้งานได้ในตอนนี้" 
+    const invalid = checkInputSignInPwd (value);
+
+    if (invalid)
+    {
+      setFeedback (invalid);
+      return;
+    }
+    else
+    {
+      setFeedback (emptyFeedback ());
+      setPending (true);
+    }
+    api.signInPwd (
+      session.current.secret, 
+      id.current, 
+      value
+    ).then (([se, ch]) =>
+    {
+      session.current = se;
+
+      switch (ch.step)
+      {
+        case api.STEP_COMPLETE:
+          onSignedIn ();
+          return;
+      }
+      setPending (false);
+    })
+    .catch ((e: unknown) =>
+    {
+      setFeedback (checkResSignInPwd (e));
+      setPending (false);
     });
   }
-  function onRecovery ()
+  const onBackPwd = () =>
   {
-    setFeedback ({ 
-      type: content.FEEDBACK_ERROR, 
-      text: "ขออภัย ระบบไม่สามารถใช้งานได้ในตอนนี้" 
-    });
+    id.current = "";
+    session.current = emptySession ();
+
+    setFeedback (emptyFeedback ());
+    setPage (content.PAGE_SIGN_IN_ID);
   }
 
-  return <>
-  <content.LvSignInId
-    visible={prop.visible}
-    title="ร้านขายแผ่นและตลับเกม"
-    description="ยินดีต้อนรับ โปรดป้อนรหัสบัญชีของคุณเพื่อลงชื่อเข้าใช้"
-    feedback={feedback.text}
-    feedbackType={feedback.type}
-    onContinue={onContinue}
-    onCreate={onCreate}
-    onRecovery={onRecovery}
-  />
-  </>;
+  return (
+    <content.View>
+      <content.ViewForm transparent={prop.transparent ?? false}>
+        <content.FormHome/>
+        <content.FormSignInId
+          visible={page === content.PAGE_SIGN_IN_ID} 
+          visibleAnimation={content.ANIM_NONE}
+          title={prop.title} 
+          description={prop.description}
+          feedback={feedback}
+          pending={pending}
+          onSubmit={onSubmitId}/>
+        <content.FormSignInPwd
+          visible={page === content.PAGE_SIGN_IN_PWD} 
+          visibleAnimation={content.ANIM_NONE}
+          feedback={feedback}
+          pending={pending}
+          onSubmit={onSubmitPwd}
+          onBack={onBackPwd}/>
+        <content.FormSignInTotp/>
+        <content.FormSignUpEmail/>
+        <content.FormSignUpPwd/>
+        <content.FormSignUpId/>
+        <content.FormSigned/>
+        <content.FormSuspended/>
+      </content.ViewForm>
+    </content.View>
+  );
 }
-content.HvSignInPwd = function AuthHvSignInPwd (prop: PropHvSignInPwd)
+/**
+ * โหมดแสดงผล: ไม่ทราบ
+*/
+content.VISIBLE_UNDEFINED = 0;
+/**
+ * โหมดแสดงผล: ซ่อน
+*/
+content.VISIBLE_HIDDEN = 1;
+/**
+ * โหมดแสดงผล: แสดงทันที
+*/
+content.VISIBLE_SHOWN = 101;
+/**
+ * ไม่มีการใช้งานแอนิเมชั่นใด ๆ
+*/
+content.ANIM_NONE = 0;
+content.ANIM_SCALE_UP = 1;
+content.ANIM_SCALE_UP_DOWN = 2;
+content.ANIM_SCALE_DOWN = 3;
+content.ANIM_SCALE_DOWN_UP = 4;
+content.ANIM_SLIDE_LEFT_TO_RIGHT = 5;
+content.ANIM_SLIDE_RIGHT_TO_LEFT = 6;
+/**
+ * การแสดงผล: ไม่ทราบ
+*/
+content.PAGE_UNDEFINED = 0;
+/**
+ * การแสดงผล: หน้าเริ่มต้นลงชื่อเข้าใช้
+*/
+content.PAGE_SIGN_IN = 1;
+/**
+ * การแสดงผล: หน้าใส่รหัสประจำตัว
+*/
+content.PAGE_SIGN_IN_ID = 2;
+/**
+ * การแสดงผล: หน้าใส่รหัสผ่าน
+*/
+content.PAGE_SIGN_IN_PWD = 3;
+/**
+ * การแสดงผล: หน้าใส่รหัส TOTP
+*/
+content.PAGE_SIGN_IN_TOTP = 4;
+
+/**
+ * ข้อความตอบกลับ: ไม่ระบุ
+*/
+content.FEEDBACK_UNDEFINED = 0;
+/**
+ * ข้อความตอบกลับ: คำเตือน
+*/
+content.FEEDBACK_WARNING = 1;
+/**
+ * ข้อความตอบกลับ: ข้อผิดพลาด
+*/
+content.FEEDBACK_ERROR = 2;
+
+content.View = function AuthView (prop: PropView)
 {
-  const [feedback, setFeedback] = react.useState ({
-    type: content.FEEDBACK_UNDEFINED,
-    text: ""
-  });
+  return (
+    <StyleView>
+      <StyleViewInner>
+        {prop.children}
+      </StyleViewInner>
+    </StyleView>
+  );
+}
+content.ViewForm = function AuthViewForm (prop: PropViewForm)
+{
+  return (
+    <StyleForm $transparent={prop.transparent}>
+      {prop.children}
+    </StyleForm>
+  );
+}
+content.FormHome = function AuthFormHome ()
+{
+  return (<></>);
+}
+content.FormSignInId = function AuthFormSignInId (prop: PropFormSignInId)
+{
+  const field = react.useRef (HTMLInputElement.prototype);
+  const [mode, setMode] = react.useState<ActivityMode> ("hidden");
 
-  function onContinue (input: string)
+  const onSubmit = () =>
   {
-    const compliant = api.checkCompliantPwd (input);
+    if (prop.onSubmit) {
+      prop.onSubmit (field.current.value);
+    }
+  }
+  const onSubmitButton = (event: react.MouseEvent) =>
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
 
-    if (!compliant.lengthEmpty)
+    onSubmit ();
+  }
+  const onSubmitInput = (event: react.KeyboardEvent<HTMLInputElement>) =>
+  {
+    if (event.key === "Enter")
     {
-      setFeedback ({ 
-        type: content.FEEDBACK_WARNING, 
-        text: "รหัสผ่านต้องไม่เว้นว่าง" 
-      });
+      onSubmit ();
+    }
+  }
+  const onBack = () =>
+  {
+    if (prop.onBack) {
+      prop.onBack (field.current.value);
+    }
+  }
+
+  react.useEffect (() =>
+  {
+    if (prop.visibleAnimation == content.ANIM_NONE)
+    {
+      setMode (prop.visible ? "visible" : "hidden");
       return;
     }
-    if (!compliant.lengthMin) 
+    if (prop.visible) {
+      field.current.focus ();
+    }
+  },
+  [prop.visible]);
+
+  return (
+    <Activity mode={mode}>
+      <content.TemplateHeader
+        title={prop.title}
+        description={prop.description}
+        onBack={prop.onBack ? onBack : undefined}
+      />
+      <content.TemplateMain>
+        <label htmlFor="auth-signin-id">รหัสประจำตัว</label>
+        <input id="auth-signin-id" ref={field} autoFocus
+          type="text" autoComplete="username webauthn"
+          placeholder="อย่างน้อย 2 ตัวอักษร"
+          disabled={prop.pending ?? false}
+          onKeyUp={onSubmitInput}
+        />
+        <content.TemplateFeedback
+          type={prop.feedback?.type}
+          text={prop.feedback?.text}/>
+        <button 
+          disabled={prop.pending ?? false}
+          onClick={onSubmitButton}>ดำเนินการต่อ</button>
+        <content.TemplateOption text="ลืมรหัสผ่าน" icon={<RotateCcw/>}/>
+        <content.TemplateOption text="สร้างบัญชีใหม่" icon={<UserRoundPlus/>}/>
+      </content.TemplateMain>
+      <content.TemplateFooter>
+        <StyleTempTextBox>
+          หากนี้ไม่ใช่อุปกรณ์ของคุณ 
+          <span>ให้ใช้งานโหมดไม่ระบุตัวตนของเบราว์เซอร์</span>
+          <span>เพื่อเลี่ยงความเสี่ยงการรั่วไหลของข้อมูลของคุณ</span>
+        </StyleTempTextBox>
+      </content.TemplateFooter>
+    </Activity>
+  );
+}
+content.FormSignInPwd = function AuthFormSignInPwd (prop: PropFormSignInPwd)
+{
+  const field = react.useRef (HTMLInputElement.prototype);
+  const [mode, setMode] = react.useState<ActivityMode> ("hidden");
+
+  const onSubmit = () =>
+  {
+    if (prop.onSubmit) {
+      prop.onSubmit (field.current.value);
+    }
+  }
+  const onSubmitButton = (event: react.MouseEvent) =>
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+
+    onSubmit ();
+  }
+  const onSubmitInput = (event: react.KeyboardEvent<HTMLInputElement>) =>
+  {
+    if (event.key === "Enter")
     {
-      setFeedback ({ 
-        type: content.FEEDBACK_WARNING, 
-        text: "รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร" 
-      });
+      onSubmit ();
+    }
+  }
+  const onBack = () =>
+  {
+    if (prop.onBack) {
+      prop.onBack (field.current.value);
+    }
+  }
+
+  react.useEffect (() =>
+  {
+    if (prop.visibleAnimation == content.ANIM_NONE)
+    {
+      setMode (prop.visible ? "visible" : "hidden");
       return;
     }
-    if (!compliant.lengthMax)
-    {
-      setFeedback ({ 
-        type: content.FEEDBACK_WARNING, 
-        text: "รหัสผ่านต้องยาวไม่เกิน 32 ตัวอักษร" 
-      });
-      return;
+    if (prop.visible) {
+      field.current.focus ();
     }
-    setFeedback ({ type: content.FEEDBACK_UNDEFINED, text: "" });
+  },
+  [prop.visible]);
 
-    if (prop.onContinue) {
-      prop.onContinue ();
-    }
-  }
-  function onCancel ()
-  {
-    if (prop.onCancel) {
-      prop.onCancel ();
-    }
-  }
-
-  return <>
-  <content.LvSignInPwd 
-    visible={prop.visible}
-    feedback={feedback.text}
-    feedbackType={feedback.type}
-    onContinue={onContinue}
-    onCancel={onCancel}
-  />
-  </>;
+  return (
+    <Activity mode={mode}>
+      <content.TemplateHeader
+        onBack={prop.onBack ? onBack : undefined}
+      />
+      <content.TemplateMain>
+        <label htmlFor="auth-signin-pwd">รหัสผ่าน</label>
+        <input id="auth-signin-pwd" ref={field} autoFocus
+          type="text" autoComplete="username webauthn"
+          placeholder="อย่างน้อย 8 ตัวอักษร"
+          disabled={prop.pending ?? false}
+          onKeyUp={onSubmitInput}
+        />
+        <content.TemplateFeedback
+          type={prop.feedback?.type}
+          text={prop.feedback?.text}/>
+        <button 
+          disabled={prop.pending ?? false}
+          onClick={onSubmitButton}>ดำเนินการต่อ</button>
+      </content.TemplateMain>
+      <content.TemplateFooter>
+        <StyleTempTextBox>
+          หากนี้ไม่ใช่อุปกรณ์ของคุณ 
+          <span>ให้ใช้งานโหมดไม่ระบุตัวตนของเบราว์เซอร์</span>
+          <span>เพื่อเลี่ยงความเสี่ยงการรั่วไหลของข้อมูลของคุณ</span>
+        </StyleTempTextBox>
+      </content.TemplateFooter>
+    </Activity>
+  );
 }
-
-content.LvSignInId = function AuthLvSignInId (prop: PropLvSignInId)
+content.FormSignInTotp = function AuthFormSignInTotp ()
 {
-  const visibleRaw = prop.visible ?? content.VISIBLE_HIDDEN;
-  const visible = 
-    visibleRaw == content.VISIBLE_SHOWN ? "visible" :
-    visibleRaw == content.VISIBLE_HIDDEN ? "hidden" : "hidden";
-  const title = prop.title ?? "";
-  const desc = prop.description ?? "";
-  const feedback = prop.feedback ?? "";
-  const feedbackType = prop.feedbackType ?? "warning";
-  const feedbackColor = 
-    feedbackType === content.FEEDBACK_WARNING ? "var(--text-warning);" :
-    feedbackType === content.FEEDBACK_ERROR ? "var(--text-error);" : "";
-
-  const input = react.useRef (HTMLInputElement.prototype);
-
-  function onContinue (event: react.MouseEvent)
-  {
-    event.preventDefault ();
-    event.stopPropagation ();
-
-    if (prop.onContinue) {
-      prop.onContinue (input.current.value);
-    }
-  }
-  function onCreate (event: react.MouseEvent)
-  {
-    event.preventDefault ();
-    event.stopPropagation ();
-
-    if (prop.onCreate) {
-      prop.onCreate ();
-    }
-  }
-  function onRecovery (event: react.MouseEvent)
-  {
-    event.preventDefault ();
-    event.stopPropagation ();
-
-    if (prop.onRecovery) {
-      prop.onRecovery ();
-    }
-  }
-
-  return <react.Activity mode={visible}>
-    <FormTitle>{title}</FormTitle>
-    <FormDesc>{desc}</FormDesc>
-    <FormMain>
-      <label htmlFor="auth-signin-id">รหัสประจำตัว</label>
-      <input id="auth-signin-id" ref={input}
-        type="text" autoComplete="username webauthn"/>
-
-      <FormAlert $color={feedbackColor}>{feedback}</FormAlert>
-      <button type="submit" onClick={onContinue}>ดำเนินการต่อ</button>
-      <div>
-        <FormOption onClick={onRecovery}>ลืมรหัสผ่าน</FormOption>
-        <FormOption onClick={onCreate}>สร้างบัญชีใหม่</FormOption>
-      </div>
-
-    </FormMain>
-    <FormDescPrivacy> 
-      หากนี้ไม่ใช่อุปกรณ์ของคุณ 
-      <span>ให้ใช้งานโหมดไม่ระบุตัวตนของเบราว์เซอร์</span>
-      <span>เพื่อเลี่ยงความเสี่ยงการรั่วไหลของข้อมูลของคุณ</span>
-    </FormDescPrivacy>
-  </react.Activity>;
+  return (<></>);
 }
-content.LvSignInPwd = function AuthLvSignInPwd (prop: PropLvSignInPwd)
+content.FormSignUpEmail = function AuthFormSignUpEmail ()
 {
-  const visibleRaw = prop.visible ?? content.VISIBLE_HIDDEN;
-  const visible = 
-    visibleRaw == content.VISIBLE_SHOWN ? "visible" :
-    visibleRaw == content.VISIBLE_HIDDEN ? "hidden" : "hidden";
-
-  const feedback = prop.feedback ?? "";
-  const feedbackType = prop.feedbackType ?? "warning";
-  const feedbackColor = 
-    feedbackType === content.FEEDBACK_WARNING ? "var(--text-warning);" :
-    feedbackType === content.FEEDBACK_ERROR ? "var(--text-error);" : "";
-
-  const input = react.useRef (HTMLInputElement.prototype);
-
-  function onContinue (event: react.MouseEvent)
-  {
-    event.preventDefault ();
-    event.stopPropagation ();
-
-    if (prop.onContinue) {
-      prop.onContinue (input.current.value);
-    }
-  }
-  function onCancel (event: react.MouseEvent)
-  {
-    event.preventDefault ();
-    event.stopPropagation ();
-
-    if (prop.onCancel) {
-      prop.onCancel ();
-    }
-  }
-
-  return <react.Activity mode={visible}>
-    <FormMain>
-      <button onClick={onCancel}>ย้อนกลับ</button>
-      <label htmlFor="auth-signin-pwd">รหัสผ่าน</label>
-      <input id="auth-signin-pwd" ref={input}
-        type="password" autoComplete="current-password webauthn"/>
-
-      <FormAlert $color={feedbackColor}>{feedback}</FormAlert>
-      <button type="submit" onClick={onContinue}>ดำเนินการต่อ</button>
-    </FormMain>
-  </react.Activity>;
+  return (<></>);
 }
-content.SignUp = function AuthSignUp ()
+content.FormSignUpPwd = function AuthFormSignUpPwd ()
 {
-  return <></>;
+  return (<></>);
+}
+content.FormSignUpId = function AuthFormSignUpId ()
+{
+  return (<></>);
+}
+content.FormSigned = function AuthFormSigned ()
+{
+  return (<></>);
+}
+content.FormSuspended = function AuthFormSuspended ()
+{
+  return (<></>);
+}
+content.TemplateHeader = function AuthTempHeader (prop: PropTemplateHeader)
+{
+  const onBack = (event: react.MouseEvent) =>
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+
+    if (prop.onBack) {
+      prop.onBack ();
+    }
+  }
+
+  return (
+    <StyleTempHeader>
+      {prop.onBack ?
+      <StyleTempHeaderBack onClick={onBack}>
+        <ArrowLeft/>
+        <span>ย้อนกลับ</span>
+      </StyleTempHeaderBack> : <></>}
+      <StyleTempHeaderTitle>{prop.title ?? ""}</StyleTempHeaderTitle>
+      <StyleTempHeaderDesc>{prop.description ?? ""}</StyleTempHeaderDesc>
+    </StyleTempHeader>
+  );
+}
+content.TemplateMain = function AuthTempMain (prop: PropTemplateMain)
+{
+  return (
+    <StyleTempMain>
+      {prop.children}
+    </StyleTempMain>
+  );
+}
+content.TemplateFooter = function AuthTempFooter (prop: PropTemplateFooter)
+{
+  return (
+    <StyleTempFooter>
+      {prop.children}
+    </StyleTempFooter>
+  );
+}
+content.TemplateOption = function AuthTempOption (prop: PropTemplateOption)
+{
+  return (
+    <StyleTempOption disabled={prop.disabled ?? false}>
+      {
+        typeof prop.icon === "string" ? 
+          <img src={prop.icon}/> 
+          : 
+          prop.icon
+      }
+      <span>{prop.text}</span>
+    </StyleTempOption>
+  );
+}
+content.TemplateFeedback = function AuthTempFeedback (
+  prop: PropTemplateFeedback
+)
+{
+  return (
+    <StyleTempFeedback $color={prop.type ?? content.FEEDBACK_UNDEFINED}>
+      {prop.text}
+    </StyleTempFeedback>
+  );
 }
 
+const StyleView = styled.div`
+  position: fixed;
+  inset: 0px;
+`;
+const StyleViewInner = styled.div`
+  position: relative;
+  width: 100%;
+  height: 100%;
 
-const AnimOpening = keyframes`
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+`;
+
+const AnimFormOpen = keyframes`
   from { scale: 1.25;}
   to { scale: 1.0; }
 `;
-const FormView = styled.div`
-  width: 100dvw;
-  height: 100dvh;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-`;
-const FormBox = styled.div`
+
+const StyleForm = styled.div<{ $transparent ?: boolean; }>`
+
   width: 512px;
   height: 572px;
-  background-color: var(--bg-primary);
+  background-color: ${
+    prop => prop.$transparent ? 'transparent' : 'var(--bg-primary)'
+  };
   border-radius: 8px;
   transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
-  animation-name: ${AnimOpening};
+  animation-name: ${AnimFormOpen};
   animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   animation-duration: 500ms;
 
@@ -434,16 +726,54 @@ const FormBox = styled.div`
   flex-wrap: nowrap;
   gap: 16px;
 `;
-const FormTitle = styled.h1`
+
+const StyleTempHeader = styled.header`
+  width: 100%;
+  height: 128px;
+  padding: 16px 16px 0px 16px;
+`;
+const StyleTempHeaderBack = styled.button`
+  width: 144px;
+  font-size: 1rem;
+  font-weight: normal;
+  text-align: start;
+
+  & > img,
+  & > svg
+  {
+    margin-right: 16px;
+    vertical-align: middle;
+  }
+`;
+const StyleTempHeaderTitle = styled.h1`
+  width: 100%;
   font-size: 2rem;
   font-weight: bold;
-  margin: 16px 16px 0px 16px;
 `;
-const FormDesc = styled.p`
+const StyleTempHeaderDesc = styled.p`
+  width: 100%;
   font-size: 1rem;
-  margin: 0px 16px 0px 16px;
+  font-weight: normal;
 `;
-const FormDescPrivacy = styled.p`
+const StyleTempMain = styled.main`
+  width: 100%;
+  height: 100%;
+  padding: 0px 16px 0px 16px;
+
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 8px;
+`;
+
+const StyleTempFooter = styled.footer`
+  width: 100%;
+  height: 128px;
+  padding: 0px 16px 16px 16px;
+`;
+
+const StyleTempTextBox = styled.p`
   font-size: 1rem;
   margin: 0px 16px 16px 16px;
 
@@ -454,26 +784,32 @@ const FormDescPrivacy = styled.p`
     padding: 8px;
   }
 `;
-const FormMain = styled.form`
-  margin: 0px 16px 0px 16px;
-  display: flex;
-  flex-grow: 1;
-  flex-direction: column;
-  justify-content: center;
-  gap: 16px;
-`;
-const FormAlert = styled.p<{ $color: string; }>`
-  font-size: 1rem;
-  font-weight: normal;
-  height: 32px;
-  color: ${prop => prop.$color};
-`;
-const FormOption = styled.button`
+const StyleTempOption = styled.button`
   background-color: transparent;
   border: transparent;
   outline: transparent;
   width: 100%;
   text-align: start;
+
+  & > img,
+  & > svg
+  {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    margin-right: 16px;
+  }
+`;
+const StyleTempFeedback = styled.p<{ $color: number; }>`
+  font-size: 1rem;
+  font-weight: normal;
+  width: 100%;
+  height: 32px;
+  color: ${prop => 
+    prop.$color === content.FEEDBACK_WARNING ? "var(--text-warning)" :
+    prop.$color === content.FEEDBACK_ERROR ? "var(--text-error)" :
+    "var(--text-primary)"
+  }
 `;
 
 /**

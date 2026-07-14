@@ -12,10 +12,29 @@
 import reader   from "#util/common.objectReader.ts";
 import error    from "#util/common.error.ts";
 
+export interface Session
+{
+    /**
+     * วันที่/เวลาที่สร้างข้อมูลนี้ขึ้นมา
+    */
+    issued: Date;
+    /**
+     * วันที่/เวลา หมดอายุของชุดรหัสยืนยันตัวตน
+    */
+    expire: Date;
+    /**
+     * ชุดรหัสยืนยันตัวตนที่ได้รับหลังจากลงชื่อเข้าใช้สำเร็จ
+    */
+    secret: string;
+}
+export interface SessionChallenge
+{
+    step: number;
+}
 /**
  * คลังเก็บข้อมูลการลงชื่อเข้าใช้
 */
-interface Storage
+export interface Storage
 {
     /**
      * วันที่/เวลาที่สร้างข้อมูลนี้ขึ้นมา
@@ -37,7 +56,7 @@ interface Storage
 /**
  * รายการข้อมูลการลงชื่อเข้าใช้
 */
-interface StorageEntry
+export interface StorageEntry
 {
     /**
      * ชื่อบัญชีผู้ใช้หรืออีเมลที่ใช้ในการลงชื่อเข้าใช้
@@ -76,6 +95,26 @@ const content = () =>
     //
     return;
 }
+/**
+ * ขั้นตอนการลงชื่อเข้าใช้: ไม่ทราบ
+*/
+content.STEP_UNKNOWN = 0;
+/**
+ * ขั้นตอนการลงชื่อเข้าใช้: ระบุรหัสประจำตัว
+*/
+content.STEP_IDENTIFIER = 1;
+/**
+ * ขั้นตอนการลงชื่อเข้าใช้: ระบุรหัสผ่าน
+*/
+content.STEP_PASSWORD = 2;
+/**
+ * ขั้นตอนการลงชื่อเข้าใช้: ยืนยันตัวตนแบบสองชั้น
+*/
+content.STEP_MFA = 3;
+/**
+ * ขั้นตอนการลงชื่อเข้าใช้: เสร็จสิ้น
+*/
+content.STEP_COMPLETE = 4;
 /**
  * โปรโตอลที่ใช้ในการสื่อสารระหว่างเซิร์ฟเวอร์
 */
@@ -252,7 +291,7 @@ content.saveWrite = () =>
 /**
  * เริ่มต้นดำเนินการลงชื่อเข้าใช้งานด้วยรหัสประจำตัว
 */
-content.signIn = async (input: string) =>
+content.signIn = async (input: string) : Promise<[Session, SessionChallenge]> =>
 {
     const endpoint = `${content.NET_URL}/sign-in`;
     const init: RequestInit =
@@ -267,9 +306,9 @@ content.signIn = async (input: string) =>
         cache: "default",
         body: JSON.stringify (
         {
-            "Value": input
+            "Identifier": input
         }),
-        signal: AbortSignal.abort (content.NET_TIMEOUT)
+        signal: AbortSignal.timeout (content.NET_TIMEOUT)
     }
     const response = await fetch (endpoint, init).catch ((e: unknown) =>
     {
@@ -295,24 +334,89 @@ content.signIn = async (input: string) =>
 
     try
     {
-        return {
-            session: data.requireString ("session"),
-            sessionIssued: data.requireDate ("sessionIssued"),
-            sessionExpire: data.requireDate ("sessionExpire")
-        };
+        const result: Session =
+        {
+            secret: data.requireString ("Session"),
+            issued: data.requireDate ("SessionIssued"),
+            expire: data.requireDate ("SessionExpire"),
+        }
+        const challenge: SessionChallenge =
+        {
+            step: data.requireInteger ("Step")
+        }
+        return [result, challenge];
     }
     catch (e: unknown)
     {
-        return new error.BadData (e);
+        throw new error.BadData (e);
     }
 }
 
-content.signInPwd = async function (session: string, input: string)
+content.signInPwd = async (
+    session: string, 
+    identifier: string, 
+    password: string
+) : Promise<[Session, SessionChallenge]> =>
 {
-    void session;
-    void input;
+    const endpoint = `${content.NET_URL}/sign-in-password`;
+    const init: RequestInit =
+    {
+        method: "POST",
+        mode: "cors",
+        referrerPolicy: "strict-origin",
+        headers: 
+        [ 
+            ["Content-Type", "application/json"],
+            ["Authorization", `Bearer ${session}`]
+        ],
+        cache: "default",
+        body: JSON.stringify (
+        {
+            "Identifier": identifier,
+            "Password": password
+        }),
+        signal: AbortSignal.timeout (content.NET_TIMEOUT)
+    }
+    const response = await fetch (endpoint, init).catch ((e: unknown) =>
+    {
+        throw new error.Network (e);
+    });
 
-    return Promise.resolve ();
+    switch (response.status)
+    {
+        case 200: break;
+        case 401: throw new error.NotAuthorized ();
+        case 404: throw new error.NotFound ();
+        case 429: throw new error.NetworkLimit ();
+        case 500: throw new error.NotAvailable ();
+        case 503: throw new error.NotAvailable ();
+        default: throw new error.Unknown ();
+    }
+    const data = await response.json ()
+        .then ((x) => reader (x))
+        .catch ((e: unknown) =>
+    {
+        throw new error.BadFormat (e);
+    });
+
+    try
+    {
+        const result: Session =
+        {
+            secret: data.requireString ("Session"),
+            issued: data.requireDate ("SessionIssued"),
+            expire: data.requireDate ("SessionExpire"),
+        }
+        const challenge: SessionChallenge =
+        {
+            step: data.requireInteger ("Step")
+        };
+        return [result, challenge];
+    }
+    catch (e: unknown)
+    {
+        throw new error.BadData (e);
+    }
 }
 content.signInVerifyTotp = async function (session: string, input: string)
 {

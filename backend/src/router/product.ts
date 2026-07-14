@@ -13,9 +13,9 @@ content.getController = function ()
 content.getRouter = function ()
 {
     const router = http.router ();
-    const auth = controlAuth.validate ({});
-    const authStaff = controlAuth.validate ({});
-    const authManager = controlAuth.validate ({});
+    const auth = controlAuth.validateLeastUser ();
+    const authStaff = controlAuth.validateOnlyStaff ();
+    const authManager = controlAuth.validateOnlyManager ();
 
     router.get ("/:id", control.getProduct);
     router.get ("/:id/preview/:pid", control.getProductPreview);

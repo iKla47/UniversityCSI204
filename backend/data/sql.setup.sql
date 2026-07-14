@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS `project`.`AccountContact`
     `Id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'รหัสบัญชี' , 
     `Email` CHAR(32) DEFAULT "" COMMENT 'อีเมล' ,
 
-    CONSTRAINT UC_AccountContact UNIQUE (`Id`) ,
+    CONSTRAINT PK_AccountContact PRIMARY KEY (`Id`),
     CONSTRAINT FK_AccountContact FOREIGN KEY (`Id`) REFERENCES Account (`Id`)
 )
 ENGINE = InnoDB COMMENT = 'ข้อมูลบัญชีผู้ใช้ (ติดต่อ)';

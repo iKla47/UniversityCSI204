@@ -12,6 +12,8 @@ from "react-router";
 import log from "#util/common.log.ts";
 import navigation from "#util/common.navigation.ts";
 
+import ctxAuth from "#context/auth.tsx";
+
 //
 // โหลดหน้าต่างเมื่อจำเป็นเท่านั้น
 //
@@ -149,22 +151,24 @@ content.Bootstrap = function InitBootstrap (prop: PropBootstrap)
   },
   []);
   return (
-  <Routes>
-    <Route caseSensitive Component={content.Outlet}>
-      <Route path="/auth" element={<CoAuth/>}/>
-      <Route path="/settings" element={<CoSettings/>}/>
-    </Route>
-    <Route caseSensitive Component={content.OutletCustomer}>
-      <Route index element={<CsHome/>}/>
-      <Route path="/about" element={<CsAbout/>}/>
-      <Route path="/product" element={<CsProduct/>}/>
-      <Route path="/product-browser" element={<CsProductBrowser/>}/>
-      <Route path="/shipping" element={<CsShipping/>}/>
-    </Route>;
-    <Route>
-      <Route path="*" element={<CoError404/>}/>
-    </Route>
-  </Routes>
+  <ctxAuth.Provider value={ctxAuth.initial ()}>
+    <Routes>
+      <Route caseSensitive Component={content.Outlet}>
+        <Route path="/auth" element={<CoAuth/>}/>
+        <Route path="/settings" element={<CoSettings/>}/>
+      </Route>
+      <Route caseSensitive Component={content.OutletCustomer}>
+        <Route index element={<CsHome/>}/>
+        <Route path="/about" element={<CsAbout/>}/>
+        <Route path="/product" element={<CsProduct/>}/>
+        <Route path="/product-browser" element={<CsProductBrowser/>}/>
+        <Route path="/shipping" element={<CsShipping/>}/>
+      </Route>;
+      <Route>
+        <Route path="*" element={<CoError404/>}/>
+      </Route>
+    </Routes>
+  </ctxAuth.Provider>
   );
 }
 content.Outlet = function InitOutlet ()
