@@ -13,6 +13,7 @@ const Doc = react.lazy (() => import ("./doc.tsx"));
 const Auth = react.lazy (() => import ("./auth.tsx"));
 const Product = react.lazy (() => import ("./product.tsx"));
 const Settings = react.lazy (() => import ("./settings.tsx"));
+const Staff = react.lazy (() => import ("./staff.tsx"));
 
 
 
@@ -32,6 +33,7 @@ function Main ()
               <Route path="/product" element={<Product/>}/>
               <Route path="/auth" element={<Auth/>}/>
               <Route path="/settings" element={<Settings/>}/>
+              <Route path="/staff" element={<Staff/>}/>
             </Route>
           </Routes>
         </BrowserRouter>
