@@ -38,7 +38,7 @@ const content = function Init ()
   return (
     <>
       <content.Splash visible={false}/>
-      <commonCtx.ProviderAuth value={commonCtx.initAuth ()}>
+      <commonCtx.ProviderAuth value={commonCtx.defAuth ()}>
         <HashRouter>
           <content.System/>
         </HashRouter>

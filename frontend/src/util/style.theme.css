@@ -40,6 +40,11 @@ body
     --text-warning: rgb(255, 236, 174);
     --text-error: #FF7373;
     --text-code: rgb(13, 52, 84);
+
+    --menu-primary: transparent;
+    --menu-primary-hover: #2f446b;
+    --menu-primary-active: #224382;
+    --menu-primary-selected: #3f7d9e;
 }
 body
 {

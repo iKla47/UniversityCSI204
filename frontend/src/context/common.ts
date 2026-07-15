@@ -7,7 +7,13 @@ interface ContextAuth
     sessionIssued: Date;
     sessionExpire: Date;
 }
-const initAuth = () : ContextAuth =>
+interface ContextLanguage
+{
+    text: number;
+    caption: number;
+    voice: number;
+}
+const defAuth = () : ContextAuth =>
 {
     return {
         name: "",
@@ -16,17 +22,32 @@ const initAuth = () : ContextAuth =>
         sessionExpire: new Date (NaN),
     };
 }
+const defLanguage = () : ContextLanguage =>
+{
+    return {
+        text: 0,
+        caption: 0,
+        voice: 0
+    }
+}
 const useAuth = () =>
 {
     return react.useContext (ContextAuth);
 }
+const useLanguage = () =>
+{
+    return react.useContext (ContextLanguage);
+}
 
 const Content = () => { return; }
-const ContextAuth = react.createContext (initAuth ());
+const ContextAuth = react.createContext (defAuth ());
+const ContextLanguage = react.createContext (defLanguage ());
 
 Content.ProviderAuth = ContextAuth.Provider;
+Content.defAuth = defAuth;
+Content.defLanguage = defLanguage;
 Content.useAuth = useAuth;
-Content.initAuth = initAuth;
+Content.useLanguage = useLanguage;
 
 Content.authSigned = (auth: ContextAuth) =>
 {
