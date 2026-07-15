@@ -161,7 +161,6 @@ export default function Order() {
                 <tr key={order.id} onClick={() => setActiveOrderId(order.id)}>
                   <td>{order.id}</td>
                   <td>{order.orderDate}</td>
-                  {/* ใส่เงื่อนไขดักตรงนี้ */}
                   <td>
                     {order.status === "กำลังจัดส่ง" || order.status === "ยกเลิก"
                       ? "-"

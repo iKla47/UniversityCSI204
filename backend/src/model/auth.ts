@@ -89,7 +89,7 @@ content.init = async () =>
     Object.freeze (EXPIRE_SESSION);
     Object.freeze (EXPIRE_CHALLENGE);
     Object.freeze (JWT_ISSUER);
-    Object.seal (JWT_SECRET);
+    // Object.seal (JWT_SECRET);
 
     return Promise.resolve ();
 }
