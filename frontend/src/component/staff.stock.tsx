@@ -273,7 +273,7 @@ const SearchInput = styled.input`
   padding: 6px 12px;
   font-size: 1rem;
   border-radius: 4px;
-  border: 1px solid #ccc;
+  border: 1px solid lightgray;
   margin-left: 0.5rem;
   width: 200px;
   background-color: white;
@@ -292,7 +292,7 @@ const StyledSelect = styled.select`
   padding: 6px 12px;
   font-size: 1rem;
   border-radius: 4px;
-  border: 1px solid #ccc;
+  border: 1px solid lightgray;
   margin-left: 0.5rem;
   cursor: pointer;
   background-color: white;
@@ -301,7 +301,7 @@ const StyledSelect = styled.select`
 `;
 
 const CreateButton = styled.button`
-  background-color: #28a745;
+  background-color: coral;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -311,15 +311,15 @@ const CreateButton = styled.button`
   cursor: pointer;
   margin-bottom: 1rem;
   transition: background-color 0.2s;
-  &:hover { background-color: #218838; }
+  &:hover { background-color: lightcoral; }
 `;
 
 const BulkActionSection = styled.div<{ isActive: boolean }>`
   display: flex;
   align-items: center;
   gap: 1rem;
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background-color: white;
+  border: 1px solid lightgray;
   padding: 12px 16px;
   border-radius: 6px;
   margin-bottom: 1rem;
@@ -337,7 +337,7 @@ const BulkInputWrapper = styled.div`
   input {
     width: 120px;
     padding: 6px 10px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid lightgray;
     border-radius: 4px;
     font-size: 0.95rem;
     background-color: white;
@@ -346,7 +346,7 @@ const BulkInputWrapper = styled.div`
 `;
 
 const ApplyButton = styled.button`
-  background-color: #2563eb;
+  background-color: blue;
   color: white;
   border: none;
   padding: 6px 16px;
@@ -354,7 +354,7 @@ const ApplyButton = styled.button`
   font-weight: bold;
   border-radius: 4px;
   cursor: pointer;
-  &:hover { background-color: #1d4ed8; }
+  &:hover { background-color: darkblue; }
   &:active { transform: scale(0.97); }
 `;
 
@@ -366,9 +366,9 @@ const QuantityManagerColumn = styled.div`
 `;
 
 const QtyButton = styled.button`
-  background-color: #e2e8f0;
+  background-color: lightcyan;
   color: black;
-  border: 1px solid #cbd5e1;
+  border: 1px solid lightgray;
   width: 32px;
   height: 32px;
   font-weight: bold;
@@ -378,7 +378,7 @@ const QtyButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  &:hover { background-color: #cbd5e1; }
+  &:hover { background-color: cyan; }
 `;
 
 const QtyInputWrapper = styled.div`
@@ -423,16 +423,16 @@ const ModalContent = styled.div`
 
 const ModalHeader = styled.div`
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem; border-bottom: 1px solid lightgray; padding-bottom: 0.5rem;
   h2 { margin: 0; font-size: 1.5rem; }
 `;
 
 const CloseButton = styled.button`
-  background: none; border: none; font-size: 1.8rem; cursor: pointer; color: #aaa;
-  &:hover { color: #333; }
+  background: none; border: none; font-size: 1.8rem; cursor: pointer; color: red;
+  &:hover { color: lightgray; }
 `;
 
-// รูปแบบฟอร์มและปุ่มสร้างสินค้า
+// create form ui
 const FormGroup = styled.div`
   margin-bottom: 1.2rem;
   display: flex;
@@ -440,7 +440,7 @@ const FormGroup = styled.div`
   gap: 0.5rem;
   label { font-weight: bold; font-size: 0.95rem; color: black; }
   input, select {
-    width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;
+    width: 100%; padding: 8px; border-radius: 4px; border: 1px solid lightgray;
     font-size: 1rem; background-color: white; color: black;
   }
 `;
@@ -451,23 +451,22 @@ const SubmitButton = styled.button`
   &:hover { background-color: darkblue; }
 `;
 
-// รูปแบบตาราง
+// Table ui
 const TableContainer = styled.div`
-  width: 100%; overflow-x: auto; border: 1px solid #ccc; border-radius: 8px;
+  width: 100%; overflow-x: auto; border: 1px solid lightgray; border-radius: 8px;
 `;
 
 const StyledTable = styled.table`
   width: 100%; border-collapse: collapse; text-align: left; font-size: 1rem;
   thead { background-color: blue; color: white; }
   th { padding: 12px 16px; font-weight: 600; text-transform: uppercase; font-size: 0.9rem; }
-  td { padding: 12px 16px; border-bottom: 1px solid #ddd; color: black; }
+  td { padding: 12px 16px; border-bottom: 1px solid lightgray; color: black; }
   .product-name { font-weight: 500; }
   
   tbody tr:nth-child(even) { background-color: lightyellow; }
-  tbody tr:hover { background-color: #f1f5f9; }
+  tbody tr:hover { background-color: lightblue; }
   
-  /* Highlight สีแถวที่ถูกเลือก checkbox */
-  tbody tr.selected-row { background-color: #e0f2fe !important; }
+  tbody tr.selected-row { background-color: lightblue; }
 
   input[type="checkbox"] {
     transform: scale(1.2);

@@ -1,10 +1,10 @@
 import { useState } from "react"; // 1. เพิ่ม useState สำหรับจำหน้าปัจจุบัน
 import styled from "styled-components";
-import Stock from "./stock";
+import Stock from "./staff.stock";
+import Order from "./staff.order";
 
 // for test
-const Orders = () => <div style={{ padding: "1rem", color: "white" }}>Orders Content</div>;
-const Reports = () => <div style={{ padding: "1rem", color: "white" }}>Reports Content</div>;
+// const Reports = () => <div style={{ padding: "1rem", color: "white" }}>Reports Content</div>;
 
 const Sidebar = function () {
   const [activeTab, setActiveTab] = useState("Stock");
@@ -12,13 +12,13 @@ const Sidebar = function () {
   const renderPage = () => {
     switch (activeTab) {
       case "Stock":
-        return <Stock />;
+        return <Stock/>;
       case "Orders":
-        return <Orders />;
-      case "Reports":
-        return <Reports />;
+        return <Order/>;
+      // case "Reports":
+      //   return <Reports/>;
       default:
-        return <Stock />;
+        return <Stock/>;
     }
   };
 
@@ -27,7 +27,7 @@ const Sidebar = function () {
       <SidebarMenu>
         <SidebarItem onClick={() => setActiveTab("Stock")}>Stock</SidebarItem>
         <SidebarItem onClick={() => setActiveTab("Orders")}>Orders</SidebarItem>
-        <SidebarItem onClick={() => setActiveTab("Reports")}>Reports</SidebarItem>
+        {/* <SidebarItem onClick={() => setActiveTab("Reports")}>Reports</SidebarItem> */}
       </SidebarMenu>
 
       <ContentArea>
@@ -62,9 +62,9 @@ const SidebarItem = styled.button`
   height: 100%;
   background-color: blue;
   border: 0px solid white;
-  color: white; /* เพิ่มสีตัวอักษรให้อ่านง่าย */
+  color: white; 
   cursor: pointer;
-  padding: 0.5rem 1rem; /* เพิ่มพื้นที่กดให้ปุ่ม */
+  padding: 0.5rem 1rem; 
   transition: background-color 0.2s ease-in-out;
   
   &:hover {

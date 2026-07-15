@@ -25,6 +25,8 @@ const CProd = lazy (() => import ("#page/customer.product.tsx"));
 const CProdBrowse = lazy (() => import ("#page/customer.productBrowser.tsx"));
 const CShipping = lazy (() => import ("#page/customer.shipping.tsx"));
 
+const SMain = lazy (() => import ("#page/staff.tsx"));
+
 const ADashboard = lazy (() => import ("#page/admin.dashboard.tsx"));
 
 const VCustomer = lazy (() => import ("#page/customer.tsx"));
@@ -126,7 +128,8 @@ content.System = function InitSystem ()
         </Route>
         {/* Staff && Manager */}
         <Route>
-          <Route path="/admin/dashboard" Component={ADashboard}/>
+          <Route path="/staff" Component={SMain}/>
+          <Route path="/admin" Component={ADashboard}/>
         </Route>
         <Route>
           <Route path="/*" Component={G404}/>

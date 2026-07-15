@@ -1,4 +1,4 @@
-import Sidebar from "#component/sidebar";
+import Sidebar from "#component/staff.sidebar.tsx";
 
 export default function Staff() {
   return (
