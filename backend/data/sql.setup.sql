@@ -21,7 +21,7 @@ FLUSH PRIVILEGES;
 --
 -- สร้างข้อมูลบัญชี
 --
-CREATE TABLE IF NOT EXISTS `project`.`Account` 
+CREATE TABLE IF NOT EXISTS `project`.`User` 
 (
     `Id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'รหัสบัญชี' , 
     `Name` CHAR(32) NOT NULL DEFAULT "" COMMENT 'ชื่อผู้ใช้',
@@ -32,23 +32,31 @@ CREATE TABLE IF NOT EXISTS `project`.`Account`
     `Modified` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
                 COMMENT 'เวลาที่แก้ไข' ,
     
-    CONSTRAINT PK_Account PRIMARY KEY (`Id`) ,
-    CONSTRAINT UC_Account UNIQUE (`Id`)
+    CONSTRAINT PK_User PRIMARY KEY (`Id`) ,
+    CONSTRAINT UC_User UNIQUE (`Id`)
 ) 
 ENGINE = InnoDB COMMENT = 'ข้อมูลบัญชีผู้ใช้';
 
 --
 -- ข้อมูลติดต่อ
--- 
-CREATE TABLE IF NOT EXISTS `project`.`AccountContact`
+--
+CREATE TABLE IF NOT EXISTS `project`.`UserContact`
 (
     `Id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'รหัสบัญชี' , 
     `Email` CHAR(32) DEFAULT "" COMMENT 'อีเมล' ,
 
-    CONSTRAINT PK_AccountContact PRIMARY KEY (`Id`),
-    CONSTRAINT FK_AccountContact FOREIGN KEY (`Id`) REFERENCES Account (`Id`)
+    CONSTRAINT PK_UserContact PRIMARY KEY (`Id`),
+    CONSTRAINT FK_UserContact FOREIGN KEY (`Id`) REFERENCES User (`Id`)
 )
 ENGINE = InnoDB COMMENT = 'ข้อมูลบัญชีผู้ใช้ (ติดต่อ)';
+
+-- CREATE TABLE IF NOT EXISTS `project`.`UserCart`
+-- (
+--     `CartId` BIGINT NOT NULL COMMENT 'รหัสเอกลักษณ์' ,
+--     `UserId` BIGINT NOT NULL COMMENT 'รหัสบัญชี' ,
+--     `ProductId` BIGINT NOT NULL COMMENT ''
+-- )
+-- ENGINE = InnoDB COMMENT = 'ตะกร้าผู้ใช้'
 
 --
 -- ข้อมูลสินค้า
@@ -68,39 +76,63 @@ ENGINE = InnoDB COMMENT = 'ข้อมูลสินค้า';
 
 CREATE TABLE IF NOT EXISTS `project`.`ProductPreview`
 (
-    `Id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'รหัสรีวิว' ,
-    `Inherited` BIGINT NOT NULL COMMENT 'รหัสสินค้า' ,
+    `PreviewId` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'รหัสรีวิว' ,
+    `ProductId` BIGINT NOT NULL COMMENT 'รหัสสินค้า' ,
     `Mime` CHAR(16) NOT NULL COMMENT 'ประเภทลิงค์' ,
     `Link` CHAR(255) NOT NULL COMMENT 'ลิงค์' ,
 
-    CONSTRAINT PK_ProductPreview PRIMARY KEY (`Id`) ,
-    CONSTRAINT UC_ProductPreview UNIQUE (`Id`) ,
-    CONSTRAINT FK_ProductPreview_Inherited 
-        FOREIGN KEY (`Inherited`) 
+    CONSTRAINT PK_ProductPreview PRIMARY KEY (`PreviewId`) ,
+    CONSTRAINT UC_ProductPreview UNIQUE (`PreviewId`) ,
+    CONSTRAINT FK_ProductPreview_ProductId 
+        FOREIGN KEY (`ProductId`) 
         REFERENCES Product (`Id`)
 )
 ENGINE = InnoDB COMMENT = 'ข้อมูลการแนะนำสินค้า';
 
 CREATE TABLE IF NOT EXISTS `project`.`ProductComment`
 (
-    `Id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'รหัสความคิดเห็น' ,
-    `Inherited` BIGINT NOT NULL COMMENT 'รหัสสินค้า' ,
+    `CommentId` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'รหัสความคิดเห็น' ,
+    `ProductId` BIGINT NOT NULL COMMENT 'รหัสสินค้า' ,
     `Author` BIGINT NOT NULL COMMENT 'รหัสบัญชี' ,
     `Title` CHAR(64) NOT NULL COMMENT 'หัวเรื่อง' ,
     `Text` VARCHAR(4096) NOT NULL COMMENT 'ข้อความ' ,
     `Rating` INT NOT NULL COMMENT 'คะแนน' ,
 
-    CONSTRAINT PK_ProductPreview PRIMARY KEY (`Id`) ,
-    CONSTRAINT UC_ProductPreview UNIQUE (`Id`) ,
-    CONSTRAINT FK_ProductComment_Inherited 
-        FOREIGN KEY (`Inherited`) 
+    CONSTRAINT PK_ProductPreview PRIMARY KEY (`CommentId`) ,
+    CONSTRAINT UC_ProductPreview UNIQUE (`CommentId`) ,
+    CONSTRAINT FK_ProductComment_ProductId 
+        FOREIGN KEY (`ProductId`) 
         REFERENCES Product (`Id`) ,
     CONSTRAINT FK_ProductPreview_Author 
         FOREIGN KEY (`Author`) 
-        REFERENCES Account (`Id`)
+        REFERENCES User (`Id`)
 )
 ENGINE = InnoDB COMMENT = 'ข้อมูลการแสดงความคิดเห็นสินค้า';
 
+CREATE TABLE IF NOT EXISTS `project`.`ProductStock`
+(
+    `Id` BIGINT NOT NULL COMMENT 'รหัสสินค้า' ,
+    `Quantity` INT NOT NULL COMMENT 'จำนวน' ,
+
+    CONSTRAINT PK_ProductStock PRIMARY KEY (`Id`) ,
+    CONSTRAINT FK_ProduckStock 
+        FOREIGN KEY (`Id`)
+        REFERENCES Product (`Id`)
+)
+ENGINE = InnoDB COMMENT = 'สต็อกสินค้า';
+
+CREATE TABLE IF NOT EXISTS `project`.`ProductCategory`
+(
+    `CategoryId` BIGINT NOT NULL COMMENT 'รหัสเอกลักษณ์' ,
+    `ProductId` BIGINT NOT NULL COMMENT 'รหัสสินค้า' ,
+    `Value` INT NOT NULL COMMENT 'รหัสหมวดหมู่' ,
+
+    CONSTRAINT PK_ProductCategory PRIMARY KEY (`CategoryId`) ,
+    CONSTRAINT FK_ProductCategory
+        FOREIGN KEY (`ProductId`)
+        REFERENCES Product (`Id`)
+)
+ENGINE = InnoDB COMMENT = 'หมวดหมู่';
 
 --
 -- สร้างข้อมูลการเข้าสู่ระบบ (ชื่อ/รหัสผ่าน)
@@ -110,13 +142,44 @@ CREATE TABLE IF NOT EXISTS `project`.`Auth`
     `Id` CHAR(16) NOT NULL COMMENT 'รหัสประจำตัว' , 
     `Password` CHAR(128) NOT NULL COMMENT 'รหัสผ่าน' , 
     `Link` BIGINT NOT NULL COMMENT 'รหัสบัญชี' , 
-    `Totp` CHAR(64) NOT NULL DEFAULT "" COMMENT 'ข้อมูล TOTP' ,
     
     CONSTRAINT PK_Auth PRIMARY KEY (`Id`) , 
     CONSTRAINT FK_Auth_Link 
         FOREIGN KEY (`Link`) 
-        REFERENCES Account (`Id`) ,
+        REFERENCES User (`Id`) ,
     CONSTRAINT UC_Auth_Link
         UNIQUE (`Link`)
 ) 
 ENGINE = InnoDB COMMENT = 'ข้อมูลการเข้าสู่ระบบ';
+
+--
+-- Order
+--
+CREATE TABLE IF NOT EXISTS `project`.`ProductOrder`
+(
+    `OrderId` BIGINT NOT NULL COMMENT 'รหัสคำสั่งซื้อ' ,
+    `UserId` BIGINT NOT NULL COMMENT 'ลูกค้าที่สั่งซื้อ' ,
+    `Created` DATETIME NOT NULL COMMENT 'วันที่สั่งซื้อ' ,
+    `Received` DATETIME NOT NULL COMMENT 'วันที่รับสินค้า' , 
+    `Status` INT NOT NULL COMMENT 'สถานะคำ' ,
+
+    CONSTRAINT PK_Order PRIMARY KEY (`OrderId`) ,
+    CONSTRAINT FK_Order_UserId
+        FOREIGN KEY (`UserId`)
+        REFERENCES User (`Id`)
+)
+ENGINE = InnoDB COMMENT = 'รายการคำสั่งซื้อ';
+
+CREATE TABLE IF NOT EXISTS `project`.`ProductOrderItem`
+(
+    `ItemId` BIGINT NOT NULL COMMENT 'รหัสไอเท็ม' ,
+    `OrderId` BIGINT NOT NULL COMMENT 'รหัสคำสั่งซื้อ' ,
+    `Product` BIGINT NOT NULL COMMENT 'รหัสสินค้า' ,
+    `Quanity` INT NOT NULL COMMENT 'จำนวน' ,
+
+    CONSTRAINT PK_OrderItem PRIMARY KEY (`ItemId`) ,
+    CONSTRAINT FK_OrderItem_OrderId
+        FOREIGN KEY (`OrderId`)
+        REFERENCES ProductOrder (`OrderId`)
+)
+ENGINE = InnoDB COMMENT = 'สินค้าในคำสั่งซื้อ';
