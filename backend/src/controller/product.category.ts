@@ -1,11 +1,9 @@
-import Component from "#component/settings.tsx";
 
 const content = () =>
 {
-  return (
-    <Component transparent={true}/>
-  )
+    return;
 }
+
 /**
  * แข็งวัตถุ (ความปลอดภัย)
 */

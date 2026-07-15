@@ -19,6 +19,8 @@ body
     --bg-root: #111A3F;
     --bg-primary: #263653;
     --bg-primary-border: #98B0FF;
+    --bg-secondary: #233b66;
+
 
     --bg-code: rgb(214, 237, 255);
 
@@ -45,6 +47,8 @@ body
     --menu-primary-hover: #2f446b;
     --menu-primary-active: #224382;
     --menu-primary-selected: #3f7d9e;
+    --menu-primary-selected-hover: #4e9ac2;
+    --menu-primary-selected-active: #3f7d9e;
 }
 body
 {

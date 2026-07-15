@@ -1,8 +1,8 @@
 import http         from "#core/http.ts";
 import logging      from "#core/log.ts"
 import error        from "#core/error.ts";
-import objReader    from "#core/objectReader.ts";
-import objWriter    from "#core/objectWriter.ts";
+import objReader    from "#core/object.reader.ts";
+import objWriter    from "#core/object.writer.ts";
 import model        from "#model/auth.ts";
 import modelAct     from "#model/account.ts";
 import

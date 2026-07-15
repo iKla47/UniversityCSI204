@@ -2,7 +2,7 @@ import * as jwt     from "jose";
 import env          from "#core/env.ts";
 import error        from "#core/error.ts";
 import sql          from "#core/sql.ts";
-import objreader    from "#core/objectReader.ts";
+import objreader    from "#core/object.reader.ts";
 import
 {
     type InputCommand as SqlInputCommand,

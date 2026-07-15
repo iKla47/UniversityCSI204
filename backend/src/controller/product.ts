@@ -1,7 +1,7 @@
 import http from "#core/http.ts";
 import error from "#core/error.ts";
 import logging from "#core/log.ts";
-import objReader from "#core/objectReader.ts";
+import objReader from "#core/object.reader.ts";
 import auth from "#controller/auth.ts";
 import model from "#model/product.ts";
 import

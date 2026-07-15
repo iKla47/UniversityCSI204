@@ -9,17 +9,24 @@ from "#context/common.ui.ts";
 
 interface PropRoot
 {
+  visible ?: boolean;
   direction ?: "row" | "column";
   align ?: "start" | "center" | "end";
   width ?: string;
   widthMax ?: string;
   height ?: string;
   heightMax ?: string;
+  margin ?: string;
   gap ?: string;
   children ?: react.ReactNode;
   selected ?: unknown;
 
   onClick ?: (value: unknown, handled: boolean) => void;
+}
+interface PropHeading
+{
+  size ?: string;
+  text ?: string;
 }
 interface PropItem
 {
@@ -32,16 +39,19 @@ interface PropItem
   onClick ?: () => boolean | undefined;
 }
 
-const content = function MenuTab (prop: PropRoot)
+
+const content = function MenuBar (prop: PropRoot)
 {
   return (
     <content.Root 
+      visible={prop.visible}
       direction={prop.direction}
       align={prop.align}
       width={prop.width}
       widthMax={prop.widthMax}
       height={prop.height}
       heightMax={prop.heightMax}
+      margin={prop.margin}
       gap={prop.gap}
       selected={prop.selected}
       onClick={prop.onClick}>
@@ -49,14 +59,16 @@ const content = function MenuTab (prop: PropRoot)
     </content.Root>
   );
 }
-content.Root = function MenuTabRoot (prop: PropRoot)
+content.Root = function MenuBarRoot (prop: PropRoot)
 {
+  const visible = prop.visible ?? true;
   const direction = prop.direction ?? "row";
   const align = prop.align ?? "center";
   const width = prop.width ?? "auto";
   const widthMax = prop.widthMax ?? "auto";
   const height = prop.height ?? "auto";
   const heightMax = prop.heightMax ?? "auto";
+  const margin = prop.margin ?? "0px";
   const gap = prop.gap ?? "4px";
   const click = prop.onClick ?? function () { return; };
 
@@ -90,11 +102,13 @@ content.Root = function MenuTabRoot (prop: PropRoot)
 
   return (
     <StyleRoot 
+      $visible={visible}
       $direction={direction}
       $width={width}
       $widthMax={widthMax}
       $height={height}
       $heightMax={heightMax}
+      $margin={margin}
       $gap={gap}
       >
       <context.ProviderIrMenuBar value={memory}>
@@ -103,7 +117,13 @@ content.Root = function MenuTabRoot (prop: PropRoot)
     </StyleRoot>
   );
 }
-content.Item = function MenuTabItem (prop: PropItem)
+content.Heading = function MenuBarHeading (prop: PropHeading)
+{
+  return (
+    <StyleHeading $size={prop.size ?? "1.5rem"}>{prop.text}</StyleHeading>
+  );
+}
+content.Item = function MenuBarItem (prop: PropItem)
 {
   const ctx = context.useIrMenuBar ();
   const dir = ctx.direction;
@@ -159,20 +179,23 @@ content.Item = function MenuTabItem (prop: PropItem)
 }
 
 const StyleRoot = styled.div<{
+  $visible: boolean;
   $width: string;
   $widthMax: string;
   $height: string;
   $heightMax: string;
+  $margin: string;
   $direction: string;
   $gap: string;
 }>`
-  display: flex;
+  display: ${prop => prop.$visible ? "flex" : "none"};
   flex-wrap: nowrap;
   flex-direction: ${prop => prop.$direction};
   width: ${prop => prop.$width};
   height: ${prop => prop.$height};
   max-width: ${prop => prop.$widthMax};
   max-height: ${prop => prop.$heightMax};
+  margin: ${prop => prop.$margin};
   gap: ${prop => prop.$gap};
 
   background-color: "var(--bg-primary);";
@@ -180,7 +203,10 @@ const StyleRoot = styled.div<{
   border: none;
   outline: none;
 `;
-
+const StyleHeading = styled.p<{ $size: string; }>`
+  font-size: ${prop => prop.$size};
+  font-weight: normal;
+`;
 const StyleItem = styled.button<{
   $direction: string;
   $align: string;
@@ -199,11 +225,13 @@ const StyleItem = styled.button<{
 
   &:hover, &:focus
   {
-    background-color: var(--menu-primary-hover);
+    background-color: ${prop => prop.$selected ? 
+      "var(--menu-primary-selected-hover)" :  "var(--menu-primary-hover)"};
   }
   &:active
   {
-    background-color: var(--menu-primary-active);
+    background-color: ${prop => prop.$selected ? 
+      "var(--menu-primary-selected-active)" :  "var(--menu-primary-active)"};
   }
 
   & > img,
