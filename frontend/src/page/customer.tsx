@@ -1,7 +1,15 @@
 import { Outlet } from "react-router";
+import {
+  ShoppingCart,
+  BookMarked,
+  Info
+}
+from "lucide-react";
+
 import NavBar from "#component/navbar.tsx";
 import navigation from "#util/common.navigation.ts";
 import ctx from "#context/common.ts";
+import branding from "#asset/image/favicon.ico";
 
 /**
  * ส่วนประกอบแสดงผลเส้นทางของลูกค้า
@@ -20,6 +28,7 @@ content.NavBar = function PresetNavBar ()
   const toHome = () => { void navigation.toIndex (); }
   const toProductBrowser = () => { void navigation.toProductBrowser (); }
   const toDoc = () => { navigation.toDoc (); }
+  const toAbout = () => { void navigation.toAbout (); }
   const toSignIn = () => { void navigation.toAuth (); }
   const auth = ctx.useAuth ();
   const authSigned = ctx.authSigned (auth);
@@ -28,13 +37,29 @@ content.NavBar = function PresetNavBar ()
 
   return <>
   <NavBar>
-    <NavBar.Branding text="ร้านขายแผ่นและตลับเกม" onClick={toHome}/>
+    <NavBar.Branding 
+      icon={branding} 
+      text="ร้านขายแผ่นและตลับเกม" 
+      onClick={toHome}/>
     <NavBar.Spacing/>
     <NavBar.Search/>
     <NavBar.Menu>
-      <NavBar.MenuItem text="สินค้า" onClick={toProductBrowser}/>
-      <NavBar.MenuItem text="ช่วยเหลือ" onClick={toDoc}/>
-      <NavBar.MenuItem text="เกี่ยวกับ"/>
+      <NavBar.MenuItem 
+        icon={<ShoppingCart/>}
+        text="สินค้า" 
+        onClick={toProductBrowser}
+        hideOnWidth={512}/>
+      <NavBar.MenuItem 
+        icon={<BookMarked/>}
+        text="ช่วยเหลือ" 
+        onClick={toDoc}
+        hideOnWidth={640}/>
+      <NavBar.MenuItem 
+        icon={<Info/>}
+        text="เกี่ยวกับ"
+        onClick={toAbout}
+        hideOnWidth={768}
+      />
     </NavBar.Menu>
     {authSigned ? <NavBar.Profile/> : <NavBar.SignIn onClick={toSignIn}/> }
   </NavBar>

@@ -93,12 +93,12 @@ const content = function Settings (prop: PropRoot)
   */
   const onResize = () =>
   {
-    setMenuWidth (resizeMenuValue ());
+    setMenuWidth (resizeValue ());
   }
   /**
    * รับค่าความกว้างของรายการเมนู
   */
-  const resizeMenuValue = () =>
+  const resizeValue = () =>
   {
     if (containerRef.current != HTMLDivElement.prototype)
     {
@@ -107,7 +107,7 @@ const content = function Settings (prop: PropRoot)
     }
     return SIZE_SMALL;
   }
-  const [menuWidth, setMenuWidth] = react.useState (resizeMenuValue ());
+  const [menuWidth, setMenuWidth] = react.useState (resizeValue ());
   const [menuSelected, setMenuSelected] = react.useState (false);
 
   /**

@@ -39,6 +39,8 @@ body
     --input-primary-active-border: #588af7;
 
     --text-primary: rgb(255, 255, 255);
+    --text-primary-hover: rgb(191, 221, 237);
+    --text-primary-active: rgb(182, 255, 255);
     --text-warning: rgb(255, 236, 174);
     --text-error: #FF7373;
     --text-code: rgb(13, 52, 84);

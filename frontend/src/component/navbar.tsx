@@ -1,5 +1,8 @@
 import react from "react";
 import styled from "styled-components";
+import ctx from "#context/common.ui.ts";
+
+import { type IrNavBar } from "#context/common.ui.ts";
 
 /**
  * โครงสร้างคุณสมบัติของส่วนประกอบหลัก
@@ -47,7 +50,7 @@ interface PropMenuItem
   /**
    * รูปไอคอนเมนู
   */
-  icon ?: string;
+  icon ?:  string | React.ComponentType<unknown> | React.ReactElement;
   /**
    * ข้อความ
   */
@@ -56,6 +59,10 @@ interface PropMenuItem
    * คำสั่งที่ทำงานเมื่อผู้ใช้กด
   */
   onClick ?: () => void;
+  /**
+   * ซ่อนถ้าความกว้างน้อยกว่าที่กำหนดไว้
+  */
+  hideOnWidth ?: number;
 }
 /**
  * โครงสร้างคุณสมบัติของส่วนประกอบ SignIn
@@ -79,64 +86,60 @@ interface PropSpacing
 }
 
 /**
- * โครงสร้างข้อมูลบริบทของเมนูนำทาง
-*/
-interface ContextContent
-{
-  /**
-   * ความกว้างของหน้าจอ ณ ปัจจุบัน
-  */
-  width: number;
-}
-
-const CtxContent = react.createContext<ContextContent> ({
-  width: 0
-});
-
-/**
  * ส่วนประกอบแสดงผลสำหรับเมนูนำทาง
 */
 const content = function NavBar (prop: PropContent)
 {
-  const reference = react.useRef (HTMLDivElement.prototype);
-  const [context, setContext] = react.useState<ContextContent> 
-  ({
-    width: 0
-  });
-
   /**
    * ทำงานตอนหน้าต่างขนาดเปลี่ยนแปลง
   */
-  const onResize = () =>
+  const resizeEvent = () =>
   {
     setContext ({
-      width: reference.current.clientWidth
+      width: resizeValue ()
     });
   }
+  /**
+   * รับค่าความกว้างของรายการ
+  */
+  const resizeValue = () =>
+  {
+    if (reference.current != HTMLDivElement.prototype)
+    {
+      return (reference.current.clientWidth);
+    }
+    return 0;
+  }
+  const reference = react.useRef (HTMLDivElement.prototype);
+  const [context, setContext] = react.useState<IrNavBar> 
+  ({
+    width: resizeValue ()
+  });
+
   /**
    * ทำงานหนึ่งครั้งที่ส่วนประกอบนี้เริ่มแสดงผล
   */
   react.useLayoutEffect (() =>
   {
-    onResize ();
+    resizeEvent ();
   },
   []);
   react.useEffect (() =>
   {
-    window.addEventListener ("resize", onResize);
+    window.addEventListener ("resize", resizeEvent);
 
     return () =>
     {
-      window.removeEventListener ("resize", onResize);
+      window.removeEventListener ("resize", resizeEvent);
     }
   },
   []);
 
   return (
     <Root ref={reference}>
-      <CtxContent value={context}>
+      <ctx.ProviderIrNavBar value={context}>
         {prop.children}
-      </CtxContent>
+      </ctx.ProviderIrNavBar>
     </Root>
   );
 }
@@ -145,8 +148,8 @@ const content = function NavBar (prop: PropContent)
 */
 content.Branding = function NavBarBranding (prop: PropBranding)
 {
-  const context = react.useContext (CtxContent);
-  const readable = context.width >= 768;
+  const context = ctx.useIrNavBar ();
+  const readable = context.width >= 1268;
 
   /**
    * ทำงานทุกครั้งทุกผู้ใช้กดปุ่ม
@@ -225,6 +228,10 @@ content.Menu = function NavBarMenu (prop: PropMenu)
 */
 content.MenuItem = function NavBarMenuItem (prop: PropMenuItem)
 {
+  const context = ctx.useIrNavBar ();
+  const visible = prop.hideOnWidth ? (prop.hideOnWidth <= context.width) : true;
+  const source = prop.icon;
+
   /**
    * ทำงานทุกครั้งทุกผู้ใช้กดปุ่ม
   */
@@ -237,11 +244,29 @@ content.MenuItem = function NavBarMenuItem (prop: PropMenuItem)
       prop.onClick ();
     }
   }
+  const Image = () =>
+  {
+    if (typeof source === 'string') 
+    {
+      return <img src={source} alt={""}/>;
+    }
+    if (react.isValidElement(source)) 
+    {
+      return source;
+    }
+
+    if (typeof source === 'function' || typeof source === 'object') 
+    {
+      const Component = source as React.ComponentType;
+      return <Component />;
+    }
+    return null;
+  }
 
   return (
-    <MenuItem onClick={onClick}>
-      {prop.icon ? <MenuItemIcon src={prop.icon}/> : <></>}
-      {prop.text ? <MenuItemText>{prop.text}</MenuItemText> : <></>}
+    <MenuItem $visible={visible} onClick={onClick}>
+      <Image/>
+      {context.width >= 768 ? prop.text : ""}
     </MenuItem>
   );
 }
@@ -274,6 +299,12 @@ const Root = styled.div`
 
   & > *:first-child { margin: 0px 0px 0px 32px; }
   & > *:last-child { margin: 0px 32px 0px 0px; }
+
+  @media (max-width: 768px)
+  {
+    & > *:first-child { margin: 0px 0px 0px 16px; }
+    & > *:last-child { margin: 0px 16px 0px 0px;; }
+  }
 `;
 const Branding = styled.button`
   min-width: 32px;
@@ -281,6 +312,13 @@ const Branding = styled.button`
   padding: 0px 8px;
   background-color: transparent;
   border: transparent;
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  margin: 0px;
+  padding: 0px;
 `;
 const BrandingImg = styled.img`
   width: 32px;
@@ -290,16 +328,16 @@ const BrandingImg = styled.img`
 `;
 const BrandingLabel = styled.label<{ $show: boolean }>`
   width: auto;
-  height: 32px;
   font-size: 1.25rem;
-  font-weight: bold;
+  font-weight: normal;
   padding: 0px 16px;
+  display: ${prop => prop.$show ? "block" : "none"};
   visibility: ${prop => prop.$show ? "visible": "hidden"};
   pointer-events: ${prop => prop.$show ? "all" : "none"};
 `;
 const Search = styled.input`
   display: block;
-  width: 256px;
+  max-width: 256px;
   min-height: 32px;
 
   font-size: 1rem;
@@ -335,6 +373,7 @@ const ProfileImg = styled.img`
 const SignIn = styled.button`
   min-width: 32px;
   min-height: 32px;
+  max-height: 32px;
   font-size: 1rem;
   padding: 0px 16px;
   background-color: var(--btn-primary);
@@ -354,27 +393,43 @@ const SignIn = styled.button`
 `;
 const Menu = styled.div`
   margin: 0px 8px;
-  height: 32px;
+  max-height: 32px;
+  display: inline-flex;
 `;
-const MenuItem = styled.button`
-  width: 96px;
-  height: 32px;
+const MenuItem = styled.button<{ $visible: boolean; }>`
+  min-width: 32px;
+  min-height: 32px;
+  max-height: 32px;
   background-color: transparent;
   border: transparent;
-  vertical-align: middle;
-`;
-const MenuItemIcon = styled.img`
-  width: 32px;
-  height: 32px;
-  margin-right: 16px;
-  display: inline-block;
-  vertical-align: middle;
-`;
-const MenuItemText = styled.span`
+  display: ${prop => prop.$visible ? "flex" : "none"};
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+
+  &:hover, &:focus
+  {
+    background-color: transparent;
+    color: var(--text-primary-hover);
+  }
+  &:active
+  {
+    background-color: transparent;
+    color: var(--text-primary-active);
+  }
+
+  & > img,
+  & > svg
+  {
+    min-width: 24px;
+    min-height: 24px;
+    max-width: 24px;
+    max-height: 24px;
+  }
   color: var(--text-primary);
   font-size: 1rem;
-  height: 32px;
-  // margin: 0px 16px;
 `;
 const Spacing = styled.div<{ $level: number }>`
   min-height: 32px;
