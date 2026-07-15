@@ -169,9 +169,20 @@ const OpeningContainer = styled.div`
 const OpeningBanner = styled.div`
   width: 100%;
   height: 100%;
+  outline: var(--bg-primary-border) solid 0px;
   border-radius: 8px;
-  background-color: yellow;
+  background-color: #282828;
   position: relative;
+  transition: all 66ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover, &:focus
+  {
+    outline-width: 0px;
+  }
+  &:active
+  {
+    outline-width: 4px;
+  }
 `;
 const OpeningBannerImg = styled.img`
   display: block;
