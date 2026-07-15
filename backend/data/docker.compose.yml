@@ -1,0 +1,44 @@
+# docker-compose -f "docker.compose.yml" up -d --build 
+
+name: project-csi
+services:
+  #
+  # ฐานข้อมูล: MySQL
+  # การเชื่อมต่อ: 51100
+  #
+  DbMySQL:
+    container_name: DbMySQL
+    image: mysql:lts
+    restart: always
+    hostname: DbMySQL
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=project
+    ports:
+      - "51100:3306"
+    volumes:
+      - "./sql:/var/lib/mysql"
+    networks:
+      - DbNetwork
+
+  #
+  # ฐานข้อมูล: PhpMyAdmin
+  # การเชื่อมต่อ: 50002
+  #
+  DbPhpMyAdmin:
+    container_name: DbPhpMyAdmin
+    image: phpmyadmin:latest
+    restart: always
+    ports:
+      - "50002:80"
+    environment:
+      - PMA_HOST=DbMySQL
+      - PMA_PORT=3306
+    networks:
+      - DbNetwork
+    depends_on:
+      - DbMySQL
+
+networks:
+  DbNetwork:
+    name: DbNetwork

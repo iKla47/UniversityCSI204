@@ -4,67 +4,93 @@
  * ระบบนี้พร้อมแสดงสีข้อความเพิ่มอำนวนความสะดวกในการมองเห็น
  * 
 */
-import util     from "node:util"
-import logging  from "#core/log.ts"
+import util from "node:util"
+import process from "node:process";
+import logging from "#core/log.ts"
 
+/**
+ * ระบบบันทึกกิจกรรมเริ่มต้น
+*/
 const log = logging.scoped ("LogConsole");
-
 /**
  * ระบบส่งข้อมูลกิจกรรมไปยังหน่วยแสดงผล (Console)
 */
-const content = function ()
+const content = function Stub () { return; }
+/**
+ * เริ่มต้นการทำงานของระบบ
+*/
+content.init = async function ()
 {
     logging.addListener ((value) =>
     {
-        const level = 
-            value.level === logging.LEVEL_INFO ? "white" :
-            value.level === logging.LEVEL_WARN ? "yellow" :
-            value.level === logging.LEVEL_ERROR ? "red" :
-            value.level === logging.LEVEL_FATAL ? "magenta" :
-            value.level === logging.LEVEL_VERBOSE ? "green" :
-            "gray";
+        const timeStart = logging.start.getTime ();
+        const timeLog = value.time.getTime ();
+        const time = ((timeLog - timeStart) / 1000).toFixed (3);
+        
+        const ftime = content.formatTime (time);
+        const ftag = content.formatTag (value.tag);
+        const fmessage = content.formatMessage (value.level, value.message);
+        const fout = `${ftime} ${ftag} ${fmessage}\n`;
 
-        const time = ((value.time.getTime () - logging.start.getTime ()) / 1000).toFixed (3);
-        const tag = value.tag;
-        const message = formatMessage (value.message);
+        switch (value.level)
+        {
+            case logging.LEVEL_ERROR:
+            case logging.LEVEL_FATAL:
+                process.stderr.write (fout);
+                break;
+            default:
+                process.stdout.write (fout);
+                break;
+        }
 
-            JSON.stringify (value.message, null, 4);
-
-        const formatted = `${util.styleText ("gray", time)} ${util.styleText ("cyan", `[${tag}]`)} ${util.styleText (level, message)}`;
-
-        console.log (formatted);
+        // console.log (`${ftime} ${ftag} ${fmessage}`);
     });
     console.clear ();
     log.info (`Started (${new Date ().toLocaleString ()})`);
+
+    return Promise.resolve ();
 }
-
-function formatMessage (data: unknown)
+content.formatTime = function (data: string)
 {
-    if (typeof data === "string")
-    {
-        return data;
-    }
-    if (typeof data === "number" || typeof data === "boolean")
-    {
-        return String (data);
-    }
-    if (data instanceof Date)
-    {
-        return data.toLocaleString ();
-    }
-    if (data instanceof Error)
-    {
-        let output = "";
+    return util.styleText ("gray", data);
+}
+/**
+ * จัดรูปแบบแท็กให้อ่านเข้าใจง่ายมากขึ้น
+*/
+content.formatTag = function (data: string) : string
+{
+    return util.styleText ("cyan", data);    
+}
+/**
+ * แปลงข้อมูลให้เป็นรูปแบบข้อความที่อ่านได้ง่ายขึ้น
+*/
+content.formatMessage = function (level: number, data: unknown [])
+{
+    const color = 
+        level === logging.LEVEL_INFO ? "white" :
+        level === logging.LEVEL_WARN ? "yellow" :
+        level === logging.LEVEL_ERROR ? "red" :
+        level === logging.LEVEL_FATAL ? "magenta" :
+        level === logging.LEVEL_VERBOSE ? "green" : "gray";
 
-        // output += data.message + "\n";
-        // output += "--- Cause ---\n"
-        // output += String (data.cause) + "\n";
-        // output += "--- Stack ---\n"
-        output += String (data.stack) + "\n";
+    const result = data.map ((x) =>
+    {
+        if (typeof x === "string") { 
+            return x; 
+        }
+        if (typeof x === "number" || typeof x === "boolean") { 
+            return util.styleText ("magenta", String (x)); 
+        }
+        if (typeof x === "object" && x instanceof Date) {
+            return util.styleText ("cyan", x.toLocaleString ()); 
+        }
+        if (typeof x === "object" && x instanceof Error) {
+            return util.styleText ("red", decodeURI (String (x.stack))); 
+        }
+        return JSON.stringify (data, null, 4);
+    }).join (" ");
 
-        return output;
-    }
-    return JSON.stringify (data, null, 4);
+    return util.styleText (color, result);
 }
 
 Object.freeze (content);

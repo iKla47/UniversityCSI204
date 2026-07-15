@@ -1,8 +1,23 @@
-backend/build/**
-backend/data/**
-
-frontend/build/**
-frontend/build/**
-
+#
+# ส่วนหลัง
+#
+backend/build
+backend/dist
+backend/data/log
+backend/data/sql
 backend/node_modules
+
+#
+# ส่วนหน้า
+#
+frontend/build
+frontend/dist
+frontend/data
+frontend/src/doc/.vitepress/cache
 frontend/node_modules
+
+#
+# ส่วนกลาง
+#
+node_modules
+.DS_Store

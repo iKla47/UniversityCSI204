@@ -1,19 +1,120 @@
+@font-face 
+{
+  font-family: 'font';
+  src: url('./font.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: auto; 
+}
+@font-face 
+{
+  font-family: 'font-code';
+  src: url('./font.code.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: auto; 
+}
 body
 {
-    --bg-root: rgb(255, 255, 255);
-    --text-primary: rgb(0, 0, 0);
+    --bg-root: #111A3F;
+    --bg-primary: #263653;
+    --bg-primary-border: #98B0FF;
+
+    --bg-code: rgb(214, 237, 255);
+
+    --btn-primary: #365493;
+    --btn-primary-text: #FFFFFF;
+    --btn-primary-hover: #4469b8;
+    --btn-primary-hover-text: #FFFFFF;
+    --btn-primary-active: #204fb4;
+    --btn-primary-active-text: #FFFFFF;
+
+    --input-primary: #263653;
+    --input-primary-border: #4d6fb8;
+    --input-primary-hover: #263653;
+    --input-primary-hover-border: #7e9ee4;
+    --input-primary-active: #263653;
+    --input-primary-active-border: #588af7;
+
+    --text-primary: rgb(255, 255, 255);
+    --text-warning: rgb(255, 236, 174);
+    --text-error: #FF7373;
+    --text-code: rgb(13, 52, 84);
+
+    --menu-primary: transparent;
+    --menu-primary-hover: #2f446b;
+    --menu-primary-active: #224382;
+    --menu-primary-selected: #3f7d9e;
 }
 body
 {
     background-color: var(--bg-root);
 }
-h1, h2, h3, h4, h5, h6, p, label
+body,
+h1, h2, h3, h4, h5, h6, p, label, li,
+button, input, textarea
+{
+    font-family: 
+        'font', system-ui, -apple-system, BlinkMacSystemFont, 
+        'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 
+        'Open Sans', 'Helvetica Neue', sans-serif;
+}
+h1, h2, h3, h4, h5, h6, p, label, li
 {
     color: var(--text-primary);
 }
-
-body, *, *::before, *::after
+code
 {
-    color: white;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    border-radius: 4px;
+    background-color: var(--bg-code);
+    color: var(--text-code);
+    padding: 0px 4px;
+}
+button
+{
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 1rem;
+    padding: 8px 16px;
+    background-color: var(--btn-primary);
+    border-radius: 4px;
+    border: none;
+    outline: none;
+    color: var(--btn-primary-text);
+
+    &:hover, &:focus {
+        background-color: var(--btn-primary-hover);
+        color: var(--btn-primary-hover-text);
+    }
+    &:active {
+        background-color: var(--btn-primary-active);
+        color: var(--btn-primary-active-text);
+    }
+}
+input
+{
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 1rem;
+    padding: 8px;
+    background-color: var(--input-primary);
+    border: 2px solid var(--input-primary-border);
+    border-radius: 4px;
+    outline: none;
+    color: var(--btn-primary-text);
+
+    &:hover {
+        background-color: var(--input-primary-hover);
+        border: 2px solid var(--input-primary-hover-border);
+    }
+    &:active, &:focus {
+        background-color: var(--input-primary-active);
+        border: 2px solid var(--input-primary-active-border);
+    }
+}
+
+#app-splash
+{
+    background-color: var(--bg-root);
+    transition: opacity 500ms cubic-bezier(0.16, 1, 0.3, 1);
 }

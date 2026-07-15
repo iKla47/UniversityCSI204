@@ -6,15 +6,27 @@
 */
 import dotenv from "#core/env.ts"
 
-interface CallbackData
+export interface CallbackData
 {
-    time: Date;
-    tag: string;
-    level: number;
-    message: Message;
+    /**
+     * เวลาที่ประทับไว้ในบันทึก
+    */
+    readonly time: Date;
+    /**
+     * ชื่อแท็กของระบบ
+    */
+    readonly tag: string;
+    /**
+     * ระดับการบันทึกกิจกรรม
+    */
+    readonly level: number;
+    /**
+     * ข้อมูลที่อยู่ในบันทึก
+    */
+    readonly message: CallbackMessage;
 }
-type Callback = (data: CallbackData) => void;
-type Message = unknown;
+export type Callback = (data: CallbackData) => void;
+export type CallbackMessage = unknown [];
 
 const listener: Callback[] = [];
 const start = new Date ();
@@ -30,13 +42,7 @@ let enableVerbose = true;
 */
 const content = function ()
 {
-    enableInfo = dotenv.getBoolean ("LogInfo", true);
-    enableWarn = dotenv.getBoolean ("LogWarn", true);
-    enableError = dotenv.getBoolean ("LogError", true);
-    enableFatal = dotenv.getBoolean ("LogFatal", true);
-    enableVerbose = dotenv.getBoolean ("LogVerbose", true);
-
-    content.info ("Log", `Started (${start.toLocaleString ()})`);
+    return;
 }
 /**
  * ระดับการบันทึกรูปแบบปกติ ใช้สำหรับข้อความที่เป็นประโยชน์
@@ -65,11 +71,32 @@ content.LEVEL_VERBOSE = 5;
  * เวลาเริ่มของระบบบันทึกกิจกรรม
 */
 content.start = start;
+/**
+ * เริ่มต้นการทำงานของระบบ
+*/
+content.init = async function ()
+{
+    enableInfo = dotenv.getBoolean ("LogInfo", true);
+    enableWarn = dotenv.getBoolean ("LogWarn", true);
+    enableError = dotenv.getBoolean ("LogError", true);
+    enableFatal = dotenv.getBoolean ("LogFatal", true);
+    enableVerbose = dotenv.getBoolean ("LogVerbose", true);
+    content.info ("Log", `Started (${start.toLocaleString ()})`);
 
+    return Promise.resolve ();
+}
 /**
  * ส่งข้อความไปยังตัวบันทึกกิจกรรมของระบบ
+ * 
+ * @param tag ชื่อแท็กระบบ
+ * @param level ระดับการบันทึก
+ * @param message ข้อมูลบันทึก
 */
-content.log = function (tag: string, level: number, message: Message)
+content.log = function 
+(
+    tag: string, 
+    level: number, 
+    ... message: unknown[])
 {
     if (level === content.LEVEL_INFO && !enableInfo) return;
     if (level === content.LEVEL_WARN && !enableWarn) return;
@@ -86,41 +113,42 @@ content.log = function (tag: string, level: number, message: Message)
             message: message
         });
     });
+    return;
 }
 /**
  * ส่งข้อความปกติ ไปยังตัวบันทึกกิจกรรมของระบบ
 */
-content.info = function (tag: string, message: Message)
+content.info = function (tag: string, ... message: CallbackMessage)
 {
-    content.log (tag, content.LEVEL_INFO, message);
+    content.log (tag, content.LEVEL_INFO, ... message);
 }
 /**
  * ส่งข้อความเตือน ไปยังตัวบันทึกกิจกรรมของระบบ
 */
-content.warn = function (tag: string, message: Message)
+content.warn = function (tag: string, ... message: CallbackMessage)
 {
-    content.log (tag, content.LEVEL_WARN, message);
+    content.log (tag, content.LEVEL_WARN, ... message);
 }
 /**
  * ส่งข้อความผิดพลาด ไปยังตัวบันทึกกิจกรรมของระบบ
 */
-content.error = function (tag: string, message: Message)
+content.error = function (tag: string, ... message: CallbackMessage)
 {
-    content.log (tag, content.LEVEL_ERROR, message);
+    content.log (tag, content.LEVEL_ERROR, ... message);
 }
 /**
  * ส่งข้อความร้ายแรง ไปยังตัวบันทึกกิจกรรมของระบบ
 */
-content.fatal = function (tag: string, message: Message)
+content.fatal = function (tag: string, ... message: CallbackMessage)
 {
-    content.log (tag, content.LEVEL_FATAL, message);
+    content.log (tag, content.LEVEL_FATAL, ... message);
 }
 /**
  * ส่งข้อความไปเรื่อย ไปยังตัวบันทึกกิจกรรมของระบบ
 */
-content.verbose = function (tag: string, message: Message)
+content.verbose = function (tag: string, ... message: CallbackMessage)
 {
-    content.log (tag, content.LEVEL_VERBOSE, message);
+    content.log (tag, content.LEVEL_VERBOSE, ... message);
 }
 /**
  * สร้างตัวบันทึกกิจกรรมระบบในรูปแบบที่มีขอบเขตที่จัดเชนมากขึ้น
@@ -135,39 +163,46 @@ content.scoped = function (tag: string)
         */
         tag: tag,
         /**
+         * ส่งข้อความ ไปยังตัวบันทึกกิจกรรมของระบบ
+        */
+        log: (level: number, ... message: CallbackMessage) =>
+        {
+            content.log (tag, level, ... message);
+        },
+        /**
          * ส่งข้อความปกติ ไปยังตัวบันทึกกิจกรรมของระบบ
         */
-        info: (message: Message) =>
+        info: (... message: CallbackMessage) =>
         {
-            content.log (tag, content.LEVEL_INFO, message);
+            content.log (tag, content.LEVEL_INFO, ... message);
         },
         /**
          * ส่งข้อความเตือน ไปยังตัวบันทึกกิจกรรมของระบบ
         */
-        warn: (message: Message) =>
+        warn: (... message: CallbackMessage) =>
         {
-            content.log (tag, content.LEVEL_WARN, message);
+            content.log (tag, content.LEVEL_WARN, ... message);
         },
         /**
          * ส่งข้อความผิดพลาด ไปยังตัวบันทึกกิจกรรมของระบบ
         */
-        error: (message: Message) =>
+        error: (... message: CallbackMessage) =>
         {
-            content.log (tag, content.LEVEL_ERROR, message);
+            content.log (tag, content.LEVEL_ERROR, ... message);
         },
         /**
          * ส่งข้อความร้ายแรง ไปยังตัวบันทึกกิจกรรมของระบบ
         */
-        fatal: (message: Message) =>
+        fatal: (... message: CallbackMessage) =>
         {
-            content.log (tag, content.LEVEL_FATAL, message);
+            content.log (tag, content.LEVEL_FATAL, ... message);
         },
         /**
          * ส่งข้อความไปเรื่อย ไปยังตัวบันทึกกิจกรรมของระบบ
         */
-        verbose: (message: Message) =>
+        verbose: (message: CallbackMessage) =>
         {
-            content.log (tag, content.LEVEL_VERBOSE, message);
+            content.log (tag, content.LEVEL_VERBOSE, ... message);
         },
     }
 }
@@ -200,6 +235,11 @@ content.clearListener = function ()
 {
     listener.splice (0, listener.length);
 }
-
+/**
+ * แข็งวัตถุ (ความปลอดภัย)
+*/
 Object.freeze (content);
+/**
+ * ส่งออกตัวแปร
+*/
 export default content;
