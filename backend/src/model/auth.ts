@@ -1,51 +1,59 @@
 import * as jwt     from "jose";
 import env          from "#core/env.ts";
 import error        from "#core/error.ts";
-import sql          from "#core/sql.ts";
-import objreader    from "#core/object.reader.ts";
+import modelAct     from "#model/account.ts";
 import
 {
-    type InputCommand as SqlInputCommand,
-    type InputValue as SqlInputValue
-}
-from "#core/sql.ts"
-import
-{
-    type DataId
+    type DataId as DataAccountId
 }
 from "#model/account.ts";
 
 /**
- * ระบบจัดการระบบยืนยันตัวตนผู้ใช้
+ * รหัสของชุดรหัสข้อมูล (หรือเรียกอีกอย่างว่า PRIMARY KEY)
 */
-const content =()=>
-{
-    return;
-}
-
-type AuthId = string;
-type AuthLink = number;
-type Restriction = number;
-
+export type DataId = string;
+/**
+ * รหัสบัญชี (หรือเรียกอีกอย่างว่า FOREIGN KEY)
+*/
+export type DataLink = DataAccountId;
 /**
  * ชุดข้อมูลที่ได้รับจากการลงชื่อเข้าใช้
 */
-interface Session
+export interface Session
 {
-    authId: AuthId;
-    authLink: AuthLink;
+    /**
+     * ชุดรหัสยืนยันตัวตน
+    */
     session: string;
+    /**
+     * วันที่ออกชุดรหัส
+    */
     sessionIssued: Date;
+    /**
+     * วันที่ชุดรหัสหมดอายุ
+    */
     sessionExpire: Date;
-    restriction: Restriction;
-    step: number;
-}
-interface SessionCreate
-{
-    id: AuthLink;
+    /**
+     * รหัสบัญชี
+    */
+    id: DataAccountId;
+    /**
+     * บทบาทบัญชี
+    */
     role: number;
-    restriction: Restriction;
-    expire ?: Date;
+    /**
+     * ข้อจำกัดการเข้าถึงบัญชี
+    */
+    restriction: number;
+
+    /**
+     * รหัสประจำตัว (ใช้ในขณะที่ลงชื่อเข้าใช้/สมัคร)
+    */
+    authId ?: DataId;
+    /**
+     * ขั้นตอนปัจจุบัน (ใช้ในขณะที่ลงชื่อเข้าใช้/สมัคร)
+    */
+    authStep ?: number;
 }
 
 let EXPIRE_SESSION: number;
@@ -54,25 +62,52 @@ let JWT_ISSUER: string;
 let JWT_SECRET: Uint8Array;
 
 /**
+ * ระบบจัดการระบบยืนยันตัวตนผู้ใช้
+*/
+const content = () =>
+{
+    return;
+}
+/**
  * ขั้นตอนการลงชื่อเข้าใช้: ไม่ทราบ
 */
 content.STEP_UNKNOWN = 0;
 /**
+ * ขั้นตอนการลงชื่อเข้าใช้: ระบุรหัสประจำตัวและรหัสผ่าน
+*/
+content.STEP_SIMPLE = 1;
+/**
  * ขั้นตอนการลงชื่อเข้าใช้: ระบุรหัสประจำตัว
 */
-content.STEP_IDENTIFIER = 1;
+content.STEP_IDENTIFIER = 2;
 /**
  * ขั้นตอนการลงชื่อเข้าใช้: ระบุรหัสผ่าน
 */
-content.STEP_PASSWORD = 2;
+content.STEP_PASSWORD = 3;
 /**
  * ขั้นตอนการลงชื่อเข้าใช้: ยืนยันตัวตนแบบสองชั้น
 */
-content.STEP_MFA = 3;
+content.STEP_MFA = 4;
 /**
  * ขั้นตอนการลงชื่อเข้าใช้: เสร็จสิ้น
 */
-content.STEP_COMPLETE = 4;
+content.STEP_COMPLETE = 5;
+/**
+ * ไม่มีข้อจำกัดใด ๆ ในการใช้งานระบบ
+*/
+content.RESTRICTION_NONE = 0;
+/**
+ * จำเป็นต้องยืนยันตัวตนก่อนใช้งานระบบ
+*/
+content.RESTRICTION_CHALLENGE = 1;
+/**
+ * บัญชีถูกปิดใช้งานชั่วคราว
+*/
+content.RESTRICTION_DISABLED = 2;
+/**
+ * บัญชีถูกระงับโดยระบบหรือผู้ดูแล
+*/
+content.RESTRICTION_SUSPENDED = 4;
 /**
  * เริ่มต้นการทำงานของระบบ
 */
@@ -90,7 +125,6 @@ content.init = async () =>
     Object.freeze (EXPIRE_SESSION);
     Object.freeze (EXPIRE_CHALLENGE);
     Object.freeze (JWT_ISSUER);
-    // Object.seal (JWT_SECRET);
 
     return Promise.resolve ();
 }
@@ -102,45 +136,87 @@ content.terminate = async () =>
     return Promise.resolve ();
 }
 /**
- * ไม่มีข้อจำกัดใด ๆ ในการใช้งานระบบ
+ * สร้างชุดรหัสยืนยันตัวตน
+ * 
+ * @param issued วันที่สร้าง
+ * @param expired วันที่หมดอายุ
+ * @param accountId รหัสบัญชี
+ * @param accountRole บทบาท
+ * @param accountRestriction ข้อจำกัด
 */
-content.RESTRICTION_NONE = 0;
-/**
- * จำเป็นต้องยืนยันตัวตนก่อนใช้งานระบบ
-*/
-content.RESTRICTION_CHALLENGE = 1;
-/**
- * บัญชีถูกปิดใช้งานชั่วคราว
-*/
-content.RESTRICTION_DISABLED = 2;
-/**
- * บัญชีถูกระงับโดยระบบหรือผู้ดูแล
-*/
-content.RESTRICTION_SUSPENDED = 4;
-
-content.createSession = async (info: SessionCreate) =>
+content.create = (
+    issued: Date, 
+    expire: Date | undefined,
+    accountId: DataAccountId,
+    accountRole: number,
+    accountRestriction: number
+) =>
 {
-    const issued = new Date ();
-    const expire = info.expire ?? new Date (8640000000000000);
+    expire = expire ?? new Date (8640000000000000);
 
-    const session = await content.jwtSign ({
-        "Id": info.id,
-        "Role": info.role,
-        "Restriction": info.restriction,
-    }, 
-    issued, expire);
-
-    const output: Session =
+    const data = 
     {
-        session: session,
-        sessionIssued: issued,
-        sessionExpire: expire,
-        restriction: info.restriction,
-        authId: "",
-        authLink: 0,
-        step: 0
+        "Id": accountId,
+        "Role": accountRole,
+        "Restriction": accountRestriction,
     };
-    return output;
+    return content.jwtSign (data, issued, expire).then ((x) =>
+    {
+        const result: Session =
+        {
+            session: x,
+            sessionIssued: issued,
+            sessionExpire: expire,
+            id: accountId,
+            role: accountRole,
+            restriction: accountRestriction,
+        };
+        return result;
+    });
+}
+/**
+ * สร้างชุดรหัสยืนยันตัวตนที่ใช้งานเฉพาะตอนลงชื่อเข้าใช้หรือสร้างบัญชี
+ * 
+ * @param issued วันที่สร้าง
+ * @param expired วันที่หมดอายุ
+ * @param accountId รหัสบัญชี
+ * @param accountRole บทบาท
+ * @param restriction ข้อจำกัด
+*/
+content.createChallenge = (
+    issued: Date, 
+    expire: Date | undefined,
+    accountId: DataAccountId,
+    authId: DataId,
+    authStep: number
+) =>
+{
+    expire = expire ?? new Date (8640000000000000);
+
+    const data = 
+    {
+        "Id": accountId,
+        "Role": modelAct.ROLE_AUTH,
+        "Restriction": content.RESTRICTION_CHALLENGE,
+        "AuthId": authId,
+        "AuthStep": authStep
+    };
+    return content.jwtSign (data, issued, expire).then ((x) =>
+    {
+        const result: Session =
+        {
+            session: x,
+            sessionIssued: issued,
+            sessionExpire: expire,
+            id: accountId,
+            role: modelAct.ROLE_AUTH,
+            restriction: content.RESTRICTION_CHALLENGE,
+
+            authId: authId,
+            authStep: authStep
+        };
+        return result;
+    });
 }
 /**
  * รับหน่วยเวลาที่หมดอายุตลอดการใช้งานระบบ
@@ -228,123 +304,6 @@ content.jwtVerify = async (input: string) =>
         }
         throw new error.NotAvailable ("JWT Verification Failed", { cause: e });
     }
-}
-
-/**
- * เริ่มต้นการลงชื่อเข้าใช้โดยรหัสประจำตัวของผู้ใช้
- * 
- * @param authId รหัสประจำตัวของผู้ใช้
-*/
-content.signIn = async (authId: string) : Promise<Session> =>
-{
-    let cmd: SqlInputCommand = `SELECT Link FROM Auth WHERE Id = ?`;
-    let val: SqlInputValue = [authId];
-    const auth = await sql.select (cmd, val);
-
-    if (auth.length == 0) {
-        throw new error.NotFound ();
-    }
-    if (auth.length >= 2) {
-        throw new error.Conflict ();
-    }
-
-    let reader = objreader (auth.at (0));
-    const outLink = reader.requireInteger ("Link");
-
-    cmd = `SELECT Role FROM User WHERE Id = ?`;
-    val = [outLink];
-
-    const account = await sql.select (cmd, val);
-    
-    if (account.length !=  1) {
-        throw new error.Conflict ();
-    }
-
-    reader = objreader (account.at (0));
-    const outRole = reader.requireInteger ("Role");
-    
-    const seIssued = new Date (Date.now ());
-    const seExpire = new Date (Date.now () + EXPIRE_CHALLENGE);
-    const seValue = await content.jwtSign ({
-        "Id": outLink,
-        "Role": outRole,
-        "Restriction": content.RESTRICTION_CHALLENGE,
-        "AuthStep": content.STEP_PASSWORD
-    }, 
-    seIssued, seExpire);
-
-    const output: Session =
-    {
-        authId: authId,
-        authLink: outLink,
-        session: seValue,
-        sessionIssued: seIssued,
-        sessionExpire: seExpire,
-        restriction: content.RESTRICTION_CHALLENGE,
-        step: content.STEP_PASSWORD
-    };
-    return output;
-}
-/**
- * ดำเนินกาารต่อการลงชื่อเข้าใช้โดยรหัสผ่าน
- * 
- * @param authLink รหัสบัญชี
- * @param authId รหัสประจำตัว
- * @param value รหัสผ่าน
-*/
-content.signInPwd = async (
-    authLink: number,
-    authId: string, 
-    role: number,
-    value: string,
-) : Promise<Session> =>
-{
-    const cmd: SqlInputCommand = `SELECT Password FROM Auth WHERE Id = ?`;
-    const val: SqlInputValue = [authId];
-    const result = await sql.select (cmd, val);
-
-    if (result.length == 0) {
-        throw new error.NotFound ();
-    }
-    if (result.length >= 2) {
-        throw new error.Conflict ();
-    }
-    const reader = objreader (result.at (0));
-    const outPwd = reader.requireString ("Password");
-
-    if (outPwd !== value) {
-        throw new error.NotAuthorized ();
-    }
-    const seIssued = new Date (Date.now ());
-    const seExpire = new Date (Date.now () + EXPIRE_CHALLENGE);
-    const seValue = await content.jwtSign ({
-        "Id": authLink,
-        "Role": role,
-        "Restriction": 0,
-        "AuthStep": content.STEP_MFA
-    }, 
-    seIssued, seExpire);
-
-    const output: Session =
-    {
-        authId: authId,
-        authLink: authLink,
-        session: seValue,
-        sessionIssued: seIssued,
-        sessionExpire: seExpire,
-        restriction: 0,
-        step: content.STEP_COMPLETE
-    };
-    return output;
-}
-
-content.create = async (id: string, pwd: string, link: DataId) =>
-{
-    await sql.insert (`
-        INSERT INTO Auth (Id, Password, Link) 
-        VALUES (?, ?, ?)`, 
-        [id, pwd, link]
-    );
 }
 
 /**

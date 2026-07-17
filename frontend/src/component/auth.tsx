@@ -299,11 +299,7 @@ const content = function Auth (prop: PropContent)
       setFeedback (emptyFeedback ());
       setPending (true);
     }
-    api.signInPwd (
-      session.current.secret, 
-      id.current, 
-      value
-    ).then (([se, ch]) =>
+    api.signInPwd (session.current.secret, value).then (([se, ch]) =>
     {
       session.current = se;
 

@@ -200,7 +200,7 @@ content.scoped = function (tag: string)
         /**
          * ส่งข้อความไปเรื่อย ไปยังตัวบันทึกกิจกรรมของระบบ
         */
-        verbose: (message: CallbackMessage) =>
+        verbose: (... message: CallbackMessage) =>
         {
             content.log (tag, content.LEVEL_VERBOSE, ... message);
         },

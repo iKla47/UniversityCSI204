@@ -78,7 +78,7 @@ interface ResultTransaction
 interface ResultError 
 {
     code: string;
-    sqlMessage: string; 
+    sqlMessage: string | undefined; 
 };
 
 /**
@@ -98,30 +98,32 @@ const log = logging.scoped ("MySQL");
 */
 const mediate = function (info: ResultError) : Error
 {
+    const message = info.sqlMessage ?? `(no sql message): ${info.code}`;
+
     switch (info.code)
     {
         case "ER_DUP_ENTRY": 
-            return new error.Duplicate (info.sqlMessage, { cause: info });
+            return new error.Duplicate (message, { cause: info });
         case "ER_NO_REFERENCED_ROW":
         case "ER_NO_REFERENCED_ROW_2":
-            return new error.Constraint (info.sqlMessage, { cause: info }); 
+            return new error.Constraint (message, { cause: info }); 
         case "ER_PARSE_ERROR":
         case "ER_BAD_FIELD_ERROR":
-            return new error.Command (info.sqlMessage, { cause: info }); 
+            return new error.Command (message, { cause: info }); 
         case "ER_NO_SUCH_TABLE": 
-            return new error.NotFound (info.sqlMessage, { cause: info }); 
+            return new error.NotFound (message, { cause: info }); 
         case "ER_ACCESS_DENIED_ERROR": 
         case "ER_DBACCESS_DENIED_ERROR":
-            return new error.NotAuthorized (info.sqlMessage, { cause: info }); 
+            return new error.NotAuthorized (message, { cause: info }); 
         case "ECONNREFUSED":
         case "CR_CONNECTION_ERROR":
-            return new error.Network (info.sqlMessage, { cause: info }); 
+            return new error.Network (message, { cause: info }); 
         case "ER_CON_COUNT_ERROR":
-            return new error.NetworkLimit (info.sqlMessage, { cause: info });
+            return new error.NetworkLimit (message, { cause: info });
         case "CR_SERVER_GONE_AWAY":
-            return new error.NetworkGone (info.sqlMessage, { cause: info });
+            return new error.NetworkGone (message, { cause: info });
         default:
-            return new error.Unknown (info.sqlMessage, { cause: info }); 
+            return new error.Unknown (message, { cause: info }); 
     }
 }
 /**

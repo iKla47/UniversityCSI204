@@ -19,7 +19,7 @@ from "#model/product.ts";
 /**
  * ระบบบันทึกกิจกรรมเริ่มต้น
 */
-const log = logging.scoped ("Auth");
+const log = logging.scoped ("Product");
 /**
  * ระบบจัดการสินค้า
 */

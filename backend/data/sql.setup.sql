@@ -22,7 +22,7 @@ FLUSH PRIVILEGES;
 -- #
 -- # สร้างข้อมูลบัญชี
 -- #
-CREATE TABLE IF NOT EXISTS `project`.`User` 
+CREATE TABLE IF NOT EXISTS `project`.`Account` 
 (
     `Id`        BIGINT NOT NULL AUTO_INCREMENT COMMENT 'รหัสบัญชี' , 
     `Name`      CHAR(32) NOT NULL DEFAULT "" COMMENT 'ชื่อผู้ใช้',
@@ -33,21 +33,22 @@ CREATE TABLE IF NOT EXISTS `project`.`User`
     `Modified`  DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
                 COMMENT 'เวลาที่แก้ไข' ,
     
-    CONSTRAINT  PK_User_Id PRIMARY KEY (`Id`) ,
-    CONSTRAINT  UK_User_Id UNIQUE (`Id`)
+    CONSTRAINT  PK_Account_Id PRIMARY KEY (`Id`) ,
+    CONSTRAINT  UK_Account_Id UNIQUE (`Id`)
 ) 
 ENGINE = InnoDB 
 COMMENT = 'ข้อมูลบัญชีผู้ใช้';
 -- #
 -- # ข้อมูลติดต่อ
 -- #
-CREATE TABLE IF NOT EXISTS `project`.`UserContact`
+CREATE TABLE IF NOT EXISTS `project`.`AccountContact`
 (
     `Id`        BIGINT NOT NULL COMMENT 'รหัสบัญชี' , 
     `Email`     CHAR(32) DEFAULT "" COMMENT 'อีเมล' ,
 
-    CONSTRAINT  PK_UserContact_Id PRIMARY KEY (`Id`),
-    CONSTRAINT  FK_UserContact_Id FOREIGN KEY (`Id`) REFERENCES User (`Id`)
+    CONSTRAINT  PK_AccountContact_Id PRIMARY KEY (`Id`),
+    CONSTRAINT  FK_AccountContact_Id FOREIGN KEY (`Id`) 
+        REFERENCES Account (`Id`)
 )
 ENGINE = InnoDB 
 COMMENT = 'ข้อมูลบัญชีผู้ใช้ (ติดต่อ)';
@@ -64,10 +65,15 @@ CREATE TABLE IF NOT EXISTS `project`.`Auth`
     CONSTRAINT UK_Auth_Id UNIQUE (`Id`) ,
     CONSTRAINT FK_Auth_Link 
         FOREIGN KEY (`Link`) 
-        REFERENCES User (`Id`) ,
+        REFERENCES Account (`Id`) ,
     CONSTRAINT UC_Auth_Link
         UNIQUE (`Link`)
 ) 
+-- CREATE TABLE IF NOT EXISTS `project`.`AuthFacebook`
+-- (
+
+-- )
+
 ENGINE = InnoDB COMMENT = 'ข้อมูลการเข้าสู่ระบบ';
 -- #
 -- # ข้อมูลสินค้า
@@ -122,7 +128,7 @@ CREATE TABLE IF NOT EXISTS `project`.`ProductComment`
         REFERENCES Product (`Id`) ,
     CONSTRAINT FK_ProductComment_Author 
         FOREIGN KEY (`Author`) 
-        REFERENCES User (`Id`)
+        REFERENCES Account (`Id`)
 )
 ENGINE = InnoDB 
 COMMENT = 'ข้อมูลการแสดงความคิดเห็นสินค้า';
@@ -166,7 +172,7 @@ COMMENT = 'ข้อมูลหมวดหมู่สินค้า';
 CREATE TABLE IF NOT EXISTS `project`.`OrderList`
 (
     `OrderId`   BIGINT NOT NULL AUTO_INCREMENT COMMENT 'รหัสคำสั่งซื้อ' ,
-    `UserId`    BIGINT NOT NULL COMMENT 'ลูกค้าที่สั่งซื้อ' ,
+    `AccountId`    BIGINT NOT NULL COMMENT 'ลูกค้าที่สั่งซื้อ' ,
     `Created`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
                 COMMENT 'วันที่สั่งซื้อ' ,
     `Delivered` DATETIME NOT NULL COMMENT 'วันที่รับสินค้า' , 
@@ -174,9 +180,9 @@ CREATE TABLE IF NOT EXISTS `project`.`OrderList`
 
     CONSTRAINT PK_Order_OrderId PRIMARY KEY (`OrderId`) ,
     CONSTRAINT UK_Order_OrderId UNIQUE (`OrderId`) ,
-    CONSTRAINT FK_Order_UserId
-        FOREIGN KEY (`UserId`)
-        REFERENCES User (`Id`)
+    CONSTRAINT FK_Order_AccountId
+        FOREIGN KEY (`AccountId`)
+        REFERENCES Account (`Id`)
 )
 ENGINE = InnoDB 
 COMMENT = 'รายการคำสั่งซื้อ';
@@ -204,10 +210,10 @@ COMMENT = 'สินค้าที่อยู่ในคำสั่งซื
 -- #
 -- # ข้อมูลตะกร้าสินค้าของผู้ใช้
 -- #
--- CREATE TABLE IF NOT EXISTS `project`.`UserCart`
+-- CREATE TABLE IF NOT EXISTS `project`.`AccountCart`
 -- (
 --     `CartId` BIGINT NOT NULL COMMENT 'รหัสเอกลักษณ์' ,
---     `UserId` BIGINT NOT NULL COMMENT 'รหัสบัญชี' ,
+--     `AccountId` BIGINT NOT NULL COMMENT 'รหัสบัญชี' ,
 --     `ProductId` BIGINT NOT NULL COMMENT ''
 -- )
 -- ENGINE = InnoDB 
@@ -215,19 +221,19 @@ COMMENT = 'สินค้าที่อยู่ในคำสั่งซื
 -- # 
 -- # สินค้าที่กำลังอยู่ในตะกร้า
 -- # 
--- CREATE TABLE IF NOT EXISTS `project`.`UserCartItem`
+-- CREATE TABLE IF NOT EXISTS `project`.`AccountCartItem`
 -- (
 --     `ItemId` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'รหัสเอกลักษณ์' ,
 --     `CartId` BIGINT NOT NULL COMMENT 'รหัสตะกร้า' ,
 --     `ProductId` BIGINT NOT NULL COMMENT 'รหัสสินค้า' ,
 --     `Quantity` INT NOT NULL DEFAULT 1 COMMENT 'จำนวน' ,
 -- 
---     CONSTRAINT PK_UserCartItem_ItemId PRIMARY KEY (`ItemId`) ,
---     CONSTRAINT UK_UserCartItem_ItemId UNIQUE (`ItemId`)
---     CONSTRAINT FK_UserCartItem_CartId
+--     CONSTRAINT PK_AccountCartItem_ItemId PRIMARY KEY (`ItemId`) ,
+--     CONSTRAINT UK_AccountCartItem_ItemId UNIQUE (`ItemId`)
+--     CONSTRAINT FK_AccountCartItem_CartId
 --         FOREIGN KEY (`CartId`)
---         REFERENCES UserCart (`CartId`) ,
---     CONSTRAINT FK_UserCartItem_ProductId
+--         REFERENCES AccountCart (`CartId`) ,
+--     CONSTRAINT FK_AccountCartItem_ProductId
 --         FOREIGN KEY (`ProductId`)
 --         REFERENCES Product (`Id`)
 -- 

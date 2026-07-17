@@ -47,6 +47,10 @@ content.BadData = class extends Error {};
 */
 content.BadType = class extends Error {};
 /**
+ * ข้อผิดพลาดเนื่องระบบไม่สามารถยืนยันตัวตนได้
+*/
+content.BadAuth = class extends Error {};
+/**
  * คลาสข้อผิดพลาด ในกรณีที่ระบบไม่พบข้อมูล
 */
 content.NotFound = class extends Error {};

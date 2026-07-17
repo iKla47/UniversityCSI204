@@ -9,15 +9,19 @@ import webSocket    from "#core/webSocket.ts";
 import sql          from "#core/sql.ts";
 
 import routerAuth           from "#router/auth.ts";
+import routerAuthSignIn     from "#router/auth.signin.ts";
+import routerAccount        from "#router/account.ts";
 import routerProdCategory   from "#router/product.category.ts";
 import routerProdComment    from "#router/product.comment.ts";
 import routerProdReview     from "#router/product.review.ts";
 import routerProdStock      from "#router/product.stock.ts";
 import routerProd           from "#router/product.ts";
 
-import modelAuth        from "#model/auth.ts";
-import modelAccount     from "#model/account.ts";
-import modelProduct     from "#model/product.ts";
+import modelAuth            from "#model/auth.ts";
+import modelAccount         from "#model/account.ts";
+import modelProduct         from "#model/product.ts";
+
+import testMode             from "./appTest.ts";
 
 const content = () =>
 {
@@ -38,6 +42,8 @@ content.start = async () =>
     await http.init (() =>
     {
         http.routeTo ("/auth", routerAuth.getRouter ());
+        http.routeTo ("/auth", routerAuthSignIn.getRouter ());
+        http.routeTo ("/account", routerAccount.getRouter ());
         http.routeTo ("/product-category", routerProdCategory.getRouter ());
         http.routeTo ("/product-comment", routerProdComment.getRouter ());
         http.routeTo ("/product-review", routerProdReview.getRouter ());
@@ -46,76 +52,22 @@ content.start = async () =>
         return;
     });
     await webSocket.init ();
+
     //
     // Service Subsystem
     //
     await modelAuth.init ();
     await modelAccount.init ();
     await modelProduct.init ();
-}
-content.seed = async () =>
-{
-    try
-    {
-        await modelAuth.create ("Admin", "12345678",
-        await modelAccount.create ({ 
-            name: "Administrator", 
-            role: modelAccount.ROLE_MANAGER 
-        }));
-    }
-    catch (e: unknown) 
-    {
-        log.warn ("Seeding", e);
-    }
 
-    try
-    {
-        await modelAuth.create ("Staff", "12345678",
-        await modelAccount.create ({ 
-            name: "Administrator", 
-            role: modelAccount.ROLE_STAFF 
-        }));
-    }
-    catch (e: unknown) 
-    {
-        log.warn ("Seeding", e);
-    }
+    //
+    // Debugging Subsystem
+    //
+    await testMode.setupAccount ();
 
-    try
-    {
-        await modelAuth.create ("ItsJeremie", "12345678",
-        await modelAccount.create ({ 
-            name: "ItsJeremie", 
-            role: modelAccount.ROLE_USER 
-        }));
-    }
-    catch (e: unknown) 
-    {
-        log.warn ("Seeding", e);
-    }
-    const sessionAdmin = await modelAuth.createSession ({
-        id: 1,
-        restriction: 0,
-        role: modelAccount.ROLE_MANAGER,
-    });
-    const sessionStaff = await modelAuth.createSession ({
-        id: 2,
-        restriction: 0,
-        role: modelAccount.ROLE_STAFF,
-    });
-    const sessionUser = await modelAuth.createSession ({
-        id: 3,
-        restriction: 0,
-        role: modelAccount.ROLE_STAFF,
-    });
-
-    log.verbose ("--- Session ---");
-    log.verbose ("Seeding", `Admin: ${sessionAdmin.session}`);
-    log.verbose ("Seeding", `Staff: ${sessionStaff.session}`);
-    log.verbose ("Seeding", `User: ${sessionUser.session}`);
-    log.verbose ("---------------");
-
-    return;
+    //
+    // Finalize Stage ...
+    //
+    http.setMode (http.MODE_READY);
 }
 await content.start ();
-await content.seed ();

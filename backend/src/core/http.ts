@@ -47,7 +47,16 @@ const netHttps = https.createServer (netMiddleware);
  * ระบบบันทึกกิจกรรมการทำงาน
 */
 const log = logging.scoped ("Http");
-
+/**
+ * สถานะข้อมูลปัจจุบัน
+*/
+const state =
+{
+    /**
+     * โหมดการทำงาน
+    */
+    mode: 0,
+};
 /**
  * ระบบจัดการเชื่อมต่อผ่านโปรโตคอล HTTP/HTTPS
 */
@@ -55,6 +64,43 @@ const content = function ()
 {
     return;
 }
+/**
+ * สถานะ: HTTP/HTTPS กำลังเตรียมพร้อมใช้งาน
+*/
+content.MODE_STANDY = 0;
+/**
+ * สถานะ: HTTP/HTTPS พร้อมใช้งาน
+*/
+content.MODE_READY = 1;
+/**
+ * สถานะ: HTTP/HTTPS ปิดปรับปรุง
+*/
+content.MODE_MAINTENANCE = 2;
+/**
+ * รับการตั้งค่าโหมดการทำงาน HTTP
+*/
+content.getMode = () => state.mode;
+/**
+ * ตั้งค่าโหมดการทำงาน HTTP
+*/
+content.setMode = (value: number) =>
+{
+    state.mode = value;
+
+    switch (value)
+    {
+        case content.MODE_STANDY:
+            log.warn ("Mode: STANDY");
+            break;
+        case content.MODE_READY:
+            log.warn ("Mode: READY");
+            break;
+        case content.MODE_MAINTENANCE:
+            log.warn ("Mode: MAINTENANCE");
+            break;
+    }
+}
+
 content.http = netHttp;
 content.https = netHttps;
 /**
@@ -314,6 +360,8 @@ content.STATUS_NETWORK_AUTH_REQUIRED = 511;
 */
 content.init = async function (cb: () => void)
 {
+    content.setMode (content.MODE_STANDY);
+
     netMiddleware.use (useHelment ());
     netMiddleware.use (useCors ());
     netMiddleware.use (useRateLimit ());
@@ -321,7 +369,26 @@ content.init = async function (cb: () => void)
     netMiddleware.use (express.json ({
         strict: true,
         inflate: true,
-    }))
+    }));
+
+    netMiddleware.use ((
+        request: express.Request, 
+        response: express.Response,
+        next: express.NextFunction) =>
+    {
+        void request;
+        void response;
+
+        if (state.mode === content.MODE_STANDY || 
+            state.mode === content.MODE_MAINTENANCE)
+        {
+            response.status (content.STATUS_SERVICE_UNAVAILABLE);
+            response.end ();
+            return;
+        }
+        next ();
+    });
+
     netMiddleware.use (netRouter);
 
     const useInsecured = dotenv.getBoolean ("B_HTTP_INSECURE_ENABLED", true);

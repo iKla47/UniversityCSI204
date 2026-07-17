@@ -1,5 +1,7 @@
 import http     from "#core/http.ts";
 import control  from "#controller/account.ts";
+import controlAuth from "#controller/auth.ts";
+import modelAct from "#model/account.ts";
 
 /**
  *  
@@ -21,14 +23,19 @@ content.getController = () =>
 content.getRouter = () =>
 {
     const router = http.router ();
+    const authUser = controlAuth.validate ({
+        allowedRole: [
+            modelAct.ROLE_USER,
+            modelAct.ROLE_MANAGER
+        ],
+        allowedRestriction: 0,
+    });
+    const authManager = controlAuth.validateOnlyManager ();
 
-    router.get ("/:id", control.getBasic);
-    router.get ("/:id/icon", control.getIcon);
-    router.get ("/:id/contact", control.getContact);
-
-    router.put ("/:id", control.putBasic);
-    router.put ("/:id/icon", control.putIcon);
-    router.put ("/:id/contact", control.putContact);
+    router.get ("/:id", control.get);
+    router.put ("/:id", authUser, control.put);
+    router.post ("/", authManager, control.post);
+    router.delete ("/:id", authManager, control.delete);
 
     return router;
 }

@@ -100,21 +100,25 @@ const content = () =>
 */
 content.STEP_UNKNOWN = 0;
 /**
+ * ขั้นตอนการลงชื่อเข้าใช้: ระบุรหัสประจำตัวและรหัสผ่าน
+*/
+content.STEP_SIMPLE = 1;
+/**
  * ขั้นตอนการลงชื่อเข้าใช้: ระบุรหัสประจำตัว
 */
-content.STEP_IDENTIFIER = 1;
+content.STEP_IDENTIFIER = 2;
 /**
  * ขั้นตอนการลงชื่อเข้าใช้: ระบุรหัสผ่าน
 */
-content.STEP_PASSWORD = 2;
+content.STEP_PASSWORD = 3;
 /**
  * ขั้นตอนการลงชื่อเข้าใช้: ยืนยันตัวตนแบบสองชั้น
 */
-content.STEP_MFA = 3;
+content.STEP_MFA = 4;
 /**
  * ขั้นตอนการลงชื่อเข้าใช้: เสร็จสิ้น
 */
-content.STEP_COMPLETE = 4;
+content.STEP_COMPLETE = 5;
 /**
  * โปรโตอลที่ใช้ในการสื่อสารระหว่างเซิร์ฟเวอร์
 */
@@ -293,7 +297,7 @@ content.saveWrite = () =>
 */
 content.signIn = async (input: string) : Promise<[Session, SessionChallenge]> =>
 {
-    const endpoint = `${content.NET_URL}/sign-in`;
+    const endpoint = `${content.NET_URL}/challenge`;
     const init: RequestInit =
     {
         method: "POST",
@@ -306,7 +310,8 @@ content.signIn = async (input: string) : Promise<[Session, SessionChallenge]> =>
         cache: "default",
         body: JSON.stringify (
         {
-            "Identifier": input
+            "Key": content.STEP_IDENTIFIER,
+            "Value": input
         }),
         signal: AbortSignal.timeout (content.NET_TIMEOUT)
     }
@@ -352,13 +357,10 @@ content.signIn = async (input: string) : Promise<[Session, SessionChallenge]> =>
     }
 }
 
-content.signInPwd = async (
-    session: string, 
-    identifier: string, 
-    password: string
-) : Promise<[Session, SessionChallenge]> =>
+content.signInPwd = async (session: string, password: string) 
+    : Promise<[Session, SessionChallenge]> =>
 {
-    const endpoint = `${content.NET_URL}/sign-in-password`;
+    const endpoint = `${content.NET_URL}/challenge`;
     const init: RequestInit =
     {
         method: "POST",
@@ -372,8 +374,8 @@ content.signInPwd = async (
         cache: "default",
         body: JSON.stringify (
         {
-            "Identifier": identifier,
-            "Password": password
+            "Key": content.STEP_PASSWORD,
+            "Value": password
         }),
         signal: AbortSignal.timeout (content.NET_TIMEOUT)
     }
