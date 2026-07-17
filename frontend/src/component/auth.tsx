@@ -412,34 +412,6 @@ content.FEEDBACK_WARNING = 1;
 */
 content.FEEDBACK_ERROR = 2;
 
-content.Provider = function AuthProvider ()
-{
-  const ctx = context.useAuth ();
-
-  react.useEffect (() =>
-  {
-    const saved = api.saveGetItemPrefered ();
-
-    if (saved)
-    {
-      ctx.name = saved.name;
-      ctx.session = saved.secret;
-      ctx.sessionIssued = saved.issued;
-      ctx.sessionExpire = saved.expired;
-    }
-    return () =>
-    {
-      ctx.name = "";
-      ctx.session = "";
-      ctx.sessionIssued = new Date (NaN);
-      ctx.sessionExpire = new Date (NaN);
-    }
-  },
-  []);
-
-  return (<></>);
-}
-
 content.View = function AuthView (prop: PropView)
 {
   return (

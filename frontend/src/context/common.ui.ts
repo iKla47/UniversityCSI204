@@ -7,6 +7,11 @@ export interface MenuContext
     setInset: (value ?: string) => void;
     setCancel: (value ?: () => void) => void;
 }
+export interface Settings
+{
+    setVisible: (value: boolean) => void;
+    setClose: (value ?: () => void) => void;
+}
 
 export interface IrMenuBar
 {
@@ -27,6 +32,22 @@ export interface IrNavBar
     width: number;
 }
 
+const defMenuContext = () : MenuContext =>
+{
+    return {
+        setVisible: () => { return; },
+        setChildren: () => { return; },
+        setInset: () => { return; },
+        setCancel: () => { return; }
+    }
+}
+const defSettings = () : Settings =>
+{
+    return {
+        setVisible: () => { return; },
+        setClose: () => { return;}
+    }
+}
 const defIrMenuBar = () : IrMenuBar =>
 {
     return {
@@ -35,15 +56,6 @@ const defIrMenuBar = () : IrMenuBar =>
         selected: undefined,
 
         onClick: () => { return; }
-    }
-}
-const defMenuContext = () : MenuContext =>
-{
-    return {
-        setVisible: () => { return; },
-        setChildren: () => { return; },
-        setInset: () => { return; },
-        setCancel: () => { return; }
     }
 }
 const defIrNavBar = () : IrNavBar =>
@@ -57,6 +69,10 @@ const useMenuContext = () =>
 {
     return react.useContext (ContextMenuContext);
 }
+const useSettings = () =>
+{
+    return react.useContext (ContextSettings);
+}
 const useIrMenuBar = () =>
 {
     return react.useContext (ContextIrMenuBar);
@@ -68,13 +84,17 @@ const useIrNavBar = () =>
 
 const Content = () => { return; }
 const ContextMenuContext = react.createContext (defMenuContext ());
+const ContextSettings = react.createContext (defSettings ());
 const ContextIrMenuBar = react.createContext (defIrMenuBar ());
 const ContextIrNavBar = react.createContext (defIrNavBar ());
 
 Content.ProviderMenuContext = ContextMenuContext;
+Content.ProviderSettings = ContextSettings;
 
 Content.defMenuContext = defMenuContext;
-Content.useMenuContext = useMenuContext;
+Content.defSettings = defSettings;
+Content.useMenuContext = useMenuContext
+Content.useSettings = useSettings;
 
 Content.ProviderIrMenuBar = ContextIrMenuBar.Provider;
 Content.ProviderIrNavBar = ContextIrNavBar.Provider;

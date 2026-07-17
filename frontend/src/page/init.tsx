@@ -60,7 +60,7 @@ const content = function Init ()
 
 content.Splash = function InitSplash ({ visible }: { visible: boolean; })
 {
-  react.useEffect (() =>
+  react.useLayoutEffect (() =>
   {
     const text = document.getElementById ("app-splash-text");
 
@@ -91,7 +91,6 @@ content.Splash = function InitSplash ({ visible }: { visible: boolean; })
     }
   },
   [visible]);
-
 
   return (<></>);
 }

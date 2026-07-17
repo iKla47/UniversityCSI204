@@ -1,18 +1,19 @@
 import { Outlet } from "react-router";
 import 
 { 
-  ShoppingCart, BookMarked, Info, Settings, LogOut,
+  ShoppingCart, BookMarked, Info, SettingsIcon, LogOut,
   ShoppingBasket, Truck
 } 
 from "lucide-react";
 
 import ctx        from "#context/common.ts";
 import ctxUI      from "#context/common.ui.ts";
+import apiAuth    from "#util/api.auth.ts";
 import navigation from "#util/common.navigation.ts";
 import branding   from "#asset/image/favicon.ico";
 
-import Auth from "#component/auth.tsx";
 import MenuContext from "#component/menu.context.tsx";
+import Settings from "#component/settings.tsx";
 import NavBar from "#component/navbar.tsx";
 
 
@@ -26,14 +27,16 @@ const content = function ()
 
     <Outlet/>
     <content.NavBar/>
-    <Auth.Provider/>
+
     <MenuContext.Provider/>
+    <Settings.Provider/>
   </>
   );
 }
 content.NavBar = function PresetNavBar ()
 {
   const menuCtx = ctxUI.useMenuContext ();
+  const settings = ctxUI.useSettings ();
   const auth = ctx.useAuth ();
   const authSigned = ctx.authSigned (auth);
 
@@ -50,14 +53,26 @@ content.NavBar = function PresetNavBar ()
     }
     const onShipping = () =>
     {
+      menuCtx.setVisible (false);
+      void navigation.toShipping ();
       return;
     }
     const onSettings = () =>
     {
+      settings.setClose (() =>
+      {
+        settings.setVisible (false);
+      });
+      settings.setVisible (true);
+      menuCtx.setVisible (false);
+      // void navigation.toSettings ();
       return;
     }
     const onSignOut = () =>
     {
+      apiAuth.saveSetPrefered (-1);
+      apiAuth.saveWrite ();
+      location.reload ();
       return;
     }
 
@@ -72,7 +87,7 @@ content.NavBar = function PresetNavBar ()
         onClick={onShipping}/>
       <MenuContext.Item 
         text="การตั้งค่า" 
-        icon={<Settings/>}
+        icon={<SettingsIcon/>}
         onClick={onSettings}/>
       <MenuContext.Item 
         text="ลงชื่อออก" 

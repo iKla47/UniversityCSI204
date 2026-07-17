@@ -1,5 +1,6 @@
 import react from "react";
 import styled from "styled-components";
+import context from "#context/common.ui.ts";
 import MenuBar from "#component/menu.bar.tsx";
 import
 {
@@ -7,17 +8,20 @@ import
   UserLock,
   Container,
   Coins,
-  ArrowLeftCircleIcon
+  ArrowLeftCircleIcon,
+  XIcon
 }
 from "lucide-react";
 
 interface PropRoot
 {
+  visible ?: boolean;
   transparent ?: boolean;
   width ?: string;
   widthMax ?: string;
   height ?: string;
   heightMax ?: string;
+  onClose ?: () => void;
 }
 interface PropView
 {
@@ -27,12 +31,11 @@ interface PropView
   height ?: string;
   heightMax ?: string;
 
-  container ?: react.RefObject<HTMLDivElement>;
+  container ?: react.Ref<HTMLDivElement> | undefined;
   children ?: react.ReactNode;
 }
 interface PropMenu
 {
-  container ?: react.RefObject<HTMLDivElement>;
   content ?: [number, react.Dispatch<react.SetStateAction<number>>];
   visible ?: boolean;
   width ?: string;
@@ -75,12 +78,36 @@ interface PropTemplateBackButton
 */
 const content = function Settings (prop: PropRoot)
 {
-  const containerRef = react.useRef (HTMLDivElement.prototype);
-  const [ctn, setCtn] = react.useState ( content.CONTENT_GENERAL);
+  return (<content.Root
+    visible={prop.visible}
+    transparent={prop.transparent}
+    width={prop.width}
+    widthMax={prop.widthMax}
+    height={prop.height}
+    heightMax={prop.heightMax}
+  />);
+}
+content.Root = function SettingsRoot (prop: PropRoot)
+{
+  const visible = prop.visible ?? false;
+  const container = react.useRef<HTMLDivElement> (HTMLDivElement.prototype);
+  const [ctn, setCtn] = react.useState (content.CONTENT_GENERAL);
 
   const SIZE_SMALL = "256px";
   const SIZE_THEREHOLD = 768;
 
+  /**
+   * ทำงานเมื่อผู้ใช้กดปุ่มปิด
+  */
+  const onClose = (event: react.MouseEvent) =>
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+
+    if (prop.onClose) {
+      prop.onClose ();
+    }
+  }
   /**
    * ทำงานเมื่อผู้ใช้กดปุ่มย้อนกลับ
   */
@@ -100,9 +127,10 @@ const content = function Settings (prop: PropRoot)
   */
   const resizeValue = () =>
   {
-    if (containerRef.current != HTMLDivElement.prototype)
+    if (container.current instanceof HTMLDivElement &&
+        container.current != HTMLDivElement.prototype)
     {
-      return (containerRef.current.clientWidth) >= 
+      return (container.current.clientWidth) >= 
         SIZE_THEREHOLD ? SIZE_SMALL : "100%";
     }
     return SIZE_SMALL;
@@ -125,28 +153,34 @@ const content = function Settings (prop: PropRoot)
   []);
 
   return (
-    <content.View 
-        transparent={prop.transparent} 
-        width={prop.width}
-        widthMax={prop.widthMax}
-        height={prop.height}
-        heightMax={prop.heightMax}
-        container={containerRef}>
-      <content.Menu 
-        visible={menuWidth === SIZE_SMALL ? true : !menuSelected}
-        width={"100%"}
-        widthMax={menuWidth}
-        container={containerRef} 
-        content={[ctn, (x) => { 
-          setCtn (x);
-          setMenuSelected (true);
-        }]}/>
-      <content.Content 
-        visible={menuWidth === SIZE_SMALL ? true : menuSelected}
-        content={ctn}
-        onBack={menuWidth === SIZE_SMALL ? undefined : onBack}
-      />
-    </content.View>
+    <react.Activity mode={visible ? "visible" : "hidden"}>
+      <content.View 
+          transparent={prop.transparent} 
+          width={prop.width}
+          widthMax={prop.widthMax}
+          height={prop.height}
+          heightMax={prop.heightMax}
+          container={container}>
+        <content.Menu 
+          visible={menuWidth === SIZE_SMALL ? true : !menuSelected}
+          width={"100%"}
+          widthMax={menuWidth}
+          content={[ctn, (x) => { 
+            setCtn (x);
+            setMenuSelected (true);
+          }]}/>
+        <content.Content 
+          visible={menuWidth === SIZE_SMALL ? true : menuSelected}
+          content={ctn}
+          onBack={menuWidth === SIZE_SMALL ? undefined : onBack}
+        />
+        <StyleBack 
+          $visible={prop.onClose ? true : false} 
+          onClick={onClose}>
+          <XIcon/>
+        </StyleBack>
+      </content.View>
+    </react.Activity>
   );
 }
 content.View = function SettingsView (prop: PropView)
@@ -351,6 +385,34 @@ content.ContentPayment = function SettingsContentPayment
     </react.Activity>
   );
 }
+content.Provider = function SettingsProvider ()
+{
+  const ctx = context.useSettings ();
+  const onClose = react.useRef<(() => void)> (undefined);
+  const [visible, setVisible] = react.useState (false);
+
+  react.useEffect (() =>
+  {
+    ctx.setVisible = (value) => { setVisible (value); }
+    ctx.setClose = (value) => { onClose.current = value; }
+
+    return () =>
+    {
+      ctx.setClose = () => { return; }
+      ctx.setVisible = () => { return; }
+    }
+  },
+  []);
+
+  return (
+    <StyleProvider $visible={visible}>
+      <content.Root 
+        visible={visible}
+        transparent={false}
+        onClose={onClose.current}/>
+    </StyleProvider>
+  );
+}
 
 content.TemplateBackButton = function SettingsTemplateBackButton 
   (prop: PropTemplateBackButton) : react.ReactElement
@@ -399,9 +461,43 @@ const StyleRoot = styled.div<{
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
+  position: relative;
+`;
+const StyleBack = styled.button<{ $visible: boolean; }>`
+  width: 32px;
+  height: 32px;
+  border: none;
+  position: absolute;
+  inset: 16px 16px auto auto;
+  margin: 0px;
+  padding: 0px;
+  display: ${prop => prop.$visible ? "block" : "none"};
+
+  & > img, & > svg
+  {
+    display: inline-block;
+    vertical-align: middle;
+    width: 24px;
+    height: 24px;
+  }
 `;
 const StyleContent = styled.div`
   flex-grow: 1;
+`;
+const StyleProvider = styled.div<{ $visible: boolean; }>`
+  position: fixed;
+  pointer-events: ${prop => prop.$visible ? "all" : "hidden"};
+  inset: 0px;
+  margin: 0px;
+  padding: 0px;
+  overflow: hidden;
+  overscroll-behavior: none;
+  padding: 16px;
+
+  background-color: rgba(0,0,0,0.5);
+  display: ${prop => prop.$visible ? "flex" : "none"};
+  align-items: center;
+  justify-content: center;
 `;
 
 const StyleTemplateHeader = styled.h1`
@@ -421,8 +517,15 @@ const StyleTemplateField = styled.div`
   align-items: center;
   height: 48px;
 
+  @media (max-width: 768px) 
+  {
+    min-height: 48px;
+    height: auto;
+  }
+
   & > div:nth-child(1)
   {
+    width: 100%;
     flex-grow: 1;
     /* background-color: var(--bg-secondary); */
   }
@@ -431,7 +534,7 @@ const StyleTemplateField = styled.div`
     display: inline-flex;
     align-items: center;
     justify-content: end;
-    width: 324px;
+    width: 100%;
     max-width: 324px;
     gap: 16px;
   }

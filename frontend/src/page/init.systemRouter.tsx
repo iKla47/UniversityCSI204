@@ -29,14 +29,14 @@ const content = function InitSystemRouter (
 
   return (
     <Routes>
-      <Route Component={content.Outlet}>
+      <Route Component={content.Outlet} caseSensitive>
         {/* Common */}
         <Route>
           <Route path="/auth" element={<GAuth/>}/>
           <Route path="/settings" element={<GSettings/>}/>
         </Route>
         {/* Customer */}
-        <Route Component={VCustomer}>
+        <Route Component={VCustomer} caseSensitive>
           <Route index Component={CHome}/>
           <Route path="/about" Component={CAbout}/>
           <Route path="/product/:id" Component={CProd}/>
@@ -44,7 +44,7 @@ const content = function InitSystemRouter (
           <Route path="/shipping" Component={CShipping}/>
         </Route>
         {/* Staff && Manager */}
-        <Route>
+        <Route caseSensitive>
           <Route path="/staff" Component={SMain}/>
           <Route path="/admin" Component={ADashboard}/>
         </Route>

@@ -14,6 +14,8 @@ content.PATH_AUTH = "/auth";
 content.PATH_DOC = "/doc";
 content.PATH_PRODUCT = "/product";
 content.PATH_PRODUCT_BROWSER = "/product-browser";
+content.PATH_SHIPPING = "/shipping";
+content.PATH_SETTINGS = "/settings";
 
 content.init = function (navigator: NavigateFunction)
 {
@@ -25,28 +27,36 @@ content.terminate = function ()
     router = function () { return; };
     return;
 }
-content.toIndex = function () 
+content.toIndex = () =>
 {
     return router (content.PATH_INDEX);
 }
-content.toAbout = function ()
+content.toAbout = () =>
 {
     return router (content.PATH_ABOUT);
 }
-content.toAuth = function ()
+content.toAuth = () =>
 {
     return router (content.PATH_AUTH);
 }
-content.toDoc = function ()
+content.toDoc = () =>
 {
     location.href = content.PATH_DOC;
 }
-content.toProduct = function (id: number)
+content.toProduct = (id: number) =>
 {
     return router (content.PATH_PRODUCT + `?id=${String (id)}`);
 }
-content.toProductBrowser = function ()
+content.toProductBrowser = () =>
 {
     return router (content.PATH_PRODUCT_BROWSER);
+}
+content.toShipping = () =>
+{
+    return router (content.PATH_SHIPPING);
+}
+content.toSettings = () =>
+{
+    return router (content.PATH_SETTINGS);
 }
 export default content;

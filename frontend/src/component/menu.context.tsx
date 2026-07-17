@@ -167,9 +167,18 @@ content.Item = function MenuContextItem (prop: PropItem)
     }
     return <img src={empty} alt={""}/>;;
   }
+  const onClick = (event: react.MouseEvent) =>
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+
+    if (prop.onClick) {
+      prop.onClick ();
+    }
+  }
 
   return (
-    <StyleItem>
+    <StyleItem onClick={onClick}>
       <Image/>
       {prop.text}
     </StyleItem>

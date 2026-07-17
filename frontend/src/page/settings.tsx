@@ -3,7 +3,9 @@ import Component from "#component/settings.tsx";
 const content = () =>
 {
   return (
-    <Component transparent={true}/>
+    <Component 
+      visible={true} 
+      transparent={true}/>
   )
 }
 /**
