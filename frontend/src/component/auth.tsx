@@ -2,12 +2,17 @@ import react    from "react";
 import styled   from "styled-components";
 import api      from "#util/api.auth.ts";
 import error    from "#util/common.error.ts";
-import context  from "#context/common.ts";
+import bg       from "#asset/image/auth.bg.jpg";
 
+import { type Session } from "#util/api.auth.ts";
 import { Activity }  from "react";
 import { keyframes } from "styled-components";
-import { ArrowLeft, RotateCcw, UserRoundPlus } from "lucide-react";
-import { type Session } from "#util/api.auth.ts";
+import 
+{ 
+  ArrowLeft, RotateCcw, UserRoundPlus, ShieldAlert, KeyRound,
+  ShieldUserIcon
+} 
+from "lucide-react";
 
 type ActivityMode = "visible" | "hidden" | undefined;
 
@@ -33,6 +38,10 @@ interface PropViewForm
   children ?: react.ReactNode;
   transparent ?: boolean;
 }
+interface PropViewFormPending
+{
+  visible ?: boolean;
+}
 interface PropFormSignInId
 {
   visible ?: boolean;
@@ -48,6 +57,8 @@ interface PropFormSignInPwd
 {
   visible ?: boolean;
   visibleAnimation ?: number;
+  title ?: string;
+  description ?: string;
   pending ?: boolean;
   feedback ?: PropTemplateFeedback;
   onSubmit ?: (value: string) => void;
@@ -143,7 +154,7 @@ const checkResSignInId = (input: unknown) : PropTemplateFeedback =>
       `เกิดข้อผิดพลาดทางด้านเครือข่าย โปรดตรวจสอบการเชื่อมต่อเครือข่ายของคุณ` 
     };
   }
-  if (input instanceof error.NotFound) 
+  if (input instanceof error.NotAuthorized) 
   {
     return { 
       type: content.FEEDBACK_ERROR, 
@@ -329,6 +340,7 @@ const content = function Auth (prop: PropContent)
 
   return (
     <content.View>
+      <content.ViewBackground/>
       <content.ViewForm transparent={prop.transparent ?? false}>
         <content.FormHome/>
         <content.FormSignInId
@@ -342,6 +354,8 @@ const content = function Auth (prop: PropContent)
         <content.FormSignInPwd
           visible={page === content.PAGE_SIGN_IN_PWD} 
           visibleAnimation={content.ANIM_NONE}
+          title={prop.title}
+          description={prop.description}
           feedback={feedback}
           pending={pending}
           onSubmit={onSubmitPwd}
@@ -352,6 +366,7 @@ const content = function Auth (prop: PropContent)
         <content.FormSignUpId/>
         <content.FormSigned/>
         <content.FormSuspended/>
+        <content.ViewPending visible={pending}/>
       </content.ViewForm>
     </content.View>
   );
@@ -422,12 +437,22 @@ content.View = function AuthView (prop: PropView)
     </StyleView>
   );
 }
+content.ViewBackground = function AuthViewBackground ()
+{
+  return (<StyleViewBackground src={bg}/>)
+}
 content.ViewForm = function AuthViewForm (prop: PropViewForm)
 {
   return (
     <StyleForm $transparent={prop.transparent}>
       {prop.children}
     </StyleForm>
+  );
+}
+content.ViewPending = function AuthViewPending (prop: PropViewFormPending)
+{
+  return (
+    <StyleFormPending $visible={prop.visible ?? false}/>
   );
 }
 content.FormHome = function AuthFormHome ()
@@ -487,7 +512,16 @@ content.FormSignInId = function AuthFormSignInId (prop: PropFormSignInId)
         onBack={prop.onBack ? onBack : undefined}
       />
       <content.TemplateMain>
-        <label htmlFor="auth-signin-id">รหัสประจำตัว</label>
+        <label htmlFor="auth-signin-id" style={{
+          marginBottom: "16px"
+        }}>
+          <ShieldUserIcon size={24} style={{
+            display: "inline-block",
+            verticalAlign: "middle",
+            marginRight: "16px"
+          }}/>
+          <span>รหัสประจำตัว</span>
+        </label>
         <input id="auth-signin-id" ref={field} autoFocus
           type="text" autoComplete="username webauthn"
           placeholder="อย่างน้อย 2 ตัวอักษร"
@@ -505,6 +539,7 @@ content.FormSignInId = function AuthFormSignInId (prop: PropFormSignInId)
       </content.TemplateMain>
       <content.TemplateFooter>
         <StyleTempTextBox>
+          <ShieldAlert/>
           หากนี้ไม่ใช่อุปกรณ์ของคุณ 
           <span>ให้ใช้งานโหมดไม่ระบุตัวตนของเบราว์เซอร์</span>
           <span>เพื่อเลี่ยงความเสี่ยงการรั่วไหลของข้อมูลของคุณ</span>
@@ -520,7 +555,10 @@ content.FormSignInPwd = function AuthFormSignInPwd (prop: PropFormSignInPwd)
 
   const onSubmit = () =>
   {
-    if (prop.onSubmit) {
+    if (prop.onSubmit && 
+        field.current instanceof HTMLInputElement &&
+        field.current != HTMLInputElement.prototype) 
+    {
       prop.onSubmit (field.current.value);
     }
   }
@@ -540,20 +578,30 @@ content.FormSignInPwd = function AuthFormSignInPwd (prop: PropFormSignInPwd)
   }
   const onBack = () =>
   {
-    if (prop.onBack) {
+    if (prop.onBack && 
+        field.current instanceof HTMLInputElement &&
+        field.current != HTMLInputElement.prototype) 
+    {
       prop.onBack (field.current.value);
     }
   }
 
   react.useEffect (() =>
   {
+    if (prop.visible && 
+        field.current instanceof HTMLInputElement &&
+        field.current != HTMLInputElement.prototype) 
+    {
+      field.current.focus ();
+    }
+  },
+  [mode]);
+
+  react.useEffect (() =>
+  {
     if (prop.visibleAnimation == content.ANIM_NONE)
     {
       setMode (prop.visible ? "visible" : "hidden");
-      return;
-    }
-    if (prop.visible) {
-      field.current.focus ();
     }
   },
   [prop.visible]);
@@ -561,16 +609,33 @@ content.FormSignInPwd = function AuthFormSignInPwd (prop: PropFormSignInPwd)
   return (
     <Activity mode={mode}>
       <content.TemplateHeader
+        title={prop.title}
+        description={prop.description}
         onBack={prop.onBack ? onBack : undefined}
       />
       <content.TemplateMain>
-        <label htmlFor="auth-signin-pwd">รหัสผ่าน</label>
+
+        <label htmlFor="auth-signin-pwd" style={{
+          marginBottom: "16px"
+        }}>
+          <KeyRound size={24} style={{
+            display: "inline-block",
+            verticalAlign: "middle",
+            marginRight: "16px"
+          }}/>
+          <span>รหัสผ่าน</span>
+        </label>
         <input id="auth-signin-pwd" ref={field} autoFocus
-          type="text" autoComplete="username webauthn"
+          type="password" autoComplete="current-password webauthn"
           placeholder="อย่างน้อย 8 ตัวอักษร"
           disabled={prop.pending ?? false}
           onKeyUp={onSubmitInput}
         />
+        {/* <div>
+          <input id="auth-signin-pwd-show" type="checkbox"/>
+          <label htmlFor="auth-signin-pwd-show">แสดงรหัสผ่าน</label>
+        </div> */}
+
         <content.TemplateFeedback
           type={prop.feedback?.type}
           text={prop.feedback?.text}/>
@@ -580,6 +645,7 @@ content.FormSignInPwd = function AuthFormSignInPwd (prop: PropFormSignInPwd)
       </content.TemplateMain>
       <content.TemplateFooter>
         <StyleTempTextBox>
+          <ShieldAlert size={24}/>
           หากนี้ไม่ใช่อุปกรณ์ของคุณ 
           <span>ให้ใช้งานโหมดไม่ระบุตัวตนของเบราว์เซอร์</span>
           <span>เพื่อเลี่ยงความเสี่ยงการรั่วไหลของข้อมูลของคุณ</span>
@@ -626,13 +692,13 @@ content.TemplateHeader = function AuthTempHeader (prop: PropTemplateHeader)
 
   return (
     <StyleTempHeader>
+      <StyleTempHeaderTitle>{prop.title ?? ""}</StyleTempHeaderTitle>
+      <StyleTempHeaderDesc>{prop.description ?? ""}</StyleTempHeaderDesc>
       {prop.onBack ?
       <StyleTempHeaderBack onClick={onBack}>
         <ArrowLeft/>
         <span>ย้อนกลับ</span>
       </StyleTempHeaderBack> : <></>}
-      <StyleTempHeaderTitle>{prop.title ?? ""}</StyleTempHeaderTitle>
-      <StyleTempHeaderDesc>{prop.description ?? ""}</StyleTempHeaderDesc>
     </StyleTempHeader>
   );
 }
@@ -692,10 +758,30 @@ const StyleViewInner = styled.div`
   justify-content: center;
   align-items: center;
 `;
+const StyleViewBackground = styled.img`
+  position: absolute;
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  transition: opacity 250ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  @media (max-width: 512px)
+  {
+    opacity: 0.0;
+  }
+`;
 
 const AnimFormOpen = keyframes`
   from { scale: 1.25;}
   to { scale: 1.0; }
+`;
+const AnimFormPending = keyframes`
+  /* 0% { background-position: 0% 50%; }
+  50% { background-position:100% 50%; }
+  100% { background-position:0% 50%; } */
+
+  0% { background-position: 100% 100%; }
+  100% { background-position: 0% 100%; }
 `;
 
 const StyleForm = styled.div<{ $transparent ?: boolean; }>`
@@ -705,6 +791,9 @@ const StyleForm = styled.div<{ $transparent ?: boolean; }>`
   background-color: ${
     prop => prop.$transparent ? 'transparent' : 'var(--bg-primary)'
   };
+  outline: 2px solid ${
+    prop => prop.$transparent ? 'transparent' : 'var(--bg-primary-border)'
+  };
   border-radius: 8px;
   transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
   animation-name: ${AnimFormOpen};
@@ -713,16 +802,48 @@ const StyleForm = styled.div<{ $transparent ?: boolean; }>`
 
   @media (max-width: 512px)
   {
+    outline-width: 0px;
     width: 100%;
     height: 100%;
     background-color: transparent;
     border-radius: 0px;
   }
 
+  position: relative;
   display: flex;
   flex-direction: column;
   flex-wrap: nowrap;
   gap: 16px;
+`;
+const StyleFormPending = styled.div<{ $visible: boolean; }>`
+  pointer-events: none;
+  position: absolute;
+  inset: 0px 0px auto 0px;
+  width: 100%;
+  height: 8px;
+  opacity: ${prop => prop.$visible ? "1.0" : "0.0"};
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg, 
+    var(--bg-primary),
+    var(--bg-primary),
+    var(--bg-primary),
+    var(--bg-primary-border),
+    var(--bg-primary-border),
+    var(--bg-primary-border),
+    var(--bg-primary),
+    var(--bg-primary),
+    var(--bg-primary)
+  );
+  background-size: 400% 400%;
+  transition: opacity 250ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  -webkit-animation: ${AnimFormPending} 1000ms 
+    cubic-bezier(0.85, 0, 0.15, 1) infinite;
+  -moz-animation: ${AnimFormPending} 1000ms 
+    cubic-bezier(0.85, 0, 0.15, 1) infinite;
+  animation: ${AnimFormPending} 1000ms 
+    cubic-bezier(0.85, 0, 0.15, 1) infinite;
 `;
 
 const StyleTempHeader = styled.header`
@@ -735,6 +856,8 @@ const StyleTempHeaderBack = styled.button`
   font-size: 1rem;
   font-weight: normal;
   text-align: start;
+  background-color: transparent;
+  margin: 16px 0px;
 
   & > img,
   & > svg
@@ -782,6 +905,13 @@ const StyleTempTextBox = styled.p`
     border-radius: 4px;
     padding: 8px;
   }
+  & > img,
+  & > svg
+  {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
 `;
 const StyleTempOption = styled.button`
   background-color: transparent;
@@ -804,7 +934,7 @@ const StyleTempFeedback = styled.p<{ $color: number; }>`
   font-size: 1rem;
   font-weight: normal;
   width: 100%;
-  height: 32px;
+  height: 48px;
   color: ${prop => 
     prop.$color === content.FEEDBACK_WARNING ? "var(--text-warning)" :
     prop.$color === content.FEEDBACK_ERROR ? "var(--text-error)" :

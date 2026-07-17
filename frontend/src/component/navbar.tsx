@@ -60,6 +60,10 @@ interface PropMenu
    * องค์ประกอบย่อยที่อยู่ในภายแท็กดังกล่าว (ถ้ามี)
   */
   children ?: react.ReactNode;
+  /**
+   * ซ่อนถ้าความกว้างน้อยกว่าที่กำหนดไว้
+  */
+  hideOnWidth ?: number;
 }
 /**
  * โครงสร้างคุณสมบัติของส่วนประกอบ MenuItem
@@ -300,8 +304,11 @@ content.SignIn = function NavBarSignIn (prop: PropSignIn)
 */
 content.Menu = function NavBarMenu (prop: PropMenu)
 {
+  const context = ctx.useIrNavBar ();
+  const visible = prop.hideOnWidth ? (prop.hideOnWidth <= context.width) : true;
+
   return (
-    <Menu>{prop.children}</Menu>
+    <Menu $visible={visible}>{prop.children}</Menu>
   );
 }
 /**
@@ -474,7 +481,6 @@ const Profile = styled.button`
   }
 `;
 const SignIn = styled.button`
-  min-width: 32px;
   min-height: 32px;
   max-height: 32px;
   font-size: 1rem;
@@ -493,11 +499,15 @@ const SignIn = styled.button`
     background-color: var(--btn-primary-active);
     color: var(--btn-primary-active-text);
   }
+  @media (max-width: 1024px)
+  {
+    min-width: 128px;
+  }
 `;
-const Menu = styled.div`
+const Menu = styled.div<{ $visible: boolean; }>`
   margin: 0px 8px;
   max-height: 32px;
-  display: inline-flex;
+  display: ${prop => prop.$visible ? " inline-flex" : "none"};
 `;
 const MenuItem = styled.button<{ $visible: boolean; }>`
   min-width: 32px;

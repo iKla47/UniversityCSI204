@@ -20,11 +20,13 @@ content.getRouter = function ()
     const route = http.router ();
     const limiterId = http.useRateLimit ({
         window: 60000 * 10,
-        limit: 3
+        limit: 3,
+        skipSuccess: true
     });
     const limiterPwd = http.useRateLimit ({
         window: 60000,
-        limit: 3
+        limit: 3,
+        skipSuccess: true
     });
     const validation = control.validateOnlyAuth ();
 

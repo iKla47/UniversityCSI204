@@ -111,7 +111,7 @@ content.NavBar = function PresetNavBar ()
       <NavBar.Search 
         placeholder="ค้นหา เกมสุดที่รัก ..."
         onClick={toProductBrowser}/>
-      <NavBar.Menu>
+      <NavBar.Menu hideOnWidth={512}>
         <NavBar.MenuItem 
           icon={<ShoppingCart/>}
           text="สินค้า" 

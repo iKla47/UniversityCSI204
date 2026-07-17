@@ -133,7 +133,8 @@ content.Root = function SettingsRoot (prop: PropRoot)
       return (container.current.clientWidth) >= 
         SIZE_THEREHOLD ? SIZE_SMALL : "100%";
     }
-    return SIZE_SMALL;
+    return (window.innerWidth) >= 
+      SIZE_THEREHOLD ? SIZE_SMALL : "100%";
   }
   const [menuWidth, setMenuWidth] = react.useState (resizeValue ());
   const [menuSelected, setMenuSelected] = react.useState (false);

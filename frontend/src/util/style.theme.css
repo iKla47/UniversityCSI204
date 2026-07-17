@@ -30,13 +30,32 @@ body
     --btn-primary-hover-text: #FFFFFF;
     --btn-primary-active: #204fb4;
     --btn-primary-active-text: #FFFFFF;
+    --btn-primary-disabled: #393e4a;
+    --btn-primary-disabled-text: #606060;
 
     --input-primary: #263653;
     --input-primary-border: #4d6fb8;
     --input-primary-hover: #263653;
     --input-primary-hover-border: #7e9ee4;
-    --input-primary-active: #263653;
+    --input-primary-active: #314770;
     --input-primary-active-border: #588af7;
+
+    --input-primary-disabled: #393e4a;
+    --input-primary-disabled-border: #52638a;
+
+    --checkbox-primary: #263653;
+    --checkbox-primary-border: #4d6fb8;
+    --checkbox-primary-hover: #263653;
+    --checkbox-primary-hover-border: #7e9ee4;
+    --checkbox-primary-active: #588af7;
+    --checkbox-primary-active-border: #588af7;
+
+    --checkbox-primary-checked: #588af7;
+    --checkbox-primary-checked-border: #588af7;
+    --checkbox-primary-checked-hover: #588af7;
+    --checkbox-primary-checked-hover-border: #99c7ec;
+    --checkbox-primary-checked-active: #588af7;
+    --checkbox-primary-checked-active-border: #b6d7f0;
 
     --text-primary: rgb(255, 255, 255);
     --text-primary-hover: rgb(191, 221, 237);
@@ -78,6 +97,7 @@ code
 }
 button
 {
+    cursor: pointer;
     min-width: 32px;
     min-height: 32px;
     font-size: 1rem;
@@ -97,12 +117,18 @@ button
         color: var(--btn-primary-active-text);
     }
 }
+button:disabled,
+button:disabled:hover,
+button:disabled:focus,
+button:disabled:active
+{
+    cursor: not-allowed;
+    background-color: var(--btn-primary-disabled);
+    color: var(--btn-primary-disabled-text);
+}
 input
 {
-    min-width: 32px;
-    min-height: 32px;
-    font-size: 1rem;
-    padding: 8px;
+    cursor: text;
     background-color: var(--input-primary);
     border: 2px solid var(--input-primary-border);
     border-radius: 4px;
@@ -117,6 +143,54 @@ input
         background-color: var(--input-primary-active);
         border: 2px solid var(--input-primary-active-border);
     }
+}
+input:disabled,
+input:disabled,
+input:disabled:focus,
+input:disabled:active
+{
+    cursor: not-allowed;
+    background-color: var(--input-primary-disabled);
+    border: 2px solid var(--input-primary-disabled-border);  
+    color: var(--btn-primary-text);
+}
+
+input[type="checkbox"]
+{
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+
+    background-color: transparent;
+    border: 2px solid var(--checkbox-primary-border);
+    border-radius: 4px;
+    outline: none;
+}
+input[type="checkbox"]:hover, input[type="checkbox"]:focus
+{
+    border: 2px solid var(--checkbox-primary-hover-border);
+}
+input[type="checkbox"]:active
+{
+    border: 2px solid var(--checkbox-primary-active-border); 
+}
+input[type="checkbox"]:checked
+{
+    src: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>');
+
+    background-color: var(--checkbox-primary-checked);
+    border: 2px solid var(--checkbox-primary-checked-border);
+}
+input[type="checkbox"]:checked:hover,
+input[type="checkbox"]:checked:focus
+{
+    background-color: var(--checkbox-primary-checked-hover);
+    border: 2px solid var(--checkbox-primary-checked-hover-border);
+}
+input[type="checkbox"]:checked:active
+{
+    background-color: var(--checkbox-primary-checked-active);
+    border: 2px solid var(--checkbox-primary-checked-active-border);
 }
 
 #app-splash

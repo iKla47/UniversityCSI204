@@ -45,9 +45,19 @@ button
 }
 input
 {
+    min-width: 32px;
+    min-height: 32px;
     font-weight: normal;
     font-size: 1rem;
     padding: 8px;
+}
+input[type="checkbox"]
+{
+    place-content: center;
+    min-width: 24px;
+    min-height: 24px;
+    display: inline-block;
+    vertical-align: middle;
 }
 
 #app-splash

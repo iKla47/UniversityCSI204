@@ -630,14 +630,19 @@ content.delete = function (path: string, routeHandler: RequestHandler)
 {
     return netRouter.delete (path, routeHandler);
 }
-content.useRateLimit = function ({ window = 10000, limit = 100 })
+content.useRateLimit = function ({ 
+    window = 10000, 
+    limit = 100,
+    skipSuccess: skipSuccessful = false,
+    skipFailed = false,
+})
 {
     return rateLimit ({
         legacyHeaders: false,
         windowMs: window,
         limit: limit,
-        
-        skipFailedRequests: false,
+        skipSuccessfulRequests: skipSuccessful,        
+        skipFailedRequests: skipFailed,
 
         handler: (request: express.Request, response: express.Response) =>
         {

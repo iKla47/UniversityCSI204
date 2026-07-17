@@ -172,7 +172,7 @@ content.challengeIdentified = (request: Request, response: Response) =>
         })
         .catch ((e: unknown) =>
         {
-            if (e instanceof error.NotFound)
+            if (e instanceof error.BadAuth)
             {
                 response.status (http.STATUS_UNAUTHORIZED);
                 response.end ();
