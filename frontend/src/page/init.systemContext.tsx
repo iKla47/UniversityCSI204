@@ -4,6 +4,15 @@ import ctxUI  from "#context/common.ui.ts";
 
 import apiAuth from "#util/api.auth.ts";
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+/**
+ * ระบบของ React Query
+*/
+const query = new QueryClient ();
+/**
+ * ส่วนประกอบการทำงานของระบบ
+*/
 const content = function InitSystemContext (
   { onComplete, children }: 
   {
@@ -44,7 +53,9 @@ const content = function InitSystemContext (
       <ctx.ProviderLanguage value={language.current}>
         <ctxUI.ProviderMenuContext value={menuContext.current}>
           <ctxUI.ProviderSettings value={settings.current}>
-            {children}
+            <QueryClientProvider client={query}>
+              {children}
+            </QueryClientProvider>
           </ctxUI.ProviderSettings>
         </ctxUI.ProviderMenuContext>
       </ctx.ProviderLanguage>

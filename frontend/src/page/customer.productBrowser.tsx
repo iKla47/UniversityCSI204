@@ -1,15 +1,29 @@
 import react      from "react";
 import styled     from "styled-components";
-import navigation from "#util/common.navigation.ts";
+
+import ctx from "#context/common.ts";
+import cmmNavigation from "#util/common.navigation.ts";
+import apiProduct from "#util/api.product.ts";
 
 import { useSearchParams } from "react-router";
+import { useQuery } from "@tanstack/react-query";
+
+import type { ReactNode } from "react";
+import type { UseQueryResult } from "@tanstack/react-query";
+import type { FetchBasic } from "#util/api.product.ts";
 
 import testArtwork from "#asset/image/test.artwork.jpg";
 
+interface PropList
+{
+  queryList: UseQueryResult<FetchBasic []>;
+}
 interface PropItem
 {
   id: number;
-  src: string;
+  name: string;
+  artwork: string | undefined;
+
   onClick: (id: number) => void;
 }
 
@@ -17,6 +31,12 @@ const content = function ProductBrowser ()
 {
   const [serachParam] = useSearchParams ();
   const search = serachParam.get ("search");
+  const auth = ctx.useAuth ();
+
+  const queryList = useQuery ({
+    queryKey: ["Product", "GetBasicByList"],
+    queryFn: () => apiProduct.getBasicByList (auth.session),
+  });
 
   react.useEffect (() =>
   {
@@ -25,54 +45,51 @@ const content = function ProductBrowser ()
   [search]);
 
   return (<>
-    <content.List/>
+    <content.List queryList={queryList}/>
     <content.Filter/>
   </>);
 }
-content.List = function ProductBrowserList ()
+content.List = function ProductBrowserList (prop: PropList)
 {
+  const [children, setChildren] = react.useState<ReactNode> ([]);
+
   const onClick = (id: number) =>
   {
-    void navigation.toProduct (id);
+    void cmmNavigation.toProduct (id);
     return;
   }
+  const onRender = () =>
+  {
+    const query = prop.queryList;
+
+    if (!query.data) {
+      return <></>;
+    }
+    setChildren (query.data.map ((x) =>
+    {
+      const key = String (x.id);
+      const id = x.id;
+      const name = x.name;
+      const artwork = (x.artwork.length > 0) ? x.artwork : undefined;
+
+      return <content.ListItem 
+        key={key}
+        id={id}
+        name={name}
+        artwork={artwork}
+        onClick={onClick}/>
+    }));
+  }
+  react.useEffect (() =>
+  {
+    onRender ();
+    return;
+  },
+  [prop.queryList]);
 
   return (
     <SyledList>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
-      <content.ListItem id={1} src={testArtwork} onClick={onClick}/>
+      {children}
     </SyledList>
   );
 }
@@ -88,7 +105,8 @@ content.ListItem = function ProductBrowserListItem (prop: PropItem)
 
   return (
     <StyledListItemContainer onClick={onClick}>
-      <StyledListItem src={prop.src}/>
+      <StyledListItem src={prop.artwork}/>
+      <StyledListItemText>{prop.name}</StyledListItemText>
     </StyledListItemContainer>
   )
 }
@@ -137,10 +155,10 @@ const StyledListItemContainer = styled.button`
   height: 300px;
   display: block;
   margin: 0px;
-  padding: 0px;
+  padding: 0px 0px 40px 0px;
 
   outline: var(--bg-primary-border) solid 0px;
-  background-color: #282828;
+  background-color: transparent;
   transition: outline 66ms cubic-bezier(0.16, 1, 0.3, 1);
   transition: width 500ms cubic-bezier(0.16, 1, 0.3, 1);
   transition: height 500ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -169,6 +187,10 @@ const StyledListItemContainer = styled.button`
     width: 100px;
     height: 150px;
   }
+`;
+const StyledListItemText = styled.label`
+  display: block;
+  margin-top: 8px;
 `;
 const StyledListItem = styled.img`
   width: 100%;

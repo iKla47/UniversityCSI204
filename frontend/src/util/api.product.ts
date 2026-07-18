@@ -201,7 +201,7 @@ content.getBasic = async (session: string, key: MainId)
     : Promise<FetchBasic> =>
 {
     const id = String (key);
-    const endpoint = `${content.NET_URL}/product/${id}`;
+    const endpoint = `${content.NET_URL}/${id}`;
     const init: RequestInit =
     {
         method: "GET",
@@ -243,7 +243,17 @@ content.getBasic = async (session: string, key: MainId)
 content.getBasicByList = async (session: string)
     : Promise<FetchBasic[]> =>
 {
-    const endpoint = `${content.NET_URL}/product`;
+    const header = new Headers ();
+
+    header.append ("Accept", "application/json");
+    header.append ("Accept-Encoding", "*");
+
+    if (session.length > 0)
+    {
+        header.append ("Authorization", session);
+    }
+
+    const endpoint = `${content.NET_URL}/`;
     const init: RequestInit =
     {
         method: "GET",
@@ -251,11 +261,7 @@ content.getBasicByList = async (session: string)
         referrerPolicy: "strict-origin",
         cache: "default",
         signal: AbortSignal.timeout (content.NET_TIMEOUT),
-        headers: 
-        [ 
-            ["Accept", "application/json"],
-            ["Authorization", (session.length > 0) ? `Bearer ${session}` : ``]
-        ],
+        headers: header,
         body: undefined
     }
     const response = await fetch (endpoint, init).catch ((e: unknown) =>
@@ -285,10 +291,10 @@ content.getBasicByData = (data: Record<string, unknown>)
         id: reader.requireInteger ("Id"),
         name: reader.requireString ("Name"),
         description: reader.requireString ("Description"),
-        artwork: reader.requireString ("Artwork"),
         price: reader.requireFloat ("Price"),
         priceCode: reader.requireInteger ("PriceCode"),
-        platform: reader.requireInteger ("Platform")
+        platform: reader.requireInteger ("Platform"),
+        artwork: reader.requireString ("Artwork"),
     };
 }
 

@@ -291,7 +291,7 @@ content.create = async (info: DataCreate) : Promise<DataId> =>
         const id = await transaction.insert (`
             INSERT INTO Product 
             (Name, Description, Price, PriceCode, Platform, Artwork) 
-            VALUES (?, ?, ?, ?, ?)`,
+            VALUES (?, ?, ?, ?, ?, ?)`,
             [
                 info.name, 
                 info.description, 

@@ -141,6 +141,7 @@ content.setupProductFor = async (
                 price: price,
                 priceCode: 1,
                 platform: modelProd.PLATFORM_WINDOWS,
+                artwork: ""
             });
         }
         catch (e: unknown)

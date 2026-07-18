@@ -47,6 +47,7 @@ content.list = (request: Request, response: Response) =>
                 "Price": x.price,
                 "PriceCode": x.priceCode,
                 "Platform": x.platform,
+                "Artwork": x.artwork
             }
         }));
         response.end ();
@@ -85,7 +86,8 @@ content.get = (request: Request, response: Response) =>
             "Description": x.description,
             "Price": x.price,
             "PriceCode": x.priceCode,
-            "Platform": x.platform
+            "Platform": x.platform,
+            "Artwork": x.artwork
         });
         response.end ();
     })
