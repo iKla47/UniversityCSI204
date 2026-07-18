@@ -9,7 +9,7 @@ import { useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 
 import type { UseQueryResult } from "@tanstack/react-query";
-import type { FetchBasic } from "#util/api.product.ts";
+import type { BasicFetch } from "#util/api.product.ts";
 
 import { Share2Icon } from "lucide-react";
 
@@ -21,7 +21,7 @@ interface PropMain
   /**
    * ระบบดึงข้อมูลพื้นฐานสินค้า
   */
-  queryBasic: UseQueryResult<FetchBasic>;
+  queryBasic: UseQueryResult<BasicFetch>;
 }
 
 const content = function Product ()
@@ -47,6 +47,7 @@ content.Main = function ProductMainContent (prop: PropMain)
   const [name, setName] = react.useState ("");
   const [sub, setSub] = react.useState ("");
   const [desc, setDesc] = react.useState ("");
+  const [price, setPrice] = react.useState ("");
 
   react.useEffect (() =>
   {
@@ -59,6 +60,7 @@ content.Main = function ProductMainContent (prop: PropMain)
     setName (data.name);
     setSub ("");
     setDesc (data.description);
+    setPrice (`${String (data.price)} ฿`);
   },
   [prop.queryBasic]);
 
@@ -81,7 +83,7 @@ content.Main = function ProductMainContent (prop: PropMain)
           <StyleMainOption>
             <StyleMainPrice>
               <StyleMainPriceDiscount>99%</StyleMainPriceDiscount>
-              <span>9999฿</span>
+              <span>{price}</span>
             </StyleMainPrice>
             <button>เพิ่มลงในตะกร้า</button>
             <button>

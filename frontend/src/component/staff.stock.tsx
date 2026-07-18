@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import productApi from "../util/api.product";
-import type { FetchBasic } from "../util/api.product";
+import type { BasicFetch } from "../util/api.product";
 
 export default function Stock() {
-  const [products, setProducts] = useState<FetchBasic[]>([]);
+  const [products, setProducts] = useState<BasicFetch[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {

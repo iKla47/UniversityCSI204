@@ -1,15 +1,14 @@
-import env          from "#core/env.ts";
-import log          from "#core/log.ts";
-import logConsole   from "#core/log.console.ts";
-import logFile      from "#core/log.file.ts";
-import logInject    from "#core/log.inject.ts";
-import logRemote    from "#core/log.remote.ts";
-import http         from "#core/http.ts";
-import webSocket    from "#core/webSocket.ts";
-import sql          from "#core/sql.ts";
+import env                  from "#core/env.ts";
+import log                  from "#core/log.ts";
+import logConsole           from "#core/log.console.ts";
+import logFile              from "#core/log.file.ts";
+import logInject            from "#core/log.inject.ts";
+import logRemote            from "#core/log.remote.ts";
+import http                 from "#core/http.ts";
+import webSocket            from "#core/webSocket.ts";
+import sql                  from "#core/sql.ts";
 
 import routerAuth           from "#router/auth.ts";
-import routerAuthSignIn     from "#router/auth.signin.ts";
 import routerAccount        from "#router/account.ts";
 import routerProdCategory   from "#router/product.category.ts";
 import routerProdComment    from "#router/product.comment.ts";
@@ -42,8 +41,7 @@ content.start = async () =>
     await sql.init ();
     await http.init (() =>
     {
-        http.routeTo ("/auth", routerAuth.getRouter ());
-        http.routeTo ("/auth", routerAuthSignIn.getRouter ());
+        http.routeTo ("/auth", routerAuth.getRouteChallenge ());
         http.routeTo ("/account", routerAccount.getRouter ());
         http.routeTo ("/product-category", routerProdCategory.getRouter ());
         http.routeTo ("/product-comment", routerProdComment.getRouter ());

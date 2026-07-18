@@ -1,29 +1,35 @@
 import http     from "#core/http.ts";
 import control  from "#controller/auth.ts";
-import model    from "#model/auth.ts";
 
-const content = function ()
+const content = () =>
 {
+    //
+    // ไม่มีคุณสมบัติในตอนนี้
+    //
     return;
 }
-content.getController = function ()
-{
-    return control;
-}
-content.getModel = function ()
-{
-    return model;
-}
-content.getRouter = function ()
+content.getRouteChallenge = () =>
 {
     const route = http.router ();
+    const limiterId = http.useRateLimit ({
+        window: 60000 * 10,
+        limit: 3,
+        skipSuccess: true
+    });
+    const limiterPwd = http.useRateLimit ({
+        window: 60000,
+        limit: 3,
+        skipSuccess: true
+    });
+    const validation = control.validateOnlyAuth ();
+
+    route.post ("/challenge", 
+        limiterId, control.challenge, validation, 
+        limiterPwd, control.challengeEnhanced
+    );
 
     return route;
 }
-/**
- * แข็งวัตถุ (ความปลอดภัย)
-*/
-Object.freeze (content);
 /**
  * ส่งออกตัวแปร
 */

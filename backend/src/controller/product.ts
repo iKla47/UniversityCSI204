@@ -83,18 +83,21 @@ content.getList = (request: Request, response: Response) =>
     void model.list ().then ((x) =>
     {
         response.status (http.STATUS_OK);
-        response.json (x.map ((x) =>
+        response.json (
         {
-            return {
-                "Id": x.id,
-                "Name": x.name,
-                "Description": x.description,
-                "Price": x.price,
-                "PriceCode": x.priceCode,
-                "Platform": x.platform,
-                "Artwork": x.artwork
-            }
-        }));
+            "Item": x.map ((x) => 
+            {
+                return {
+                    "Id": x.id,
+                    "Name": x.name,
+                    "Description": x.description,
+                    "Price": x.price,
+                    "PriceCode": x.priceCode,
+                    "Platform": x.platform,
+                    "Artwork": x.artwork
+                }
+            })
+        });
         response.end ();
     })
     .catch ((e: unknown) =>

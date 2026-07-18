@@ -8,7 +8,7 @@ import
 from "#model/product.ts";
 import
 {
-    type DataId as DataAccountId
+    type BasicId as DataAccountId
 }
 from "#model/account.ts"
 

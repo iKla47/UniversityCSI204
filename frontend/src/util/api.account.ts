@@ -8,65 +8,24 @@
  * และการลงทะเบียนผู้ใช้โปรดดูที่โมดูล: api.auth.ts
  * 
 */
-import reader   from "#util/common.objectReader.ts";
-import error    from "#util/common.error.ts";
+import error        from "#util/common.error.ts";
+import common       from "#util/api.common.ts";
+
+import { type ObjectReader } from "#util/common.objectReader.ts";
 
 /**
- * โมดูลหลักที่ใช้ในการสื่อสารระหว่างส่วนติดต่อผู้ใช้และเซิร์ฟเวอร์
- * ที่เกี่ยวข้องกับข้อมูลบัญชีผู้ใช้
+ * รหัสของชุดรหัสข้อมูล (หรือเรียกอีกอย่างว่า PRIMARY KEY)
 */
-const content = () => 
-{
-    //
-    // ไม่มีคุณสมบัติดังนั้นอย่าเรียกใช้งาน
-    //
-    return;
-};
-/**
- * กุญแจหลักของบัญชี
-*/
-export type Key = number;
-/**
- * รายการบัญชีผู้ใช้ทั้งหมดในระบบ
-*/
-export interface List
-{
-    /**
-     * รายการบัญชีผู้ใช้
-    */
-    item: ListItem [];
-}
-/**
- * ข้อมูลพื้นฐานของบัญชีผู้ใช้ที่แสดงในรายการบัญชี
-*/
-export interface ListItem
-{
-    /**
-     * รหัสบัญชี
-    */
-    id: Key;
-    /**
-     * ไอคอน
-    */
-    icon: string;
-    /**
-     * ชื่อของผู้ใช้
-     */
-    name: string;
-    /**
-     * บทบาท
-    */
-    role: number;
-}
+export type BasicId = number;
 /**
  * เก็บรวบรวมข้อมูลพื้นฐานเกี่ยวกับบัญชีผู้ใช้
 */
-export interface Basic
+export interface BasicFetch
 {
     /**
      * รหัสบัญชี
     */
-    id: Key;
+    id: BasicId;
     /**
      * ไอคอน
     */
@@ -86,18 +45,22 @@ export interface Basic
 export interface BasicUpdate
 {
     /**
+     * รหัสบัญชี
+    */
+    id: BasicId;
+    /**
      * บทบาทของผู้ใช้
     */
-    role: Key | undefined;
+    role ?: BasicId | undefined;
     /**
      * ชื่อของผู้ใช้
     */
-    name: string | undefined;
+    name ?: string | undefined;
 }
 /**
  * ข้อมูลติดต่อของผู้ใช้
 */
-export interface Contact
+export interface ContactFetch
 {
     /**
      * หมายเลขโทรศัพท์
@@ -116,12 +79,24 @@ export interface ContactUpdate
     /**
      * หมายเลขโทรศัพท์
     */
-    phone: string [] | undefined;
+    phone ?: string [] | undefined;
     /**
      * อีเมล
     */
-    email: string [] | undefined;
+    email ?: string [] | undefined;
 }
+
+/**
+ * โมดูลหลักที่ใช้ในการสื่อสารระหว่างส่วนติดต่อผู้ใช้และเซิร์ฟเวอร์
+ * ที่เกี่ยวข้องกับข้อมูลบัญชีผู้ใช้
+*/
+const content = () => 
+{
+    //
+    // ไม่มีคุณสมบัติดังนั้นอย่าเรียกใช้งาน
+    //
+    return;
+};
 /**
  * โปรโตอลที่ใช้ในการสื่อสารระหว่างเซิร์ฟเวอร์
 */
@@ -164,142 +139,22 @@ content.ROLE_MANAGER = 3;
 */
 content.ROLE_DEVELOPER = 4;
 
-
-/**
- * โหลดตัวระบบบัญชี
-*/
-content.init = () : Promise<void> =>
-{
-    return Promise.resolve ();
-}
-/**
- * ดึงรายการบัญชีทั้งหมดที่มีอยู่ในระบบ
-*/
-content.getList = async (session: string) : Promise<List> =>
-{
-    const endpoint = `${content.NET_URL}/account`;    
-    const init: RequestInit =
-    {
-        method: "GET",
-        mode: 'cors',
-        referrerPolicy: 'no-referrer',
-        headers: 
-        [ 
-            ["Authorization", `Bearer ${session}`] 
-        ],
-        cache: "default",
-        signal: AbortSignal.timeout (content.NET_TIMEOUT),
-        body: undefined
-    };
-    const response = await fetch (endpoint, init).catch ((e: unknown) =>
-    {
-        throw new error.Network (e);
-    });
-
-    switch (response.status)
-    {
-        case 200: break;
-        case 401: throw new error.NotAuthorized ();
-        case 403: throw new error.Forbidden ();
-        case 429: throw new error.NetworkLimit ();
-        case 500: throw new error.NotAvailable ();
-        case 503: throw new error.NotAvailable ();
-        default: throw new error.Unknown ();
-    }
-    const data = await (response.json ()
-        .then ((x) => reader (x))
-        .catch ((e: unknown) => 
-    {
-        throw new error.BadFormat (e);
-    }));
-
-    try
-    {
-        const item = data.requireArrayObject ("Item").map ((x) =>
-        {
-            const inner = reader (x);
-            const innerResult: ListItem =
-            {
-                id:         inner.requireInteger ("Id"),
-                icon:       inner.requireString ("Icon"),
-                name:       inner.requireString ("Name"),
-                role:       inner.requireInteger ("Role"),
-            }
-            return innerResult;
-        });
-        return { item: item };
-    }
-    catch (e: unknown)
-    {
-        throw new error.BadData (e);
-    }
-}
 /**
  * รับข้อมูลพื้นฐานเกี่ยวบัญชีผู้ใช้
 */
-content.getBasic = async (session: string, id ?: Key) : Promise<Basic> =>
+content.getBasic = async (session: string, id ?: BasicId) 
+    : Promise<BasicFetch> =>
 {
-    id = id ?? 0;
+    const url = `${content.NET_URL}/account` + (id ? `/${String (id)}` : "");
+    const reader = await common.getJson (session, url);
+    const result = content.readBasic (reader);
 
-    const endpoint = `${content.NET_URL}/account/${String (id)}`;    
-    const init: RequestInit =
-    {
-        method: "GET",
-        mode: "cors",
-        referrerPolicy: "strict-origin",
-        signal: AbortSignal.timeout (content.NET_TIMEOUT),
-        headers: 
-        [ 
-            ["Authorization", `Bearer ${session}`],
-        ],
-        cache: "default",
-        body: undefined
-    }
-    const response = await fetch (endpoint, init).catch ((e: unknown) => 
-    {
-        throw new error.Network (e);
-    });
-    switch (response.status)
-    {
-        case 200: break;
-        case 401: throw new error.NotAuthorized ();
-        case 403: throw new error.Forbidden ();
-        case 404: throw new error.NotFound ();
-        case 429: throw new error.NetworkLimit ();
-        case 500: throw new error.NotAvailable ();
-        case 503: throw new error.NotAvailable ();
-        default: throw new error.Unknown ();
-    }
-    const data = await (response.json ()
-        .then ((x) => reader (x))
-        .catch ((e: unknown) => 
-    {
-        throw new error.BadFormat (e);
-    }));
-
-    try
-    {
-        const id = data.requireInteger ("Id");
-        const icon = data.requireString ("Icon");
-        const role = data.optionalInteger ("Role", 0);
-        const name = data.requireString ("Name");
-    
-        return {
-            id: id,
-            icon: icon,
-            role: Number (role),
-            name: name,
-        }
-    }
-    catch (e: unknown)
-    {
-        throw new error.BadData (e);
-    }
+    return result;
 }
 /**
  * รับข้อมูลติดต่อเกี่ยวบัญชีผู้ใช้
 */
-content.getContact = async (session: string, id ?: Key) : Promise<Contact> =>
+content.getContact = async (session: string, id ?: BasicId) : Promise<ContactFetch> =>
 {
     id = id ?? 0;
 
@@ -525,7 +380,15 @@ content.delete = async (auth: string, id ?: number, password?: string) =>
         default: throw new error.Unknown ();
     }
 }
-
+content.readBasic = (reader: ObjectReader) : BasicFetch =>
+{
+    return {
+        id: reader.requireInteger ("Id"),
+        icon: reader.requireString ("Icon"),
+        role: reader.optionalInteger ("Role") ?? 0,
+        name: reader.requireString ("Name"),
+    }
+}
 /**
  * แข็งวัตถุ (ความปลอดภัย)
 */

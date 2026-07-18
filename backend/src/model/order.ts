@@ -2,7 +2,7 @@ import error from "#core/error.ts";
 import objectReader from "#core/object.reader.ts";
 import sql from "#core/sql.ts";
 
-import { type DataId as DataAccountId } from "./account.ts";
+import { type BasicId as DataAccountId } from "./account.ts";
 import { type DataId as DataProductId } from "#model/product.ts";
 
 /**

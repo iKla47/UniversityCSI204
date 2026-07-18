@@ -1,6 +1,7 @@
 import react                  from "react";
 import styled                 from "styled-components";
 import api                    from "#util/api.auth.ts";
+import apiFb                  from "#util/api.auth.facebook.ts";
 import error                  from "#util/common.error.ts";
 import base                   from "#component/auth.tsx";
 import { type Session }       from "#util/api.auth.ts";
@@ -250,10 +251,10 @@ const content = function AuthSignIn (prop: PropRoot)
   {
     switch (authStep)
     {
-      case api.STEP_IDENTIFIER: setPage (base.PAGE_SIGN_IN_ID); break;
-      case api.STEP_PASSWORD: setPage (base.PAGE_SIGN_IN_PWD); break;
-      case api.STEP_MFA: setPage (base.PAGE_SIGN_IN_TOTP); break;
-      case api.STEP_COMPLETE:
+      case api.STEP_CHALLENGE_ID: setPage (base.PAGE_SIGN_IN_ID); break;
+      case api.STEP_CHALLENGE_PASSWORD: setPage (base.PAGE_SIGN_IN_PWD); break;
+      case api.STEP_CHALLENGE_TOTP: setPage (base.PAGE_SIGN_IN_TOTP); break;
+      case api.STEP_CHALLENGE_COMPLETED:
         onComplete ();
         break;
     }
@@ -296,16 +297,17 @@ const content = function AuthSignIn (prop: PropRoot)
     setFeedback (base.createEmptyFeedback ());
     setPending (true);
 
-    void api.fbLogin ().then (([se, ch, ex]) =>
+    void apiFb.login ().then ((challenge) =>
     {
-      id.current = ex.name;
-      session.current = se;
+      id.current = challenge.fbName;
+      session.current = challenge;
 
-      onTransition (ch.step);
+      onTransition (challenge.step);
       setPending (false);
     })
     .catch (() =>
     {
+      
       setFeedback ({
         type: base.FEEDBACK_WARNING,
         text: "เกิดข้อผิดพลาดบางอย่าง โปรดลองใหม่อีกครั้ง"
@@ -327,16 +329,19 @@ const content = function AuthSignIn (prop: PropRoot)
       return;
     }
 
-    api.challengeId (value).then (([se, ch]) =>
+    api.challengeId (value).then ((challenge) =>
     {
       id.current = value;
-      session.current = se;
+      session.current = challenge;
 
-      onTransition (ch.step);
+      onTransition (challenge.step);
       setPending (false);
     })
     .catch ((e: unknown) =>
     {
+
+      console.error (e);
+
       setFeedback (checkResponseId (e));
       setPending (false);
     });
@@ -355,11 +360,11 @@ const content = function AuthSignIn (prop: PropRoot)
       return;
     }
 
-    api.challengePassword (session.current.secret, value).then (([se, ch]) =>
+    api.challengePassword (session.current.secret, value).then ((challenge) =>
     {
-      session.current = se;
+      session.current = challenge;
 
-      onTransition (ch.step);
+      onTransition (challenge.step);
       setPending (false);
     })
     .catch ((e: unknown) =>
@@ -379,7 +384,12 @@ const content = function AuthSignIn (prop: PropRoot)
 
   react.useEffect (() =>
   {
-    api.fbLoad ();
+    apiFb.init ();
+
+    return () =>
+    {
+      apiFb.terminate ();
+    }
   },
   []);
 

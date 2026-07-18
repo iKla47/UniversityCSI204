@@ -64,6 +64,11 @@ content.BadXml = class extends content.Base {};
 */
 content.BadData = class extends content.Base {};
 /**
+ * คลาสข้อผิดพลาด ในกรณีที่ระบบไม่สามารถประมวลข้อมูลได้
+ * เนื่องจากชุดข้อมูลมีประเภทข้อมูลที่ไม่ถูกต้อง
+*/
+content.BadType = class extends content.Base {};
+/**
  * คลาสข้อผิดพลาด ในกรณีที่ระบบไม่พบข้อมูล
 */
 content.NotFound = class extends content.Base {};
@@ -111,6 +116,10 @@ content.Command = class extends content.Base {};
  * คลาสข้อผิดพลาด ในกรณีที่ระบบถูกยกเลิก
 */
 content.Cancelled = class extends content.Base {};
+/**
+ * ข้อผิดพลาดเนื่องระบบไม่สามารถยืนยันตัวตนได้
+*/
+content.BadAuth = class extends content.Base {};
 /**
  * แข็งวัตถุ (ความปลอดภัย)
 */

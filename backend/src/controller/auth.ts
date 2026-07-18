@@ -1,7 +1,10 @@
+import error        from "#core/error.ts";
 import http         from "#core/http.ts";
 import logging      from "#core/log.ts"
+import objectReader from "#core/object.reader.ts";
 import model        from "#model/auth.ts";
 import modelAct     from "#model/account.ts";
+import { type Session, type Challenge } from "#model/auth.ts";
 import
 { 
     type Request, 
@@ -9,22 +12,6 @@ import
     type NextFunction
 } 
 from "#core/http.ts";
-
-import { type DataId, type Session } from "#model/auth.ts";
-import { type DataId as DataAccountId } from "#model/account.ts";
-
-/**
- * ตั้งค่าการยืนยันตัวตน
-*/
-export interface ValidationSettings
-{
-    allowedRole ?: number [];
-    allowedRestriction ?: number;
-}
-/**
- * ผลลัพธ์การยืนยันตัวตนเมื่อสำเร็จ
-*/
-export type ValidationResult = Session; 
 
 /**
  * ระบบบันทึกกิจกรรมเริ่มต้น
@@ -38,11 +25,231 @@ const content = function ()
     return;
 }
 /**
+ * เส้นทางเริ่มต้นการลงชื่อเข้าใช้งาน
+*/
+content.challenge = (
+    request: Request, 
+    response: Response, 
+    next: NextFunction
+) =>
+{
+    let type: number;
+
+    try
+    {
+        type = objectReader (request.body).requireInteger ("Type");
+    }
+    catch
+    {
+        response.status (http.STATUS_BAD_REQUEST);
+        response.end ();
+        return;
+    }
+
+    const stepSimple = () =>
+    {
+        let id: string;
+        let password: string;
+        
+        try
+        {
+            const reader = objectReader (request.body);
+            id = reader.requireString ("Id");
+            password = reader.requireString ("Password");
+        }
+        catch
+        {
+            response.status (http.STATUS_BAD_REQUEST);
+            response.end ();
+            return;
+        }
+        void model.challengeSimple (id, password).then (stepNext)
+            .catch ((e: unknown) =>
+        {
+            if (e instanceof error.NotFound || e instanceof error.BadAuth)
+            {
+                response.status (http.STATUS_UNAUTHORIZED);
+                response.end ();
+                return;
+            }
+            log.error (e);
+            response.status (http.STATUS_SERVICE_UNAVAILABLE);
+            response.end ();
+        });
+    }
+    const stepId = () =>
+    {
+        let value: string;
+
+        try
+        {
+            value = objectReader (request.body).requireString ("Value");
+        }
+        catch
+        {
+            response.status (http.STATUS_BAD_REQUEST);
+            response.end ();
+            return;
+        }
+        void model.challengeId (value).then (stepNext).catch ((e: unknown) =>
+        {
+            if (e instanceof error.NotFound || e instanceof error.BadAuth)
+            {
+                response.status (http.STATUS_UNAUTHORIZED);
+                response.end ();
+                return;
+            }
+            log.error (e);
+            response.status (http.STATUS_SERVICE_UNAVAILABLE);
+            response.end ();
+        });
+    }
+    const stepPassword = () =>
+    {
+        //
+        // จำเป็นต้องมีชุดรหัสยืนยันตัวตนดำเนินการต่อไปยังรหัสผ่าน
+        //
+        next ();
+    }
+    const stepNext = (x: Challenge) =>
+    {
+        response.status (http.STATUS_OK);
+        response.json ({
+            "Session": x.raw,
+            "SessionIssued": x.issued.getTime (),
+            "SessionExpire": x.expired.getTime (),
+            "Step": x.authStep,
+        });
+        response.end ();
+    }
+    const connectFacebook = () =>
+    {
+        let id: number;
+        let access: string;
+        let name: string;
+        let email: string;
+        let icon: string;
+        
+        try
+        {
+            const reader = objectReader (request.body);
+            id = reader.requireInteger ("Id");
+            access = reader.requireString ("Access");
+            name = reader.requireString ("Name");
+            email = reader.requireString ("Email");
+            icon = reader.requireString ("Icon");
+        }
+        catch
+        {
+            response.status (http.STATUS_BAD_REQUEST);
+            response.end ();
+            return;
+        }
+        void model.challengeFacebook (
+            id, access, 
+            name, email, icon
+        )
+        .then (stepNext)
+        .catch ((e: unknown) =>
+        {
+            if (e instanceof error.NotAuthorized)
+            {
+                response.status (http.STATUS_UNAUTHORIZED);
+                response.end ();
+                return;
+            }
+            log.error (e);
+            response.status (http.STATUS_SERVICE_UNAVAILABLE);
+            response.end ();
+        });
+    }
+    switch (type)
+    {
+        case model.STEP_CHALLENGE_SIMPLE: stepSimple (); return;
+        case model.STEP_CHALLENGE_ID: stepId (); return;
+        case model.STEP_CHALLENGE_PASSWORD: stepPassword (); return;
+        case model.STEP_CONNECT_FACEBOOK: connectFacebook (); return;
+    }
+
+    response.status (http.STATUS_BAD_REQUEST);
+    response.end ();
+}
+/**
+ * ดำเนินการลงชื่อเข้าใช้งานระบบต่อไป โดยวิธีที่ระบบสามารถระบุตัวตนได้บางส่วน
+*/
+content.challengeEnhanced = (request: Request, response: Response) =>
+{
+    const auth = content.validateResult (response) as Challenge;
+    const reader = objectReader (request.body);
+    const type = reader.requireInteger ("Type");
+
+    const stepPassword = () =>
+    {
+        if (auth.authStep !== model.STEP_CHALLENGE_PASSWORD)
+        {
+            stepOut ();
+            return;
+        }
+        let value: string;
+
+        try
+        {
+            value = objectReader (request.body).requireString ("Value");
+        }
+        catch
+        {
+            response.status (http.STATUS_BAD_REQUEST);
+            response.end ();
+            return;
+        }
+        void model.challengePassword (auth, value)
+        .then (stepNext)
+        .catch ((e: unknown) =>
+        {
+            if (e instanceof error.NotFound || e instanceof error.BadAuth)
+            {
+                response.status (http.STATUS_UNAUTHORIZED);
+                response.end ();
+                return;
+            }
+            log.error (e);
+            response.status (http.STATUS_SERVICE_UNAVAILABLE);
+            response.end ();
+        });
+    }
+    const stepNext = (x: Challenge) =>
+    {
+        response.status (http.STATUS_OK);
+        response.json ({
+            "Session": x.raw,
+            "SessionIssued": x.issued.getTime (),
+            "SessionExpire": x.expired.getTime (),
+            "Step": x.authStep,
+        });
+        response.end ();
+    }
+    const stepOut = () =>
+    {
+        response.status (http.STATUS_UNAUTHORIZED);
+        response.end ();
+    }
+
+    switch (type)
+    {
+        case model.STEP_CHALLENGE_PASSWORD: stepPassword (); return;
+    }
+
+    response.status (http.STATUS_BAD_REQUEST);
+    response.end ();
+}
+
+/**
  * ตรวจสอบการเข้าถึงระบบก่อนที่จะส่งกระบวนการต่อไป
 */
 content.validate = function (config: ValidationSettings)
 {
-    const allowRole = config.allowedRole ?? [
+    const allowRole = config.allowedRole ?? 
+    [
         modelAct.ROLE_USER,
         modelAct.ROLE_STAFF,
         modelAct.ROLE_MANAGER,
@@ -66,7 +273,7 @@ content.validate = function (config: ValidationSettings)
             //
             // ขาดข้อมูลการเข้าถึงระบบ
             //
-            log.warn (`${ip} no authentication data`);
+            log.warn (`${ip} ขาดข้อมูลการยืนยันตัวตน`);
 
             response.status (http.STATUS_UNAUTHORIZED);
             response.end ();
@@ -78,7 +285,7 @@ content.validate = function (config: ValidationSettings)
 
         if (headerMap.length != 2)
         {
-            log.warn (`${ip} invalid authentication format`);
+            log.warn (`${ip} รูปแบบข้อมูลยืนยันไม่ถูกต้อง`);
 
             response.status (http.STATUS_UNAUTHORIZED);
             response.end ();
@@ -93,61 +300,46 @@ content.validate = function (config: ValidationSettings)
         //
         if (key !== "Bearer")
         {
-            log.warn (`${ip} invalid authentication type: ${key}`);
+            log.warn (`${ip} ประเภทการยืนยันที่ไม่รู้จัก: ${key}`);
 
             response.status (http.STATUS_UNAUTHORIZED);
             response.end ();
             return;
         }
-
-        void model.jwtVerify (value).then ((x) =>
+        void model.readChallenge (value).then ((x) =>
         {
-            const result: ValidationResult = {
-                session: value,
-                sessionIssued: new Date (Number (x.data.iat)),
-                sessionExpire: new Date (Number (x.data.exp)),
-                id: x.data ["Id"] as DataAccountId,
-                role: x.data ["Role"] as number,
-                restriction: x.data ["Restriction"] as number,
+            const passRole = allowRole.includes (x.role);
+            const passRest = 
+                (x.restriction & allowRestriction) === allowRestriction;
 
-                authId: x.data ["AuthId"] as DataId,
-                authStep: x.data ["AuthStep"] as number
-            };
-
-            const passRole = allowRole.includes (result.role);
-            const passRestriction = 
-                (result.restriction & allowRestriction) === allowRestriction;
-
-            if (!passRole || !passRestriction)
+            if (!passRole || !passRest)
             {
-                const role = String (result.role);
-                const restr = String (result.restriction);
+                const role = String (x.role);
+                const restr = String (x.restriction);
 
-                log.warn (`${ip} violated authorization: ${role}, ${restr}`);
+                log.warn (`${ip} ไม่ผ่านเงื่อนไขการยืนยันตัวตน: ${role}, ${restr}`);
 
                 response.status (http.STATUS_FORBIDDEN);
                 response.end ();
                 return;
             }
-
-            response.locals ["AuthValidation"] = result;
-
+            response.locals ["AuthValidation"] = x;
             next ();
         })
         .catch ((e: unknown) =>
         {
-            log.warn (`${ip} failed authorization`);
+            log.warn (`${ip} ยืนยันตัวตนไม่สำเร็จ`);
             log.warn (e);
 
             response.status (http.STATUS_UNAUTHORIZED);
             response.end ();
             return;
-        })
+        });
     }
 }
-content.validateResult = (response: Response) : ValidationResult =>
+content.validateResult = (response: Response) : Session | Challenge =>
 {
-    return response.locals ["AuthValidation"] as ValidationResult;
+    return response.locals ["AuthValidation"] as Session | Challenge;
 }
 content.validateOnlyAuth = () =>
 {
@@ -199,10 +391,15 @@ content.validateLeastStaff = () =>
     });
 }
 
+
 /**
- * แข็งวัตถุ (ความปลอดภัย)
+ * ตั้งค่าการยืนยันตัวตน
 */
-Object.freeze (content);
+export interface ValidationSettings
+{
+    allowedRole ?: number [];
+    allowedRestriction ?: number;
+}
 /**
  * ส่งออกตัวแปร
 */

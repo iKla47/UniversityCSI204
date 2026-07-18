@@ -10,7 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import type { ReactNode } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
-import type { FetchBasic } from "#util/api.product.ts";
+import type { BasicFetch } from "#util/api.product.ts";
 
 /**
  * โครงสร้างข้อมูลที่ส่วนประกอบต้องการใช้งาน: รายการสินค้า
@@ -20,7 +20,7 @@ interface PropList
   /**
    * ระบบดึงข้อมูลรายการสินค้า
   */
-  queryList: UseQueryResult<FetchBasic []>;
+  queryList: UseQueryResult<BasicFetch []>;
 }
 /**
  * โครงสร้างข้อมูลที่ส่วนประกอบต้องการใช้งาน: ตัวสินค้า
@@ -55,7 +55,7 @@ const content = function ProductBrowser ()
 
   const queryList = useQuery ({
     queryKey: ["Product", "GetBasicByList"],
-    queryFn: () => apiProduct.getBasicByList (auth.session),
+    queryFn: () => apiProduct.getBasicList (auth.session),
   });
 
   return (<>
@@ -78,6 +78,9 @@ content.List = function ProductBrowserList (prop: PropList)
 
     if (!query.data) {
       return <></>;
+    }
+    if (query.error) {
+      console.error (query.error);
     }
     setChildren (query.data.map ((x) =>
     {

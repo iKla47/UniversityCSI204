@@ -1,12 +1,11 @@
 import logging          from "#core/log.ts";
 import modelAuth        from "#model/auth.ts";
-import modelAuthSignUp  from "#model/auth.signup.ts";
 import modelAccount     from "#model/account.ts";
 import modelProd        from "#model/product.ts";
 
-import { type DataId as DataAuthId } from "#model/auth.ts";
-import { type DataId as DataAccountId } from "#model/account.ts";
-import { type DataFetch as DataAuth } from "#model/auth.signup.ts";
+import { type BasicId as DataAuthId } from "#model/auth.ts";
+import { type BasicId as DataAccountId } from "#model/account.ts";
+import { type BasicFetch as DataAuth } from "#model/auth.ts";
 
 /**
  * ระบบบันทึกกิจกรรมเริ่มต้น
@@ -91,7 +90,7 @@ content.setupAccountFor = async (
 
     try
     {
-        auth = await modelAuthSignUp.get (authId);
+        auth = await modelAuth.getDb (authId);
         link = auth.link;
     }
     catch
@@ -102,7 +101,7 @@ content.setupAccountFor = async (
                 name: accountName,
                 role: accountRole
             });
-            await modelAuthSignUp.create (authId, authPwd, link);
+            await modelAuth.createDb (authId, authPwd, link);
         }
         catch (e: unknown)
         {
@@ -111,14 +110,14 @@ content.setupAccountFor = async (
             return;
         }
     }
-    const session = await modelAuth.create (
+    const session = await modelAuth.createSession (
         new Date (), undefined,
         link, accountRole,
         modelAccount.RESTRICTION_NONE
     );
 
     log.info (`Name: ${accountName}`);
-    log.info (`Session: ${session.session}`);
+    log.info (`Session: ${session.raw}`);
 }
 content.setupProductFor = async (
     productName: string,
@@ -141,7 +140,6 @@ content.setupProductFor = async (
                 price: price,
                 priceCode: 1,
                 platform: modelProd.PLATFORM_WINDOWS,
-                artwork: ""
             });
         }
         catch (e: unknown)

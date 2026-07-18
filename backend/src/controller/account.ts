@@ -11,8 +11,8 @@ import
 from "#core/http.ts";
 import
 {
-    type DataUpdate,
-    type DataCreate,
+    type BasicUpdate,
+    type BasicCreate,
 }
 from "#model/account.ts";
 
@@ -45,7 +45,7 @@ content.get = (request: Request, response: Response) =>
         return;
     }
 
-    void model.get (accountId).then ((x) =>
+    void model.getBasic (accountId).then ((x) =>
     {
         response.status (http.STATUS_OK);
         response.json ({
@@ -80,7 +80,7 @@ content.get = (request: Request, response: Response) =>
 content.put = (request: Request, response: Response) =>
 {
     const accountId = Number (request.params ["id"]);
-    let input: DataUpdate;
+    let input: BasicUpdate;
 
     if (!Number.isSafeInteger (accountId) ||
         !request.body)
@@ -106,7 +106,7 @@ content.put = (request: Request, response: Response) =>
         return;
     }
 
-    void model.update (input).then (() =>
+    void model.updateBasic (input).then (() =>
     {
         response.status (http.STATUS_NO_CONTENT);
         response.end ();
@@ -128,7 +128,7 @@ content.put = (request: Request, response: Response) =>
 }
 content.post = (request: Request, response: Response) =>
 {
-    let input: DataCreate;
+    let input: BasicCreate;
 
     try
     {
