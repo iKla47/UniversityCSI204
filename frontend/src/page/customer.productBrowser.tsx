@@ -28,7 +28,7 @@ const content = function ProductBrowser ()
   const auth = ctx.useAuth ();
 
   const queryList = useQuery ({
-    queryKey: ["Product", "GetBasicByList"],
+    queryKey: ["Product", "List"],
     queryFn: () => apiProduct.getBasicList (auth.session, {
       search: search ?? undefined
     }),

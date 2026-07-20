@@ -1,10 +1,10 @@
-import react  from "react";
-import ctx    from "#context/common.ts";
-import ctxUI  from "#context/common.ui.ts";
+import Context    from "#context/common.ts";
+import ContextUI  from "#context/common.ui.ts";
+import ApiAuth    from "#util/api.auth.ts";
 
-import apiAuth from "#util/api.auth.ts";
-
+import { useEffect, useRef, useCallback } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { type ReactNode } from "react";
 
 /**
  * ระบบของ React Query
@@ -13,21 +13,16 @@ const query = new QueryClient ();
 /**
  * ส่วนประกอบการทำงานของระบบ
 */
-const content = function InitSystemContext (
-  { onComplete, children }: 
-  {
-    onComplete: () => void;
-    children: react.ReactNode;
-  })
+const content = function InitSystemContext (prop: ComponentProperty)
 {
-  const auth = react.useRef (ctx.defAuth ());
-  const language = react.useRef (ctx.defLanguage ());
-  const menuContext = react.useRef (ctxUI.defMenuContext ());
-  const settings = react.useRef (ctxUI.defSettings ());
+  const auth = useRef (Context.defAuth ());
+  const language = useRef (Context.defLanguage ());
+  const menuContext = useRef (ContextUI.defMenuContext ());
+  const settings = useRef (ContextUI.defSettings ());
 
-  const onLoadAuth = () =>
+  const onInitAuth = useCallback (() =>
   {
-    const saved = apiAuth.saveGetItemPrefered ();
+    const saved = ApiAuth.saveGetItemPrefered ();
     const ctx = auth.current;
 
     if (saved)
@@ -37,35 +32,56 @@ const content = function InitSystemContext (
       ctx.sessionIssued = saved.issued;
       ctx.sessionExpire = saved.expired;
     }
-  }
-
-  react.useEffect (() =>
+  }, 
+  []);
+  const onTerminateAuth = useCallback (() =>
   {
-    onLoadAuth ();
-    onComplete ();
+    return;
   },
   []);
 
+  useEffect (() =>
+  {
+    const onMounted = prop.onMounted;
+    const onUnmounted = prop.onUnmounted;
 
+    onInitAuth ();
+    onMounted ();
+
+    return () =>
+    {
+      onTerminateAuth ();
+      onUnmounted ();
+    }
+  },
+  [
+    prop.onMounted, prop.onUnmounted,
+    onInitAuth,
+    onTerminateAuth
+  ]);
 
   return (
-    <ctx.ProviderAuth value={auth.current}>
-      <ctx.ProviderLanguage value={language.current}>
-        <ctxUI.ProviderMenuContext value={menuContext.current}>
-          <ctxUI.ProviderSettings value={settings.current}>
+    <Context.ProviderAuth value={auth.current}>
+      <Context.ProviderLanguage value={language.current}>
+        <ContextUI.ProviderMenuContext value={menuContext.current}>
+          <ContextUI.ProviderSettings value={settings.current}>
             <QueryClientProvider client={query}>
-              {children}
+              {prop.children}
             </QueryClientProvider>
-          </ctxUI.ProviderSettings>
-        </ctxUI.ProviderMenuContext>
-      </ctx.ProviderLanguage>
-    </ctx.ProviderAuth>
+          </ContextUI.ProviderSettings>
+        </ContextUI.ProviderMenuContext>
+      </Context.ProviderLanguage>
+    </Context.ProviderAuth>
   );
 }
-/**
- * แข็งวัตถุ (ความปลอดภัย)
-*/
-Object.freeze (content);
+
+interface ComponentProperty
+{
+  onMounted: () => void;
+  onUnmounted: () => void;
+  children: ReactNode;
+}
+
 /**
  * ส่งออกตัวแปร
 */

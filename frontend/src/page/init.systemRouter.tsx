@@ -1,6 +1,17 @@
-import react from "react";
-import { lazy } from "react";
+import { lazy, useEffect } from "react";
 import { Route, Routes, Outlet } from "react-router"
+
+import InitDebug from "#page/init.debug.tsx";
+
+//
+// โหลดหน้าต่างเมื่อจำเป็นเท่านั้น
+// I: Initializer
+// G: Global
+// C: Customer
+// S: Staff
+// A: Manager || Admin
+// V: View
+//
 
 const GAuth = lazy (() => import ("#page/auth.tsx"));
 const GSettings = lazy (() => import ("#page/settings.tsx"));
@@ -19,14 +30,21 @@ const ADashboard = lazy (() => import ("#page/admin.dashboard.tsx"));
 
 const VCustomer = lazy (() => import ("#page/customer.tsx"));
 
-const content = function InitSystemRouter (  
-  { onComplete }: { onComplete: () => void; })
+const content = function InitSystemRouter (prop: ComponentProperty)
 {
-  react.useEffect (() =>
+  useEffect (() =>
   {
-    onComplete ();
+    const onMounted = prop.onMounted;
+    const onUnmounted = prop.onUnmounted;
+
+    onMounted ();
+
+    return () =>
+    {
+      onUnmounted ();
+    }
   },
-  []);
+  [prop.onMounted, prop.onUnmounted]);
 
   return (
     <Routes>
@@ -63,14 +81,19 @@ content.Outlet = function InitOutlet ()
   {
     return <>
       <Outlet/>
+      <InitDebug/>
     </>;
   }
   return <Outlet/>
 }
-/**
- * แข็งวัตถุ (ความปลอดภัย)
-*/
-Object.freeze (content);
+
+
+interface ComponentProperty
+{
+  onMounted: () => void;
+  onUnmounted: () => void;
+}
+
 /**
  * ส่งออกตัวแปร
 */

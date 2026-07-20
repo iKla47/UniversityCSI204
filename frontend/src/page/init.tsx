@@ -1,16 +1,6 @@
-import react from "react";
-import { lazy } from "react";
+import { Suspense, lazy, useState, useEffect, useRef } from "react";
 import { HashRouter } from "react-router";
 
-//
-// โหลดหน้าต่างเมื่อจำเป็นเท่านั้น
-// I: Initializer
-// G: Global
-// C: Customer
-// S: Staff
-// A: Manager || Admin
-// V: View
-//
 
 const ISystem = lazy (() => import ("#page/init.system.tsx"));
 const ISystemContext = lazy (() => import ("#page/init.systemContext.tsx"));
@@ -22,37 +12,50 @@ const ISystemRouter = lazy (() => import ("#page/init.systemRouter.tsx"));
 */
 const content = function Init ()
 {
-  const [state, setState] = react.useState ({
-    initSystem: false,
-    initSystemContext: false,
-    initSystemRouter: false
-  });
+  const completedTotal = 3;
+  const completed = useRef (0);
+  const [splash, setSplash] = useState (true);
+
+  const onCountMounted = () =>
+  {
+    completed.current += 1;
+    setSplash (completed.current !== completedTotal);
+  };
+  const onCountUnmounted = () =>
+  {
+    completed.current -= 1;
+    setSplash (completed.current !== completedTotal);
+  }
+
+  useEffect (() =>
+  {
+    completed.current = 0;
+    setSplash (true);
+
+    return () =>
+    {
+      completed.current = 0;
+      setSplash (true);
+    }
+  },
+  []);
 
   return (
     <>
       <HashRouter>
-        <content.Splash visible={!(
-          state.initSystem ||
-          state.initSystemContext ||
-          state.initSystemRouter
-        )}/>
-        <react.Suspense>
+        <content.Splash visible={splash}/>
+        <Suspense>
           <ISystem 
-            onComplete={() => { setState ({ 
-              ... state, 
-              initSystem: true }); 
-            }}/>
-          <ISystemContext
-            onComplete={() => { setState ({ 
-              ... state, 
-              initSystemContext: true }); 
-            }}>
-            <ISystemRouter
-              onComplete={() => { setState ({ 
-                ... state, initSystemRouter: true }); 
-              }}/>
+            onMounted={onCountMounted}
+            onUnmounted={onCountUnmounted}/>
+          <ISystemContext 
+            onMounted={onCountMounted} 
+            onUnmounted={onCountUnmounted}>
+            <ISystemRouter 
+              onMounted={onCountMounted}
+              onUnmounted={onCountUnmounted}/>
           </ISystemContext>
-        </react.Suspense>
+        </Suspense>
       </HashRouter>
     </>
   );
@@ -60,7 +63,7 @@ const content = function Init ()
 
 content.Splash = function InitSplash ({ visible }: { visible: boolean; })
 {
-  react.useLayoutEffect (() =>
+  useEffect (() =>
   {
     const text = document.getElementById ("app-splash-text");
 
@@ -80,7 +83,8 @@ content.Splash = function InitSplash ({ visible }: { visible: boolean; })
 
   },
   []);
-  react.useEffect (() =>
+
+  useEffect (() =>
   {
     const view = document.getElementById ("app-splash");
 

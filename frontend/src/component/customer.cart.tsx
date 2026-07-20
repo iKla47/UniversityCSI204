@@ -1,19 +1,31 @@
 import styled       from "styled-components";
 import ctx          from "#context/common.ts";
 import ctxCustomer  from "#context/customer.ts";
+import apiAuth      from "#util/api.auth.ts";
 import apiAccount   from "#util/api.account.ts";
 import apiProduct   from "#util/api.product.ts";
 import apiStorage   from "#util/api.storage.ts";
 
-import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { XIcon, MinusIcon, PlusIcon } from "lucide-react";
-import type { MouseEvent, ReactNode } from "react";
+import 
+{ 
+  type MouseEvent,  
+  type ReactNode 
+} from "react";
 
+/**
+ * ส่วนประกอบการแสดงผลรายการในตะกร้าและการสั่งซื้อสินค้า
+*/
 const content = function CustomerCart (prop: PropRoot)
 {
   return content.Root (prop);
 }
+/**
+ * ส่วนประกอบรวมทุกส่วนประกอบย่อยเข้าด้วยกัน 
+ * พร้อมเพิ่มเติมตรรกะของระบบ
+*/
 content.Root = function CartRoot (prop: PropRoot)
 {
   const visible = prop.visible ?? false;
@@ -21,7 +33,12 @@ content.Root = function CartRoot (prop: PropRoot)
 
   const { data: fetchItem } = useQuery ({
     queryKey: ["Cart"],
-    queryFn: () => apiAccount.getCart (auth.session)
+    queryFn: () => apiAccount.getCart (auth.session),
+    enabled: () => apiAuth.checkSession ({
+      secret: auth.session,
+      issued: auth.sessionIssued,
+      expire: auth.sessionExpire
+    })
   });
 
   const Component = ({ productId }: {productId: number;}) =>
@@ -249,6 +266,12 @@ const StyleViewPanel = styled.div`
   display: flex;
   flex-direction: column;
   flex-wrap: nowrap;
+
+  @media (max-width: 860px)
+  {
+    max-width: 100%;
+    max-height: 100%;
+  }
 `;
 const StyleHeader = styled.header`
   width: 100%;
@@ -260,6 +283,7 @@ const StyleMain = styled.main`
   flex-wrap: nowrap;
   width: 100%;
   height: 100%;
+  overflow-y: auto;
 
   @media (max-width: 860px)
   {
@@ -311,7 +335,7 @@ const StyleItemContainer = styled.div`
   flex-direction: row;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 0px 0px 8px 0px;
+  padding: 2px 2px 8px 2px;
 
   @media (max-width: 860px)
   {

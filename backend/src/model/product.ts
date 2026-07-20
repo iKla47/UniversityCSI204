@@ -400,7 +400,7 @@ content.updateStock = (info: StockUpdate) =>
     .filter (x => x !== undefined)
     .join (" = ?, ")
     .concat (" = ? ")
-    .concat ("WHERE CategoryId = ?");
+    .concat ("WHERE ProductId = ?");
 
     const value = [
         info.quantity,

@@ -1,21 +1,24 @@
-import react, { type ChangeEvent, type InputEvent, type MouseEvent, type SubmitEvent }      from "react";
+import react      from "react";
 import styled     from "styled-components";
-import ctx        from "#context/common.ts";
-import ctxUI      from "#context/common.ui.ts";
-import apiAccount from "#util/api.account.ts";
-import apiStorage from "#util/api.storage.ts";
+import MenuBar    from "#component/menu.bar.tsx";
+import Context    from "#context/common.ts";
+import ContextUI  from "#context/common.ui.ts";
+import ApiAccount from "#util/api.account.ts";
+import ApiStorage from "#util/api.storage.ts";
 
-import MenuBar  from "#component/menu.bar.tsx";
+import { useState, useEffect, useRef, useCallback } 
+from "react";
 
-import { useState, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
-import
-{
-  UserIcon, UserLock, Container, Coins,
-  ArrowLeftCircleIcon, XIcon,
+import { useQuery } 
+from "@tanstack/react-query";
+
+import {
+  UserIcon, UserLock, Container, Coins, ArrowLeftCircleIcon, XIcon,
   UserCircleIcon
-}
-from "lucide-react";
+} from "lucide-react";
+import { 
+  type ChangeEvent, type MouseEvent 
+} from "react";
 
 interface PropRoot
 {
@@ -93,13 +96,32 @@ const content = function Settings (prop: PropRoot)
 }
 content.Root = function SettingsRoot (prop: PropRoot)
 {
-  const visible = prop.visible ?? false;
-  const container = react.useRef<HTMLDivElement> (HTMLDivElement.prototype);
-  const [ctn, setCtn] = react.useState (content.CONTENT_GENERAL);
-
   const SIZE_SMALL = "256px";
   const SIZE_THEREHOLD = 768;
+  const container = react.useRef<HTMLDivElement> (HTMLDivElement.prototype);
 
+  /**
+   * รับค่าความกว้างของรายการเมนู
+  */
+  const resizeValue = useCallback (() =>
+  {
+    if (container.current instanceof HTMLDivElement &&
+        container.current != HTMLDivElement.prototype)
+    {
+      return (container.current.clientWidth) >= 
+        SIZE_THEREHOLD ? SIZE_SMALL : "100%";
+    }
+    return (window.innerWidth) >= 
+      SIZE_THEREHOLD ? SIZE_SMALL : "100%";
+  }, 
+  [container]);
+
+  const visible = prop.visible ?? false;
+  const [ctn, setCtn] = useState (content.CONTENT_GENERAL);
+  const [menuWidth, setMenuWidth] = useState (resizeValue ());
+  const [menuSelected, setMenuSelected] = useState (false);
+
+  
   /**
    * ทำงานเมื่อผู้ใช้กดปุ่มปิด
   */
@@ -122,31 +144,16 @@ content.Root = function SettingsRoot (prop: PropRoot)
   /**
    * ทำงานเมื่อขนาดหน้าต่างมีการเปลี่ยนแปลง
   */
-  const onResize = () =>
+  const onResize = useCallback (() =>
   {
     setMenuWidth (resizeValue ());
-  }
-  /**
-   * รับค่าความกว้างของรายการเมนู
-  */
-  const resizeValue = () =>
-  {
-    if (container.current instanceof HTMLDivElement &&
-        container.current != HTMLDivElement.prototype)
-    {
-      return (container.current.clientWidth) >= 
-        SIZE_THEREHOLD ? SIZE_SMALL : "100%";
-    }
-    return (window.innerWidth) >= 
-      SIZE_THEREHOLD ? SIZE_SMALL : "100%";
-  }
-  const [menuWidth, setMenuWidth] = react.useState (resizeValue ());
-  const [menuSelected, setMenuSelected] = react.useState (false);
-
+  }, 
+  [resizeValue]);
+    
   /**
    * ทำงานเมื่อส่วนประกอบนี้เริ่มทำงาน
   */
-  react.useEffect (() =>
+  useEffect (() =>
   {
     window.addEventListener ("resize", onResize);
 
@@ -155,7 +162,7 @@ content.Root = function SettingsRoot (prop: PropRoot)
       window.removeEventListener ("resize", onResize);
     }
   },
-  []);
+  [onResize]);
 
   return (
     <react.Activity mode={visible ? "visible" : "hidden"}>
@@ -212,6 +219,9 @@ content.View = function SettingsView (prop: PropView)
 */
 content.Menu = function SettingsMenu (prop: PropMenu)
 {
+  /**
+   * ทำงานเมื่อผู้ใช้กดเลือกรายการ
+  */
   const selectEvent = (value: unknown) =>
   {
     if (prop.content)
@@ -243,6 +253,9 @@ content.Menu = function SettingsMenu (prop: PropMenu)
     </MenuBar>
   );
 }
+/**
+ * ส่วนประกอบสำหรับการแสดงเนื้อหา
+*/
 content.Content = function SettingsContent (prop: PropContent)
 {
   const visible = prop.visible ?? true;
@@ -252,7 +265,6 @@ content.Content = function SettingsContent (prop: PropContent)
   const isShipping = visible && current === content.CONTENT_SHIPPING;
   const isPayment = visible && current === content.CONTENT_PAYMENT;
   const onBack = prop.onBack;
-
 
   return (
     <StyleContent>
@@ -266,58 +278,82 @@ content.Content = function SettingsContent (prop: PropContent)
 content.ContentGeneral = function SettingsContentGeneral
   (prop: PropContentGeneral) : react.ReactElement
 {
-  const inputFile = useRef (HTMLInputElement.prototype);
-  const [name, setName] = useState ("");
-  const [icon, setIcon] = useState ("");
+  const auth = Context.useAuth ();
+  const iconInput = useRef (HTMLInputElement.prototype);
+  const [pending, setPending] = useState (false);
 
-  const auth = ctx.useAuth ();
-  const { data, refetch } = useQuery ({
+  const queryBasic = useQuery ({
     queryKey: ["Account", "Basic"],
-    queryFn: () => apiAccount.getBasic (auth.session)
+    queryFn: () => ApiAccount.getBasic (auth.session)
   });
 
+  /**
+   * ทำงานเมื่อผู้ใช้กดเปลี่ยนรูป
+  */
   const onIconChange = (event: MouseEvent) =>
   {
     event.preventDefault ();
     event.stopPropagation ();
 
-    if (inputFile.current instanceof HTMLInputElement && 
-        inputFile.current != HTMLInputElement.prototype)
+    if (iconInput.current instanceof HTMLInputElement && 
+        iconInput.current != HTMLInputElement.prototype)
     {
-      inputFile.current.click ();
+      iconInput.current.click ();
     }
   }
+  /**
+   * ทำงานเมื่อผู้ใช้เลือกรูปเรียบร้อยแล้ว
+  */
   const onIconChangeSubmit = (event: ChangeEvent<HTMLInputElement>) =>
   {
       event.preventDefault ();
       event.stopPropagation ();
+      setPending (true);
 
-      if (event.target.files)
-      {
-        const file = event.target.files [0];
-        void apiAccount.updateBasic (auth.session, {
-          icon: file
-        })
-        .then (() => {
-          void refetch ();
-        });
+      if (!event.target.files) {
+        return;
       }
+      const file = event.target.files [0];
+
+      void ApiAccount.updateBasic (auth.session, 
+      {
+        icon: file
+      })
+      .then (() => queryBasic.refetch ()).then (() =>
+      {
+          setPending (false);
+      })
+      .catch (() =>
+      {
+          setPending (false);
+      });
+  }
+  const onNameChange = (event: MouseEvent) =>
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+  }
+  const onEmailChange = (event: MouseEvent) =>
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+  }
+  const onWillSignOut = (event: MouseEvent) =>
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
   }
 
-  useEffect (() =>
-  {
-    if (data)
-    {
-      setName (data.name);
-      setIcon (apiStorage.getUrlStream (data.icon));
-    }
-  },
-  [data]);
+  const block = queryBasic.data;
+  const icon = block ? ApiStorage.getUrlStream (block.icon) : "";
+  const name = block ? block.name : "";
+  const email = block ? block.name : "";
 
   return (
     <react.Activity mode={prop.visible ? "visible" : "hidden"}>
       <input 
-        type="file" style={{ display: "none" }} ref={inputFile}
+        disabled={pending}
+        type="file" style={{ display: "none" }} ref={iconInput}
         onChange={onIconChangeSubmit}
         accept="image/png, image/jpeg"
         multiple={false}/>
@@ -326,12 +362,14 @@ content.ContentGeneral = function SettingsContentGeneral
         onClick={prop.onBack}/>
       <StyleTemplateHeader>ข้อมูลบัญชี</StyleTemplateHeader>
       <StyleGeneralIcon>
-        {icon.length > 0 ? 
-         (<img src={icon}/>) :
-         (<UserCircleIcon/>)
+        { (icon.length > 0) ?
+          (<img src={icon}/>) :
+          (<UserCircleIcon/>)
         }
         <StyleGeneralIconAction>
-          <button onClick={onIconChange}>เปลี่ยนรูป</button>
+          <button 
+            disabled={pending}
+            onClick={onIconChange}>เปลี่ยนรูป</button>
         </StyleGeneralIconAction>
       </StyleGeneralIcon>
       <StyleTemplateField>
@@ -340,7 +378,9 @@ content.ContentGeneral = function SettingsContentGeneral
         </div>
         <div>
           <label>{name}</label>
-          <button>เปลี่ยนชื่อ</button>
+          <button 
+            disabled={pending}
+            onClick={onNameChange}>เปลี่ยนชื่อ</button>
         </div>
       </StyleTemplateField>
       <StyleTemplateField>
@@ -348,13 +388,19 @@ content.ContentGeneral = function SettingsContentGeneral
           <label>อีเมล</label>
         </div>
         <div>
-          <label>con****@***.net</label>
-          <button>เปลี่ยนอีเมล</button>
+          <label>{email}</label>
+          <button disabled={pending} onClick={onEmailChange}>
+            { (email.length > 0) ?
+              ("เปลี่ยนอีเมล") : ("เพิ่มอีเมล")
+            }
+          </button>
         </div>
       </StyleTemplateField>
       <StyleTemplateField>
         <div>
-          <button>ลงชื่อออก</button>
+          <button 
+            disabled={pending} 
+            onClick={onWillSignOut}>ลงชื่อออก</button>
         </div>
       </StyleTemplateField>
     </react.Activity>
@@ -454,7 +500,7 @@ content.ContentPayment = function SettingsContentPayment
 }
 content.Provider = function SettingsProvider ()
 {
-  const ctx = ctxUI.useSettings ();
+  const ctx = ContextUI.useSettings ();
   const onClose = react.useRef<(() => void)> (undefined);
   const [visible, setVisible] = react.useState (false);
 

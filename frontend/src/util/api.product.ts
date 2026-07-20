@@ -64,6 +64,22 @@ content.getComment = async (session: string, key: CommentId)
 
     return result;
 }
+/**
+ * ทำการดึงข้อมูลสต็อกสินค้า
+ * 
+ * @param session ชุดรหัสยืนยันตัวตน
+ * @param key รหัสสินค้าที่ถูกต้อง
+*/
+content.getStock = async (session: string, key: StockId) 
+    : Promise<StockFetch> =>
+{
+    const id = String (key);
+    const endpoint = `${content.NET_URL_STOCK}/${id}`;
+    const data = await common.getJson (session, endpoint);
+    const result = content.readStock (data);
+
+    return result;
+}
 
 /**
  * ทำการเปลี่ยนข้อมูลพื้นฐานของสินค้า
@@ -84,6 +100,17 @@ content.updateBasic = async (session: string, data: BasicUpdate)
         "PriceCode": data.priceCode,
     });
 }
+content.updateStock = async (session: string, data: StockUpdate) 
+    : Promise<void> =>
+{
+    const id = String (data.productId);
+    const endpoint = `${content.NET_URL_COMMENT}/${id}`;
+
+    await common.putJson (session, endpoint, {
+        "Quantity": data.quantity,
+    });
+}
+
 /**
  * ทำการสร้างข้อมูลพื้นฐานของสินค้า
  * 
@@ -166,6 +193,14 @@ content.readCreateResult = (reader: ObjectReader) : BasicCreateResult =>
     };
 }
 
+content.readStock = (reader: ObjectReader) : StockFetch =>
+{
+    return {
+        productId: reader.requireInteger ("ProductId"),
+        quantity: reader.requireInteger ("Quantity")
+    }
+}
+
 /**
  * โปรโตอลที่ใช้ในการสื่อสารระหว่างเซิร์ฟเวอร์
 */
@@ -195,6 +230,10 @@ content.NET_PREFIX_COMMENT = "/product-comment";
 */
 content.NET_PREFIX_REVIEW = "/product-review";
 /**
+ * เส้นทางนำหน้าหลังจากที่อยู่ของเซิร์ฟเวอร์ สำหรับระบบสต็อก
+*/
+content.NET_PREFIX_STOCK = "/product-stock";
+/**
  * ระหว่างเวลาการเชื่อมต่อกับเซิร์ฟเวอร์ก่อนที่จะตัดขาด
 */
 content.NET_TIMEOUT = 30000;
@@ -213,7 +252,11 @@ content.NET_URL_COMMENT = `${content.NET_PROTOCOL}://${content.NET_ADDRESS}:${St
 /**
  * ลิงค์เต็มของที่อยู่เซิร์ฟเวอร์ สำหรับระบบตัวอย่าง
 */
-content.NET_URL_COMMENT = `${content.NET_PROTOCOL}://${content.NET_ADDRESS}:${String (content.NET_PORT)}${content.NET_PREFIX_REVIEW}`;
+content.NET_URL_REVIEW = `${content.NET_PROTOCOL}://${content.NET_ADDRESS}:${String (content.NET_PORT)}${content.NET_PREFIX_REVIEW}`;
+/**
+ * ลิงค์เต็มของที่อยู่เซิร์ฟเวอร์ สำหรับระบบสต็อกสินค้า
+*/
+content.NET_URL_STOCK = `${content.NET_PROTOCOL}://${content.NET_ADDRESS}:${String (content.NET_PORT)}${content.NET_PREFIX_STOCK}`;
 /**
  * ไม่มีแพลตฟอร์ม
 */
@@ -303,6 +346,7 @@ export type CommentId = number;
  * รหัสของชุดรหัสข้อมูลสำหรับตัวอย่าง (หรือเรียกอีกอย่างว่า PRIMARY KEY)
 */
 export type ReviewId = number;
+export type StockId = number;
 /**
  * โครงสร้างข้อมูลที่ได้รับจากการดึงข้อมูลพื้นฐานจากระบบฐานข้อมูล
 */
@@ -492,11 +536,11 @@ export interface CommentUpdate
     /**
      * หัวเรื่อง
     */
-    title: string;
+    title ?: string | undefined;
     /**
      * ข้อความ
     */
-    text: string;
+    text ?: string | undefined;
 }
 export interface CommentCreate
 {
@@ -512,6 +556,29 @@ export interface CommentCreate
      * ข้อความ
     */
     text: string;
+}
+
+export interface StockFetch
+{
+    /**
+     * รหัสสินค้า
+    */
+    productId: number;
+    /**
+     * จำนวนสินค้า
+    */
+    quantity: number;
+}
+export interface StockUpdate
+{
+    /**
+     * รหัสสินค้า
+    */
+    productId: number;
+    /**
+     * จำนวนสินค้า
+    */
+    quantity ?: number | undefined;
 }
 
 /**
