@@ -90,6 +90,7 @@ content.putJson = async (
     });
     switch (response.status)
     {
+        case 200: break;
         case 204: break;
         case 401: throw new error.NotAuthorized ();
         case 403: throw new error.Forbidden ();
@@ -139,7 +140,7 @@ content.putForm = async (
     switch (response.status)
     {
         case 200: break;
-        case 201: break;
+        case 204: break;
         case 401: throw new error.NotAuthorized ();
         case 403: throw new error.Forbidden ();
         case 404: throw new error.NotFound ();
