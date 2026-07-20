@@ -146,7 +146,7 @@ content.createWriterPath = async () : Promise<ResourcePath> =>
 }
 content.delete = (id: ResourceId) =>
 {
-    return nodeFsa.rm (content.getJoin (id));
+    return nodeFsa.rm (content.getJoin (id), { force: true });
 }
 
 content.getMime = function (path: string)

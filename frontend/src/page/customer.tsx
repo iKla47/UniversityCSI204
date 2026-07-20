@@ -102,8 +102,6 @@ content.NavBar = function PresetNavBar ()
       return;
     }
 
-    console.log (accountData);
-
     menuCtx.setChildren (<>
       <MenuContext.Item 
         text="ตะกร้าสินค้า" 

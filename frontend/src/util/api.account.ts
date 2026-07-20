@@ -34,17 +34,20 @@ content.getBasic = async (session: string, id ?: BasicId)
 {
     const url = content.NET_URL + (id ? `/${String (id)}` : "");
     const reader = await common.getJson (session, url);
-    const result = content.readBasic (reader);
+    const result = content.outputGetBasic (reader);
 
     return result;
 }
-content.getCartList = async (session: string) =>
+/**
+ * รับข้อมูลรายการตะกร้าสินค้า
+*/
+content.getCart = async (session: string) =>
 {    
     const url = content.NET_URL_CART;
     const reader = await common.getJson (session, url);
     const result = reader.requireArrayRecord ("Item").map ((x) =>
     {
-        return content.readCart (objectReader (x));
+        return content.outputGetCart (objectReader (x));
     });
     return result;
 }
@@ -69,17 +72,81 @@ content.updateBasic = async (session: string, data: BasicUpdate) =>
     }
     await common.postForm (session, endpoint, form);
 }
+/**
+ * ปรับเปลี่ยนข้อมูลที่กำลังอยู่ในตะกร้าของบัญชีตนเอง
+*/
+content.updateCart = async (session: string, data: CartUpdate) =>
+{
+    const id = data.itemId;
+    const url = content.NET_URL_CART + (id ? `/${String (id)}` : "");
+
+    await common.putJson (session, url, {
+        "ItemId": data.itemId,
+        "Quantity": data.quantity
+    });
+}
+/**
+ * เพิ่มบัญชีใหม่ลงในระบบ
+*/
+content.createBasic = async (session: string, data: BasicCreate) =>
+{
+    const url = content.NET_URL;
+    const form = new FormData ();
+
+    form.append ("Metadata", JSON.stringify ({
+        "Name": data.name,
+        "Role": data.role
+    }));
+
+    if (data.icon)
+    {
+        form.append ("Icon", data.icon);
+    }
+    const response = await common.postForm (session, url, form);
+    const json = await common.toJson (response);
+    const result = content.outputPostBasic (json);
+
+    return result;
+}
+/**
+ * เพิ่มสินค้นในตะกร้าลงในบัญชีของตนเอง
+*/
+content.createCart = async (session: string, data: CartCreate) =>
+{
+    const url = content.NET_URL_CART;
+    const response = await common.postJson (session, url, {
+        "ProductId": data.productId,
+        "Quantity": data.quantity
+    });
+    const json = await common.toJson (response);
+    const result = content.outputPostCart (json);
+
+    return result;
+}
 
 /**
  * ลบข้อมูลบัญชีดังกล่าวออกจากระบบ ซึ่งรวมไปถึงข้อมูลการเข้าสู่ระบบเช่นกัน
 */
-content.delete = async (session: string, id: BasicId) =>
+content.deleteBasic = async (session: string, id: BasicId) =>
 {
     const key = String (id);
     const endpoint = `${content.NET_URL}/account/${key}`;
     await common.delete (session, endpoint);
 }
-content.readBasic = (reader: ObjectReader) : BasicFetch =>
+/**
+ * ลบไอเท็มดังกล่าวออกจากตะกร้าของบัญชีตนเอง
+*/
+content.deleteCart = async (session: string, id: CartId) =>
+{
+    const key = String (id);
+    const endpoint = `${content.NET_URL_CART}/account/${key}`;
+    await common.delete (session, endpoint);
+}
+
+/**
+ * (ฟังก์ชั่นภายใน)
+*/
+content.outputGetBasic = (reader: ObjectReader) : BasicFetch =>
 {
     return {
         id: reader.requireInteger ("Id"),
@@ -88,12 +155,35 @@ content.readBasic = (reader: ObjectReader) : BasicFetch =>
         name: reader.requireString ("Name"),
     }
 }
-content.readCart = (reader: ObjectReader) : CartFetch =>
+/**
+ * (ฟังก์ชั่นภายใน)
+*/
+content.outputGetCart = (reader: ObjectReader) : CartFetch =>
 {
     return {
         itemId: reader.requireInteger ("ItemId"),
         productId: reader.requireInteger ("ProductId"),
         quantity: reader.requireInteger ("Quantity")
+    }
+}
+/**
+ * (ฟังก์ชั่นภายใน)
+*/
+content.outputPostBasic = (reader: ObjectReader) : BasicCreateResult =>
+{
+    return {
+        id: reader.requireInteger ("Id"),
+        created: reader.requireDate ("Created")
+    }
+}
+/**
+ * (ฟังก์ชั่นภายใน)
+*/
+content.outputPostCart = (reader: ObjectReader) : BasicCreateResult =>
+{
+    return {
+        id: reader.requireInteger ("Id"),
+        created: reader.requireDate ("Created")
     }
 }
 
@@ -176,7 +266,7 @@ export interface BasicUpdate
     /**
      * รหัสบัญชี
     */
-    id ?: BasicId;
+    id ?: BasicId | undefined;
     /**
      * บทบาทของผู้ใช้
     */
@@ -190,23 +280,71 @@ export interface BasicUpdate
     */
     icon ?: File | undefined;
 }
+/**
+ * โครงสร้างข้อมูลที่ใช้ในการสร้างข้อมูลลงในฐานข้อมูล
+*/
+export interface BasicCreate
+{
+    /**
+     * ชื่อผู้ใช้
+    */
+    name: string;
+    /**
+     * บทบาทของผู้ใช้
+    */
+    role: number;
+    /**
+     * ไอคอน
+    */
+    icon: File | undefined;
+}
+export interface BasicCreateResult
+{
+    /**
+     * รหัสบัญชี
+    */
+    id: number;
+    /**
+     * เวลาที่สร้างบัญชี (อาจคลาดเคลื่อน)
+    */
+    created: Date;
+}
 
 export interface CartFetch
 {
+    /**
+     * รหัสเอกลักษณ์ของตะกร้า
+    */
     itemId: CartId;
+    /**
+     * รหัสสินค้า
+    */
     productId: ProductId;
+    /**
+     * จำนวนของในตะกร้า
+    */
     quantity: number;
 }
 export interface CartUpdate
 {
+    /**
+     * รหัสเอกลักษณ์ของตะกร้า
+    */
     itemId: CartId;
-    accountId: BasicId;
+    /**
+     * จำนวนของในตะกร้า
+    */
     quantity ?: number | undefined;
 }
 export interface CartCreate
 {
-    accountId: BasicId;
+    /**
+     * รหัสเอกลักษณ์ของตะกร้า
+    */
     productId: ProductId;
+    /**
+     * จำนวนของในตะกร้า
+    */
     quantity: number;
 }
 

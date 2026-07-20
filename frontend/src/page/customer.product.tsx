@@ -1,14 +1,16 @@
-import react            from "react";
 import styled           from "styled-components";
 
 import cmmCtx           from "#context/common.ts";
+import apiAccount       from "#util/api.account.ts";
 import apiProduct       from "#util/api.product.ts";
 import apiStorage       from "#util/api.storage.ts";
 
 import { useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
 import type { UseQueryResult } from "@tanstack/react-query";
+import type { MouseEvent } from "react";
 import type { BasicFetch } from "#util/api.product.ts";
 
 import { Share2Icon } from "lucide-react";
@@ -44,13 +46,34 @@ const content = function Product ()
 }
 content.Main = function ProductMainContent (prop: PropMain)
 {
-  const [name, setName] = react.useState ("");
-  const [sub, setSub] = react.useState ("");
-  const [desc, setDesc] = react.useState ("");
-  const [price, setPrice] = react.useState ("");
-  const [icon, setIcon] = react.useState ("");
+  const auth              = cmmCtx.useAuth ();
+  const [name, setName]   = useState ("");
+  const [sub, setSub]     = useState ("");
+  const [desc, setDesc]   = useState ("");
+  const [price, setPrice] = useState ("");
+  const [icon, setIcon]   = useState ("");
 
-  react.useEffect (() =>
+  const onClickAdd = (event: MouseEvent) =>
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+
+    const query = prop.queryBasic;
+    const queryData = query.data;
+    const queryId = queryData ? queryData.id : NaN;
+
+    void apiAccount.createCart (auth.session, {
+      productId: queryId,
+      quantity: 1
+    });
+  }
+  const onClickShare = (event: MouseEvent) =>
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+  }
+
+  useEffect (() =>
   {
     const query = prop.queryBasic;
     const data = query.data;
@@ -87,8 +110,8 @@ content.Main = function ProductMainContent (prop: PropMain)
               <StyleMainPriceDiscount>99%</StyleMainPriceDiscount>
               <span>{price}</span>
             </StyleMainPrice>
-            <button>เพิ่มลงในตะกร้า</button>
-            <button>
+            <button onClick={onClickAdd}>เพิ่มลงในตะกร้า</button>
+            <button onClick={onClickShare}>
               <Share2Icon/>
               <span>แชร์</span>
             </button>

@@ -1,25 +1,14 @@
-import http     from "#core/http.ts";
-import control  from "#controller/account.ts";
-import controlAuth from "#controller/auth.ts";
-import modelAct from "#model/account.ts";
+import http             from "#core/http.ts";
+import control          from "#controller/account.ts";
+import controlAuth      from "#controller/auth.ts";
 
-/**
- *  
-*/
 const content = () =>
 {
+    //
+    // ไม่มีคุณสมบัติในตอนนี้
+    //
     return;
 }
-/**
- * 
-*/
-content.getController = () =>
-{
-    return control;
-}
-/**
- * 
-*/
 content.getRoute = () =>
 {
     const router = http.router ();
@@ -27,7 +16,11 @@ content.getRoute = () =>
     const authManager = controlAuth.validateOnlyManager ();
 
     router.get ("/", authUser, control.getBasic);
+    router.get ("/:id", authUser, control.getBasicOf);
+
     router.put ("/", authUser, control.putBasic);
+    router.put ("/:id", authUser, control.putBasicOf);
+
     router.post ("/", authManager, control.postBasic);
     router.delete ("/", authManager, control.deleteBasic);
 
@@ -53,10 +46,6 @@ content.getRouteCart = () =>
 
     return router;
 }
-/**
- * แข็งวัตถุ (ความปลอดภัย)
-*/
-Object.freeze (content);
 /**
  * ส่งออกตัวแปร
 */

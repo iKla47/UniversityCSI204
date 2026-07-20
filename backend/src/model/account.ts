@@ -184,8 +184,9 @@ content.createCart = (info: CartCreate)
 {
     return sql.insert (`
         INSERT INTO AccountCart (AccountId, ProductId, Quantity)
-        VALUES (?, ?, ?)`,
-        [info.accountId, info.productId, info.quantity]
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE Quantity = ?`,
+        [info.accountId, info.productId, info.quantity, info.quantity]
     ) as Promise<CartId>;
 }
 

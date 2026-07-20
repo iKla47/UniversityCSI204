@@ -16,7 +16,7 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import type { BasicFetch as ProductBasicFetch } from "#util/api.product.ts";
 import type { CartFetch } from "#util/api.account.ts";
 
-import { ShoppingBasket } from "lucide-react";
+import { RefreshCwOff, ShoppingBasket } from "lucide-react";
 
 /**
  * ส่วนประกอบหน้าต่างเลือกสินค้า
@@ -35,7 +35,7 @@ const content = function ProductBrowser ()
   });
   const queryCart = useQuery ({
     queryKey: ["Cart"],
-    queryFn: () => apiAccount.getCartList (auth.session)
+    queryFn: () => apiAccount.getCart (auth.session)
   });
 
   react.useEffect (() =>
@@ -53,21 +53,24 @@ const content = function ProductBrowser ()
 content.List = function ProductBrowserList (prop: PropList)
 {
   const [children, setChildren] = react.useState<ReactNode> ([]);
+  const showQuery = prop.queryList;
+  const showContent = !showQuery.isError;
+  const showAlert = showQuery.isLoadingError || showQuery.isFetching;
+  const isLoading = showQuery.isLoading;
+  const isLoadingError = showQuery.isLoadingError;
 
   const onClick = (id: number) =>
   {
     void cmmNavigation.toProduct (id);
     return;
   }
+
   const onRender = () =>
   {
     const query = prop.queryList;
 
     if (!query.data) {
-      return <></>;
-    }
-    if (query.error) {
-      console.error (query.error);
+      return;
     }
     setChildren (query.data.map ((x) =>
     {
@@ -94,7 +97,23 @@ content.List = function ProductBrowserList (prop: PropList)
 
   return (
     <SyledList>
-      {children}
+      <StyleListContent $visible={showContent}>
+        {children}
+      </StyleListContent>
+      <StyleListAlert $visible={showAlert}>
+        { isLoading ? (
+            <p>กำลังโหลดรายการสินค้า</p>
+          ) : <></>
+        }
+        {
+          isLoadingError ? (
+            <>
+              <RefreshCwOff size={64}/>
+              <p>เกิดข้อผิดพลาดการโหลดรายการสินค้า</p>
+            </>
+          ) : <></>
+        }
+      </StyleListAlert>
     </SyledList>
   );
 }
@@ -201,9 +220,7 @@ interface PropCart
 
 const SyledList = styled.div`
 
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  position: relative;
   gap: 8px;
   overflow: hidden auto;
   margin: 48px 510px 0px 254px;
@@ -230,6 +247,22 @@ const SyledList = styled.div`
     margin: 48px 14px 16px 14px;
   }
 `;
+const StyleListAlert = styled.div<{ $visible: boolean; }>`
+  display: ${prop => prop.$visible ? "flex" : "none"};
+  flex-direction: column;
+  gap: 16px;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+`;
+const StyleListContent = styled.div<{ $visible: boolean; }>`
+  display: ${prop => prop.$visible ? "flex" : "none"};
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
 const StyledListItemContainer = styled.button`
 
   min-width: 200px;
@@ -259,28 +292,28 @@ const StyledListItemContainer = styled.button`
 
   @media (max-width: 960px)
   {
-    min-width: 150px;
-    min-height: 200px;
+    min-width: 200px;
+    min-height: 300px;
 
-    max-width: 150px;
-    max-height: 200px;
+    max-width: 200px;
+    max-height: 300px;
   }
   @media (max-width: 640px)
   {
-    min-width: 125px;
+    min-width: 100px;
     min-height: 175px;
 
-    max-width: 125px;
+    max-width: 100px;
     max-height: 175px;
   }
-  @media (max-width: 512px)
+  /* @media (max-width: 512px)
   {
-    min-width: 100px;
+    min-width: 75px;
     min-height: 150px;
 
-    max-width: 100px;
+    max-width: 75px;
     max-height: 150px;
-  }
+  } */
 `;
 const StyledListItemText = styled.label`
   display: block;

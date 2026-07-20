@@ -21,7 +21,7 @@ content.Root = function CartRoot (prop: PropRoot)
 
   const { data: fetchItem } = useQuery ({
     queryKey: ["Cart"],
-    queryFn: () => apiAccount.getCartList (auth.session)
+    queryFn: () => apiAccount.getCart (auth.session)
   });
 
   const Component = ({ productId }: {productId: number;}) =>

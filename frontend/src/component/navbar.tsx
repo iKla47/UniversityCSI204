@@ -267,7 +267,10 @@ content.Profile = function NavBarProfile (prop: PropProfile)
     <Profile onClick={onClick}>
       { !prop.icon && !data ? <CircleUser/> : <></>}
       { !prop.icon && data ? 
-        <img src={apiStorage.getUrlStream (data.icon)}/> : <></>
+        data.icon.length > 0 ?
+        <img src={apiStorage.getUrlStream (data.icon)}/> : 
+        <CircleUser/>
+        : <></>
       }
       {prop.icon ? <img src={prop.icon}/> : <></>}
     </Profile>

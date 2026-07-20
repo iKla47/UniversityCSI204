@@ -6,68 +6,19 @@ import Logo         from "#asset/image/favicon.ico";
 
 import ContentStock from "#component/staff.stock.tsx";
 import ContentOrder from "#component/staff.order.tsx";
+import ContentAccount from "#component/console.account.tsx";
 
 import
 {
   ArrowLeftCircleIcon,
   XIcon,
   Cuboid,
-  PackageSearchIcon
+  PackageSearchIcon,
+  ShieldUser
 }
 from "lucide-react";
 
-interface PropRoot
-{
-  visible ?: boolean;
-  transparent ?: boolean;
-  width ?: string;
-  widthMax ?: string;
-  height ?: string;
-  heightMax ?: string;
-  margin ?: string;
 
-  onClose ?: () => void;
-}
-interface PropView
-{
-  transparent ?: boolean;
-  width ?: string;
-  widthMax ?: string;
-  height ?: string;
-  heightMax ?: string;
-  margin ?: string;
-
-  container ?: react.Ref<HTMLDivElement> | undefined;
-  children ?: react.ReactNode;
-}
-interface PropMenu
-{
-  content ?: [number, react.Dispatch<react.SetStateAction<number>>];
-  visible ?: boolean;
-  width ?: string;
-  widthMax ?: string;
-}
-interface PropContent
-{
-  visible ?: boolean;
-  content ?: number;
-  onBack ?: () => void;
-}
-interface PropContentGeneral
-{
-  visible ?: boolean;
-  onBack ?: () => void;
-}
-interface PropContentSecurity
-{
-  visible ?: boolean;
-  onBack ?: () => void;
-}
-interface PropTemplateBackButton
-{
-  visible ?: boolean;
-  onClick ?: () => void;
-}
 
 /**
  * องค์ประกอบแสดงผลหน้า Console
@@ -245,6 +196,8 @@ content.Menu = function ConsoleMenu (prop: PropMenu)
         text="สต็อกสินค้า" icon={<Cuboid/>}/>
       <MenuBar.Item value={content.CONTENT_ORDER} 
         text="คำสั่งซื้อ" icon={<PackageSearchIcon/>}/>
+      <MenuBar.Item value={content.CONTENT_ACCOUNT} 
+        text="ผู้ใช้" icon={<ShieldUser/>}/>
     </MenuBar>
   );
 }
@@ -254,6 +207,7 @@ content.Content = function ConsoleContent (prop: PropContent)
   const current = prop.content ?? 0;
   const isStock = visible && current === content.CONTENT_STOCK;
   const isOrder = visible && current === content.CONTENT_ORDER;
+  const isAct   = visible && current === content.CONTENT_ACCOUNT;
   const onBack = prop.onBack;
 
 
@@ -261,6 +215,7 @@ content.Content = function ConsoleContent (prop: PropContent)
     <StyleContent>
       <content.ContentStock visible={isStock} onBack={onBack}/>
       <content.ContentOrder visible={isOrder} onBack={onBack}/>
+      <content.ContentAccount visible={isAct} onBack={onBack}/>
     </StyleContent>
   );
 }
@@ -278,7 +233,7 @@ content.ContentStock = function ConsoleContentStock
   );
 }
 content.ContentOrder = function ConsoleContentOrder
-  (prop: PropContentSecurity) : react.ReactElement
+  (prop: PropContentOrder) : react.ReactElement
 {
   return (
     <react.Activity mode={prop.visible ? "visible" : "hidden"}>
@@ -286,6 +241,18 @@ content.ContentOrder = function ConsoleContentOrder
         visible={prop.onBack != undefined} 
         onClick={prop.onBack}/>
       <ContentOrder/>
+    </react.Activity>
+  );
+}
+content.ContentAccount = function ConsoleContentAccount 
+  (prop: PropContentAccount) : react.ReactElement
+{
+  return (
+    <react.Activity mode={prop.visible ? "visible" : "hidden"}>
+      <content.TemplateBackButton 
+        visible={prop.onBack != undefined} 
+        onClick={prop.onBack}/>
+      <ContentAccount/>
     </react.Activity>
   );
 }
@@ -310,12 +277,80 @@ content.TemplateBackButton = function ConsoleTemplateBackButton
     </StyleTemplateBackButton>
   );
 }
-
+/**
+ * ไม่มีหน้าที่เลือก
+*/
 content.CONTENT_UNDEFINED = 0;
+/**
+ * หน้าจัดการข้อมูลสต็อก
+*/
 content.CONTENT_STOCK = 1;
+/**
+ * หน้าจัดการข้อมูลคำสั่งซื้อ
+*/
 content.CONTENT_ORDER = 2;
-content.CONTENT_SHIPPING = 3;
-content.CONTENT_PAYMENT = 4;
+/**
+ * หน้าจัดการข้อมูลบัญชี
+*/
+content.CONTENT_ACCOUNT = 3;
+
+interface PropRoot
+{
+  visible ?: boolean;
+  transparent ?: boolean;
+  width ?: string;
+  widthMax ?: string;
+  height ?: string;
+  heightMax ?: string;
+  margin ?: string;
+
+  onClose ?: () => void;
+}
+interface PropView
+{
+  transparent ?: boolean;
+  width ?: string;
+  widthMax ?: string;
+  height ?: string;
+  heightMax ?: string;
+  margin ?: string;
+
+  container ?: react.Ref<HTMLDivElement> | undefined;
+  children ?: react.ReactNode;
+}
+interface PropMenu
+{
+  content ?: [number, react.Dispatch<react.SetStateAction<number>>];
+  visible ?: boolean;
+  width ?: string;
+  widthMax ?: string;
+}
+interface PropContent
+{
+  visible ?: boolean;
+  content ?: number;
+  onBack ?: () => void;
+}
+interface PropContentGeneral
+{
+  visible ?: boolean;
+  onBack ?: () => void;
+}
+interface PropContentOrder
+{
+  visible ?: boolean;
+  onBack ?: () => void;
+}
+interface PropContentAccount
+{
+  visible ?: boolean;
+  onBack ?: () => void;
+}
+interface PropTemplateBackButton
+{
+  visible ?: boolean;
+  onClick ?: () => void;
+}
 
 const StyleRoot = styled.div<{ 
   $transparent: boolean; 
@@ -380,11 +415,6 @@ const StyleTemplateBackButton = styled.button<{ $visible: boolean; }>`
     margin-right: 16px;
   }
 `;
-
-/**
- * แข็งวัตถุ (ความปลอดภัย)
-*/
-Object.freeze (content);
 /**
  * ส่งออกตัวแปร
 */
