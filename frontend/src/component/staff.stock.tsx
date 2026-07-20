@@ -5,20 +5,27 @@ import type { BasicFetch } from "../util/api.product";
 export default function Stock() {
   const [products, setProducts] = useState<BasicFetch[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
+  
+  
   const loadProducts = async () => {
     try {
       const session = localStorage.getItem("session") ?? "";
-      const data = await productApi.getBasicByList(session);
-      setProducts(data);
+      const data = await productApi.getBasicList(session);
+      return data;
     } catch (err) {
       console.error(err);
+      return [];
     }
   };
+
+  useEffect(() => 
+  {
+    void loadProducts ().then ((x) =>
+    {
+      setProducts (x);
+    })
+  }, 
+  []);
 
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -41,7 +48,7 @@ export default function Stock() {
                 type="text"
                 placeholder="Search..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => { setSearchQuery(e.target.value); }}
               />
             </SearchWrapper>
           </ToolbarRow>
