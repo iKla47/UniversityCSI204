@@ -91,7 +91,7 @@ content.updateBasic = async (session: string, data: BasicUpdate)
     : Promise<void> =>
 {
     const id = String (data.id);
-    const endpoint = `${content.NET_URL_COMMENT}/${id}`;
+    const endpoint = `${content.NET_URL}/${id}`;
 
     await common.putJson (session, endpoint, {
         "Name": data.name,
@@ -104,7 +104,7 @@ content.updateStock = async (session: string, data: StockUpdate)
     : Promise<void> =>
 {
     const id = String (data.productId);
-    const endpoint = `${content.NET_URL_COMMENT}/${id}`;
+    const endpoint = `${content.NET_URL_STOCK}/${id}`;
 
     await common.putJson (session, endpoint, {
         "Quantity": data.quantity,
@@ -152,7 +152,7 @@ content.deleteBasic = async (session: string, key: BasicId)
     : Promise<void> =>
 {
     const id = String (key);
-    const endpoint = `${content.NET_URL_COMMENT}/${id}`;
+    const endpoint = `${content.NET_URL}/${id}`;
 
     await common.delete (session, endpoint);
 }

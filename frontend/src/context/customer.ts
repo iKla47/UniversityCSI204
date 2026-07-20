@@ -4,6 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import Ctx from "#context/common.ts";
 import ApiAuth from "#util/api.auth.ts";
 import ApiAccount from "#util/api.account.ts";
+import ApiProduct from "#util/api.product.ts";
+
+import { 
+    type BasicId as ProductId,
+    type BasicFetchOption as ProductSearchOption
+} from "#util/api.product.ts";
 
 interface ContextCart
 {
@@ -37,6 +43,26 @@ const useCartQuery = () =>
         throwOnError: true
     });
 }
+const useProduct = (id: ProductId) =>
+{
+    const auth = Ctx.useAuth ();
+    return useQuery ({
+        queryKey: ["Product", "Basic", id],
+        queryFn: () => ApiProduct.getBasic (auth.session, id),
+        enabled: true,
+        throwOnError: true
+    });
+}
+const useProductList = (option: ProductSearchOption) =>
+{
+    const auth = Ctx.useAuth ();
+    return useQuery ({
+        queryKey: ["Product", "BasicList", option],
+        queryFn: () => ApiProduct.getBasicList (auth.session, option),
+        enabled: true,
+        throwOnError: true
+    });
+}
 
 const Content = () => { return; }
 const ContextCart = createContext<ContextCart> (defCart ());
@@ -45,5 +71,7 @@ Content.ProviderCart = ContextCart.Provider;
 Content.defCart = defCart;
 Content.useCart = useCart;
 Content.useCartQuery = useCartQuery;
+Content.useProduct = useProduct;
+Content.useProductList = useProductList;
 
 export default Content;

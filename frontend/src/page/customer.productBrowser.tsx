@@ -23,52 +23,52 @@ import { RefreshCwOff, ShoppingBasket } from "lucide-react";
 */
 const content = function ProductBrowser ()
 {
+  return (<>
+    <content.List/>
+    <content.Filter/>
+    <content.Cart/>
+  </>);
+}
+content.List = function ProductBrowserList ()
+{  
   const [serachParam] = useSearchParams ();
   const search = serachParam.get ("search");
-  const auth = ctx.useAuth ();
-
-  const queryList = useQuery ({
-    queryKey: ["Product", "List"],
-    queryFn: () => apiProduct.getBasicList (auth.session, {
-      search: search ?? undefined
-    }),
+  const queryList = ctxCustomer.useProductList ({
+    search: search ?? ""
   });
+  
+  const showQuery = queryList;
+  const showContent = !showQuery.isError;
+  const showAlert = showQuery.isLoadingError || showQuery.isFetching;
+  const isLoading = showQuery.isLoading;
+  const isLoadingError = showQuery.isLoadingError;
 
   react.useEffect (() =>
   {
     void queryList.refetch ();
   },
   [search]);
-
-  return (<>
-    <content.List queryList={queryList}/>
-    <content.Filter/>
-    <content.Cart/>
-  </>);
-}
-content.List = function ProductBrowserList (prop: PropList)
-{
-  const [children, setChildren] = react.useState<ReactNode> ([]);
-  const showQuery = prop.queryList;
-  const showContent = !showQuery.isError;
-  const showAlert = showQuery.isLoadingError || showQuery.isFetching;
-  const isLoading = showQuery.isLoading;
-  const isLoadingError = showQuery.isLoadingError;
-
+  
+  /**
+   * ทำงานเมื่อผู้ใช้กดเลือกสินค้าบนรายการ
+  */
   const onClick = (id: number) =>
   {
     void cmmNavigation.toProduct (id);
     return;
   }
-
+  /**
+   * แสดงผลรายการหลังจากข้อมูลโหลดเรียบร้อยแล้ว
+  */
   const onRender = () =>
   {
-    const query = prop.queryList;
+    const query = queryList;
 
-    if (!query.data) {
-      return;
+    if (!query.data) 
+    {
+      return (<></>);
     }
-    setChildren (query.data.map ((x) =>
+    return (query.data.map ((x) =>
     {
       const key = String (x.id);
       const id = x.id;
@@ -84,31 +84,32 @@ content.List = function ProductBrowserList (prop: PropList)
         onClick={onClick}/>
     }));
   }
-  react.useEffect (() =>
+  /**
+   * แสดงผลการแจ้งเตือนในขณะที่ระบบกำลังดำเนินการ
+  */
+  const onRenderAlert = () =>
   {
-    onRender ();
-    return;
-  },
-  [prop.queryList]);
+    if (isLoadingError) 
+    {
+      return <>
+        <RefreshCwOff size={64}/>
+        <p>เกิดข้อผิดพลาดการโหลดรายการสินค้า</p>
+      </>
+    }
+    if (isLoading) 
+    {
+      return <p>กำลังโหลดรายการสินค้า</p>
+    }
+    return <></>;
+  }
 
   return (
     <SyledList>
       <StyleListContent $visible={showContent}>
-        {children}
+        { onRender () }
       </StyleListContent>
       <StyleListAlert $visible={showAlert}>
-        { isLoading ? (
-            <p>กำลังโหลดรายการสินค้า</p>
-          ) : <></>
-        }
-        {
-          isLoadingError ? (
-            <>
-              <RefreshCwOff size={64}/>
-              <p>เกิดข้อผิดพลาดการโหลดรายการสินค้า</p>
-            </>
-          ) : <></>
-        }
+        { onRenderAlert () }
       </StyleListAlert>
     </SyledList>
   );
@@ -177,17 +178,6 @@ content.Cart = function ProductBrowserCart ()
   );
 }
 
-
-/**
- * โครงสร้างข้อมูลที่ส่วนประกอบต้องการใช้งาน: รายการสินค้า
-*/
-interface PropList
-{
-  /**
-   * ระบบดึงข้อมูลรายการสินค้า
-  */
-  queryList: UseQueryResult<ProductBasicFetch []>;
-}
 /**
  * โครงสร้างข้อมูลที่ส่วนประกอบต้องการใช้งาน: ตัวสินค้า
 */
