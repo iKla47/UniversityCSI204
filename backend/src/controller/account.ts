@@ -366,12 +366,15 @@ content.inputPutCart = (
 {
     const reader = objectReader (request.body);
     const quantity = reader.requireInteger ("Quantity");
-
-    return {
+    const result = {
         accountId: accountId,
         itemId: itemId,
         quantity: quantity
     };
+    if (result.quantity && result.quantity < 0) {
+        throw new error.BadData ("Negative quantity not accepted");
+    }
+    return result;
 }
 content.inputPostBasic = async (
     iconId: ResourceId, 
@@ -413,11 +416,15 @@ content.inputPostBasic = async (
 content.inputPostCart = (request: Request, accountId: number) : CartCreate =>
 {
     const reader = objectReader (request.body);
-    return {
+    const result = {
         accountId: accountId,
         productId: reader.requireInteger ("ProductId"),
         quantity: reader.requireInteger ("Quantity")
     };
+    if (result.quantity && result.quantity < 0) {
+        throw new error.BadData ("Negative quantity not accepted");
+    }
+    return result;
 }
 
 

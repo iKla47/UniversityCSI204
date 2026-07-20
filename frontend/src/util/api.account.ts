@@ -130,7 +130,7 @@ content.createCart = async (session: string, data: CartCreate) =>
 content.deleteBasic = async (session: string, id: BasicId) =>
 {
     const key = String (id);
-    const endpoint = `${content.NET_URL}/account/${key}`;
+    const endpoint = `${content.NET_URL}/${key}`;
     await common.delete (session, endpoint);
 }
 /**
@@ -139,7 +139,7 @@ content.deleteBasic = async (session: string, id: BasicId) =>
 content.deleteCart = async (session: string, id: CartId) =>
 {
     const key = String (id);
-    const endpoint = `${content.NET_URL_CART}/account/${key}`;
+    const endpoint = `${content.NET_URL_CART}/${key}`;
     await common.delete (session, endpoint);
 }
 

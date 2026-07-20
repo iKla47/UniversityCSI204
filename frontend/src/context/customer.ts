@@ -40,7 +40,7 @@ const useCartQuery = () =>
             issued: auth.sessionIssued,
             expire: auth.sessionExpire
         }),
-        throwOnError: true
+        throwOnError: false
     });
 }
 const useProduct = (id: ProductId) =>
@@ -50,7 +50,7 @@ const useProduct = (id: ProductId) =>
         queryKey: ["Product", "Basic", id],
         queryFn: () => ApiProduct.getBasic (auth.session, id),
         enabled: true,
-        throwOnError: true
+        throwOnError: false
     });
 }
 const useProductList = (option: ProductSearchOption) =>
@@ -60,7 +60,7 @@ const useProductList = (option: ProductSearchOption) =>
         queryKey: ["Product", "BasicList", option],
         queryFn: () => ApiProduct.getBasicList (auth.session, option),
         enabled: true,
-        throwOnError: true
+        throwOnError: false
     });
 }
 
