@@ -1,9 +1,14 @@
 import react        from "react";
 import styled       from "styled-components";
 import MenuBar      from "#component/menu.bar.tsx";
+import MenuContext  from "#component/menu.context.tsx";
 import NavBar       from "#component/navbar.tsx";
 import Logo         from "#asset/image/favicon.ico";
+import apiAuth      from "#util/api.auth.ts";
+import ctxUI        from "#context/common.ui.ts";
 
+import Toast        from "#component/toast.tsx";
+import Settings     from "#component/settings.tsx";
 import ContentStock from "#component/staff.stock.tsx";
 import ContentOrder from "#component/staff.order.tsx";
 import ContentAccount from "#component/console.account.tsx";
@@ -14,7 +19,9 @@ import
   XIcon,
   Cuboid,
   PackageSearchIcon,
-  ShieldUser
+  ShieldUser,
+  SettingsIcon,
+  LogOut
 }
 from "lucide-react";
 
@@ -25,6 +32,47 @@ from "lucide-react";
 */
 const content = function Console ()
 {
+  const menuCtx = ctxUI.useMenuContext ();
+  const settings = ctxUI.useSettings ();
+  
+  const toProfile = () => 
+  {
+    /**
+     * เปิดหน้าการตั้งค่า
+    */
+    const onSettings = () =>
+    {
+      settings.setClose (() =>
+      {
+        settings.setVisible (false);
+      });
+      settings.setVisible (true);
+      menuCtx.setVisible (false);
+    }
+    /**
+     * ลงชื่อผู้ใช้ออก 
+    */
+    const onSignOut = () =>
+    {
+      apiAuth.saveSetPrefered (-1);
+      apiAuth.saveWrite ();
+      location.reload ();
+    }
+    menuCtx.setChildren (<>
+      <MenuContext.Item 
+        text="การตั้งค่า" 
+        icon={<SettingsIcon/>}
+        onClick={onSettings}/>
+      <MenuContext.Item 
+        text="ลงชื่อออก" 
+        icon={<LogOut/>}
+        onClick={onSignOut}/>
+    </>);
+    menuCtx.setInset ("56px 16px 0px auto");
+    menuCtx.setCancel (() => { menuCtx.setVisible (false); });
+    menuCtx.setVisible (true);
+  }
+  
   return (
     <>
       <content.Root
@@ -39,12 +87,11 @@ const content = function Console ()
       <NavBar>
         <NavBar.Branding text="แผนควบคุมระบบ" icon={Logo}/>
         <NavBar.Spacing/>
-        <NavBar.Menu>
-          <NavBar.MenuItem text="หน้าแรก"/>
-          <NavBar.MenuItem text="เอกสาร"/>
-        </NavBar.Menu>
-        <NavBar.Profile/> : 
+        <NavBar.Profile onClick={toProfile}/> : 
       </NavBar>
+      <Settings.Provider/>
+      <Toast.Provider/>
+      <MenuContext.Provider/>
     </>
   )
 }
@@ -182,7 +229,7 @@ content.Menu = function ConsoleMenu (prop: PropMenu)
   const visible = prop.visible ?? true;
   const width = prop.width ?? "100%";
   const widthMax = prop.widthMax ?? "256px";
-  
+
   return (
     <MenuBar 
         visible={visible}
