@@ -1,5 +1,6 @@
 import http             from "#core/http.ts";
 import control          from "#controller/account.ts";
+import controlOrder     from "#controller/order.ts";
 import controlAuth      from "#controller/auth.ts";
 
 const content = () =>
@@ -52,6 +53,7 @@ content.getRouteOrder = () =>
     const authUser = controlAuth.validateLeastUser ();
 
     router.get ("/", authUser, control.getOrder);
+    router.post ("/", authUser, controlOrder.post);
 
     return router;
 }

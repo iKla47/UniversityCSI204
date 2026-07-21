@@ -18,7 +18,6 @@ content.getRoute = () =>
     
     router.get ("/", authStaff, control.getList);
     router.get ("/:id", authUser, control.get);
-    router.post ("/", authUser, control.post);
     router.put ("/:id", authStaff, control.put);
     router.delete ("/:id", authManager, control.delete);
 
