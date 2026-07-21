@@ -273,7 +273,7 @@ content.update = async (info: BasicUpdate) : Promise<number> =>
         info.price ? "Price" : undefined,
         info.priceCode ? "PriceCode" : undefined,
         info.platform ? "Platform" : undefined,
-        info.artwork ? "Artwork" : undefined
+        info.cover ? "Artwork" : undefined
     ]
     .filter (x => x !== undefined)
     .join (" = ?, ")
@@ -286,7 +286,7 @@ content.update = async (info: BasicUpdate) : Promise<number> =>
         info.price,
         info.priceCode,
         info.platform,
-        info.artwork,
+        info.cover,
         info.id
     ]
     .filter (x => x !== undefined);
@@ -431,14 +431,15 @@ content.create = async (info: BasicCreate) : Promise<BasicId> =>
     {
         const id = await transaction.insert (`
             INSERT INTO Product 
-            (Name, Description, Price, PriceCode, Platform, Cover) 
-            VALUES (?, ?, ?, ?, ?, ?)`,
+            (Name, Description, Price, PriceCode, Platform, Background, Cover) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [
                 info.name, 
                 info.description, 
                 info.price, 
                 info.priceCode, 
                 info.platform,
+                info.background,
                 info.cover,
             ]
         ) as BasicId;
@@ -633,6 +634,7 @@ content.readBasic = (column: Record<string, unknown>) =>
         price: reader.requireFloat ("Price"),
         priceCode: reader.requireInteger ("PriceCode"),
         platform: reader.requireInteger ("Platform"),
+        background: reader.requireString ("Background"),
         cover: reader.requireString ("Cover")
     };
     return result;
@@ -741,6 +743,10 @@ export interface BasicFetch
     */
     platform: number;
     /**
+     * พื้นหลังสินค้า
+    */
+    background: string;
+    /**
      * รูปปกเกม
     */
     cover: string;
@@ -779,9 +785,13 @@ export interface BasicUpdate
     */
     platform ?: number | undefined;
     /**
+     * พื้นหลังสินค้า
+    */
+    background ?: string | undefined;
+    /**
      * รูปปกเกม
     */
-    artwork ?: string;
+    cover ?: string | undefined;
 }
 /**
  * โครงสร้างข้อมูลที่ใช้ในการสร้างข้อมูลลงในฐานข้อมูล
@@ -808,6 +818,10 @@ export interface BasicCreate
      * แพลตฟอร์ม
     */
     platform: number;
+    /**
+     * พื้นหลังสินค้า
+    */
+    background: string;
     /**
      * รูปปกสินค้า
     */

@@ -165,6 +165,7 @@ content.readBasic = (reader: ObjectReader) : BasicFetch =>
         price: reader.requireFloat ("Price"),
         priceCode: reader.requireInteger ("PriceCode"),
         platform: reader.requireInteger ("Platform"),
+        background: reader.requireString ("Background"),
         cover: reader.requireString ("Cover"),
     };
 }
@@ -377,6 +378,10 @@ export interface BasicFetch
     */
     platform: number;
     /**
+     * รูปภาพพื้นหลังสินค้า
+    */
+    background: string;
+    /**
      * รูปภาพปกสินค้า
     */
     cover: string;
@@ -440,6 +445,10 @@ export interface BasicCreate
      * แพลตฟอร์ม
     */
     platform: number;
+    /**
+     * พื้นหลังสินค้า
+    */
+    background: Blob | File | undefined;
     /**
      * ปกสินค้า
     */

@@ -65,6 +65,7 @@ content.getBasic = (request: Request, response: Response) =>
             "Price": x.price,
             "PriceCode": x.priceCode,
             "Platform": x.platform,
+            "Background": x.background,
             "Cover": x.cover
         });
         response.end ();
@@ -110,6 +111,7 @@ content.getBasicList = (request: Request, response: Response) =>
                     "Price": x.price,
                     "PriceCode": x.priceCode,
                     "Platform": x.platform,
+                    "Background": x.background,
                     "Cover": x.cover
                 }
             })
@@ -585,12 +587,14 @@ content.postBasic = async (request: Request, response: Response) =>
     try
     {
         const coverId = await modelStorage.createWriterId ();
+        const bgId = await modelStorage.createWriterId ();
         const form = formidable ({
             multiples: false,
             uploadDir: modelStorage.getPath (),
             filter: (part) =>
             {
-                const isKey = part.name === "Cover";
+                const isKey = part.name === "Cover" || 
+                                part.name == "Background";
                 const isImage = part.mimetype ? 
                                 part.mimetype.startsWith ("image/") : false;
 
@@ -600,16 +604,24 @@ content.postBasic = async (request: Request, response: Response) =>
             {
                 void name; void ext;
                 void part; void form;
-                return coverId;
+
+                switch (part.name)
+                {
+                    case "Cover": return coverId;
+                    case "Background": return bgId;
+                }
+                return "";
             },
         });
         const [field, file] = await form.parse (request);
 
         const listMetadata = field ["Metadata"] ?? [];
-        const listFile = file ["Cover"] ?? [];
+        const listCover = file ["Cover"] ?? [];
+        const listBackground = file ["Background"] ?? [];
 
         const meta = objectReader (JSON.parse (listMetadata.at (0) ?? ""));
-        const cover = listFile.at (0);
+        const background = listBackground.at (0);
+        const cover = listCover.at (0);
 
         input = 
         {
@@ -618,6 +630,7 @@ content.postBasic = async (request: Request, response: Response) =>
             price: meta.requireInteger ("Price"),
             priceCode: meta.requireInteger ("PriceCode"),
             platform: meta.requireInteger ("Platform"),
+            background: background?.newFilename ?? "",
             cover: cover?.newFilename ?? ""
         };
     }
