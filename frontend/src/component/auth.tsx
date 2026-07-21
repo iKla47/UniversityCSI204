@@ -200,9 +200,14 @@ content.PAGE_SIGN_IN_PWD = 3;
 content.PAGE_SIGN_IN_TOTP = 4;
 
 /**
+ * การแสดงผล: หน้าใส่รหัส TOTP
+*/
+content.PAGE_SUSPENDED = 11;
+/**
  * การแสดงผล: หน้าใส่ข้อมูลสร้างบัญชี
 */
 content.PAGE_SIGN_UP = 101;
+
 /**
  * ข้อความตอบกลับ: ไม่ระบุ
 */

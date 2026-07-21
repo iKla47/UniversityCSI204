@@ -194,7 +194,8 @@ content.challengeFacebook = async (
         const accountId = await modelAccount.create ({
             name: name,
             role: modelAccount.ROLE_USER,
-            icon: icon
+            icon: icon,
+            status: modelAccount.RESTRICTION_NONE,
         });
         await content.createDbFacebook (userId, accountId);
 
@@ -212,7 +213,7 @@ content.challengeFacebook = async (
 content.challengeFinalize = async (authLink: AccountId) 
     : Promise<Challenge> =>
 {
-    const cmd = `SELECT Id, Role FROM Account WHERE Id = ?`;
+    const cmd = `SELECT Id, Role, Status FROM Account WHERE Id = ?`;
     const param = [authLink];
     const query = await sql.select (cmd, param).then ((x) =>
     {
@@ -227,22 +228,29 @@ content.challengeFinalize = async (authLink: AccountId)
         {
             id: reader.requireInteger ("Id"),
             role: reader.requireInteger ("Role"),
+            status: reader.requireInteger ("Status"),
         }
         return result;
     });
+    const isSuspended = 
+        ((query.status & modelAccount.RESTRICTION_SUSPENDED) != 0);
 
     const issued = new Date ();
     const expired = new Date (Date.now () + model.getExpireSession ());
     const session = await model.createSession (
         issued, expired,
         query.id, query.role, 
-        model.RESTRICTION_NONE
+        isSuspended ? 
+            modelAccount.RESTRICTION_SUSPENDED : 
+            modelAccount.RESTRICTION_NONE
     );
     
     return {
         ... session,
         authId: "",
-        authStep: content.STEP_CHALLENGE_COMPLETED
+        authStep: isSuspended ? 
+            content.STEP_CHALLENGE_SUSPENDED : 
+            content.STEP_CHALLENGE_COMPLETED
     }
 }
 /**
@@ -551,6 +559,10 @@ content.STEP_CHALLENGE_TOTP = 4;
  * ขั้นตอนการลงชื่อเข้าใช้: เสร็จสิ้น
 */
 content.STEP_CHALLENGE_COMPLETED = 5;
+/**
+ * ขั้นตอนการลงชื่อเข้าใช้: บัญชีถูกระงับ
+*/
+content.STEP_CHALLENGE_SUSPENDED = 100;
 /**
  * ขั้นตอนการลงชื่อเข้าใช้: Facebook
 */

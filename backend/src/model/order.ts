@@ -87,12 +87,12 @@ content.update = async (info: BasicUpdate) :
     Promise<void> =>
 {
     const key = [
-        info.delivered ? "Delivered" : undefined,
-        info.status ? "Status" : undefined
+        info.delivered ? "Delivered = ?" : undefined,
+        info.status ? "Status = ?" : undefined
     ]
     .filter (x => x !== undefined)
-    .join (" = ?, ")
-    .concat (" = ? ")
+    .join (", ")
+    .concat (" ")
     .concat ("WHERE Id = ?");
 
     const value = [

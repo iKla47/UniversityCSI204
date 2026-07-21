@@ -324,6 +324,10 @@ content.STEP_CHALLENGE_TOTP = 4;
 */
 content.STEP_CHALLENGE_COMPLETED = 5;
 /**
+ * ขั้นตอนการลงชื่อเข้าใช้: บัญชีถูกระงับ
+*/
+content.STEP_CHALLENGE_SUSPENDED = 100;
+/**
  * ขั้นตอนการลงชื่อเข้าใช้: Facebook
 */
 content.STEP_CONNECT_FACEBOOK = 101;

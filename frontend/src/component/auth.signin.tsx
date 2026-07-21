@@ -8,7 +8,8 @@ import { type Session }       from "#util/api.auth.ts";
 import { type PropTemplateFeedback } from "#component/auth.tsx";
 import 
 { 
-  RotateCcw, UserRoundPlus, KeyRound, ShieldUserIcon
+  RotateCcw, UserRoundPlus, KeyRound, ShieldUserIcon,
+  UserLockIcon
 } 
 from "lucide-react";
 
@@ -100,6 +101,18 @@ interface PropChallengePassword
   feedback ?: PropTemplateFeedback;
   onSubmit ?: (value: string) => void;
   onBack ?: (last: string) => void;
+}
+interface PropSuspended
+{
+  /**
+   * ระบุสถานะการแสดงผล (แสดง/ซ่อน)
+  */
+  visible ?: boolean;
+  title ?: string;
+  description ?: string;
+  pending ?: boolean;
+  feedback ?: PropTemplateFeedback;
+  onBack ?: () => void;
 }
 
 const checkInputId = (input: string) : PropTemplateFeedback | null =>
@@ -254,6 +267,7 @@ const content = function AuthSignIn (prop: PropRoot)
       case api.STEP_CHALLENGE_ID: setPage (base.PAGE_SIGN_IN_ID); break;
       case api.STEP_CHALLENGE_PASSWORD: setPage (base.PAGE_SIGN_IN_PWD); break;
       case api.STEP_CHALLENGE_TOTP: setPage (base.PAGE_SIGN_IN_TOTP); break;
+      case api.STEP_CHALLENGE_SUSPENDED: setPage (base.PAGE_SUSPENDED); break;
       case api.STEP_CHALLENGE_COMPLETED:
         onComplete ();
         break;
@@ -381,6 +395,14 @@ const content = function AuthSignIn (prop: PropRoot)
     setFeedback (base.createEmptyFeedback ());
     setPage (base.PAGE_SIGN_IN_ID);
   }
+  const onSuspendBack = () =>
+  {
+    id.current = "";
+    session.current = base.createEmptySession ();
+
+    setFeedback (base.createEmptyFeedback ());
+    setPage (base.PAGE_SIGN_IN_ID);
+  }
 
   react.useEffect (() =>
   {
@@ -415,7 +437,13 @@ const content = function AuthSignIn (prop: PropRoot)
           onBack={onPasswordBack}/>
         <content.ChallengeTotp/>
         <content.Signed/>
-        <content.Suspended/>
+        <content.Suspended 
+          visible={page === base.PAGE_SUSPENDED} 
+          title={prop.title}
+          description={prop.description}
+          feedback={feedback}
+          pending={pending}
+          onBack={onSuspendBack}/>
     </react.Activity>
   );
 }
@@ -670,9 +698,46 @@ content.Signed = function AuthFormSigned ()
 {
   return (<></>);
 }
-content.Suspended = function AuthFormSuspended ()
+content.Suspended = function AuthFormSuspended (prop: PropSuspended)
 {
-  return (<></>);
+  const onBack = () =>
+  {
+    if (prop.onBack)
+    {
+      prop.onBack ();
+    }
+  }
+
+  return (
+    <base.TemplateDiv visible={prop.visible}>
+      <base.TemplateHeader
+        title={prop.title}
+        description={prop.description}
+        onBack={prop.onBack ? onBack : undefined}
+      />
+      <base.TemplateMain>
+        <div style={{ 
+          display: "flex", flexDirection: "column",
+          gap: "16px", color: "var(--text-primary)",
+          alignItems: "center", justifyContent: "center",
+          textAlign: "center"
+        }}>
+          <UserLockIcon size={64}/>
+          <p>บัญชีของคุณถูกระงับการใช้งาน</p>
+          <p>
+            สิ่งนี้อาจเกิดขึ้นจากการละเมิดนโยบายของแพลตฟอร์ม
+            หากคุณคิดว่าสิ่งนี้เป็นการเข้าผิดให้ทำการติดต่อผู้ดูแลระบบ
+          </p>
+        </div>
+        <base.TemplateFeedback
+          type={prop.feedback?.type}
+          text={prop.feedback?.text}/>
+      </base.TemplateMain>
+      <base.TemplateFooter>
+        <base.TemplatePrivacyNotice/>
+      </base.TemplateFooter>
+    </base.TemplateDiv>
+  );
 }
 const StyleChallengeOption = styled.div`
   display: inline-flex;

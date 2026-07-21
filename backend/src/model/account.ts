@@ -100,6 +100,7 @@ content.updateBasic = (info: BasicUpdate) : Promise<void> =>
     ]
     .filter (x => x !== undefined)
     .join (", ")
+    .concat (" ")
     .concat ("WHERE Id = ?");
 
     const param = 
@@ -128,6 +129,7 @@ content.updateCart = async (info: CartUpdate)
     ]
     .filter (x => x !== undefined)
     .join (", ")
+    .concat (" ")
     .concat ("WHERE ItemId = ? AND AccountId = ?");
 
     const value = 

@@ -278,6 +278,7 @@ content.updateBasic = async (info: BasicUpdate) : Promise<number> =>
     ]
     .filter (x => x !== undefined)
     .join (", ")
+    .concat (" ")
     .concat ("WHERE Id = ?");
 
     const value = [
@@ -305,6 +306,7 @@ content.updateCategory = (info: CategoryUpdate) =>
     ]
     .filter (x => x !== undefined)
     .join (", ")
+    .concat (" ")
     .concat ("WHERE CategoryId = ?");
 
     const value = [
@@ -335,6 +337,7 @@ content.updateComment = (info: CommentUpdate) =>
     ]
     .filter (x => x !== undefined)
     .join (", ")
+    .concat (" ")
     .concat ("WHERE CommentId = ?");
 
     const value = [
@@ -366,6 +369,7 @@ content.updateReview = (info: ReviewUpdate) =>
     ]
     .filter (x => x !== undefined)
     .join (", ")
+    .concat (" ")
     .concat ("WHERE ReviewId = ?");
 
     const value = [
@@ -395,6 +399,7 @@ content.updateStock = (info: StockUpdate) =>
     ]
     .filter (x => x !== undefined)
     .join (", ")
+    .concat (" ")
     .concat ("WHERE ProductId = ?");
 
     const value = [
