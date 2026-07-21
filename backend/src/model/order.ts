@@ -2,6 +2,8 @@ import error from "#core/error.ts";
 import objectReader from "#core/object.reader.ts";
 import sql from "#core/sql.ts";
 
+import { type InputCommand, type InputValue } from "#core/sql.ts";
+
 import { type ObjectReader } from "#core/object.reader.ts";
 import { type BasicId as AccountId } from "#model/account.ts";
 import { type BasicId as ProductId } from "#model/product.ts";
@@ -120,9 +122,10 @@ content.getListByAccount = async (key: AccountId)
  * 
  * @key info ข้อมูลประกอบการเปลี่ยนแปลง
 */
-content.update = async (info: BasicUpdate): Promise<void> => {
-    const fields: string[] = [];
-    const values: (string | number | Date | null)[] = [];
+content.update = async (info: BasicUpdate): Promise<void> => 
+{
+    const fields: InputCommand [] = [];
+    const values: InputValue = [];
 
     if (info.delivered !== undefined) {
         fields.push("`Delivered` = ?");
@@ -140,9 +143,9 @@ content.update = async (info: BasicUpdate): Promise<void> => {
 
     values.push(info.orderId);
 
-    await sql.update(
+    await sql.update (
         `UPDATE \`OrderList\` SET ${fields.join(", ")} WHERE \`OrderId\` = ?`,
-        values as any
+        values
     );
 };
 /***
@@ -165,7 +168,7 @@ content.create = async (info: BasicCreate): Promise<BasicId> => {
             );
 
             if (stockRows.length === 0) {
-                throw new error.NotFound(`ไม่พบสินค้า ID ${item.productId} ในระบบสต็อก`);
+                throw new error.NotFound(`ไม่พบสินค้า ID ${String (item.productId)} ในระบบสต็อก`);
             }
 
             const reader = objectReader(stockRows[0]);
@@ -175,7 +178,7 @@ content.create = async (info: BasicCreate): Promise<BasicId> => {
             //
             if (currentQuantity < item.quantity) {
                 throw new error.BadData(
-                    `สินค้า ID ${item.productId} มีจำนวนไม่พอ (คงเหลือ: ${currentQuantity}, ต้องการ: ${item.quantity})`
+                    `สินค้า ID ${String (item.productId)} มีจำนวนไม่พอ (คงเหลือ: ${String (currentQuantity)}, ต้องการ: ${String (item.quantity)})`
                 );
             }
             //
