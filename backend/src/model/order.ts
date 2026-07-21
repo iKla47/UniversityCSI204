@@ -38,35 +38,17 @@ content.terminate = () =>
 content.get = async (key: BasicId) 
     : Promise<BasicFetch> =>
 {
-    const transaction = await sql.transaction ();
-    let queryList;
-    let queryItem;
-
-    try
-    {
-        const query = await Promise.all ([
-            transaction.select (
-            "SELECT * FROM OrderList WHERE OrderId = ?", 
-            [key]),
-            transaction.select (
-            "SELECT * FROM OrderItem WHERE OrderId = ?", 
-            [key]),
-        ]);
-        queryList = query[0];
-        queryItem = query[1];
-
-        await transaction.commit ();
-    }
-    catch (e: unknown)
-    {
-        await transaction.rollback ();
-        throw new error.NotAvailable (e);
-    }
-    finally
-    {
-        transaction.release ();
-    }
-
+    const query = await Promise.all ([
+        sql.select (
+        "SELECT * FROM OrderList WHERE OrderId = ?", 
+        [key]),
+        sql.select (
+        "SELECT * FROM OrderItem WHERE OrderId = ?", 
+        [key]),
+    ]);
+    const queryList = query[0];
+    const queryItem = query[1];    
+    
     if (queryList.length == 0) {
         throw new error.NotFound ("No entry of order");
     }
@@ -76,6 +58,60 @@ content.get = async (key: BasicId)
     {
         return objectReader (x);
     }));
+}
+/**
+ * ทำการดึงข้อมูลรายการคำสั่งซื้อสินค้า
+*/
+content.getList = async () 
+    : Promise<BasicFetch[]> =>
+{
+    const queryList = await sql.select ("SELECT * FROM OrderList");
+
+    if (queryList.length === 0) {
+        return [];
+    }
+
+    return await Promise.all (queryList.map ((x) =>
+    {
+        return sql.select (
+            "SELECT * FROM OrderItem WHERE = OrderId = ?", []
+        )
+        .then ((y) =>
+        {
+            return content.readBasic (objectReader (x), y.map ((z) =>
+            {
+                return objectReader (z);
+            }));
+        });
+    }))
+}
+/**
+ * ทำการดึงข้อมูลรายการคำสั่งซื้อสินค้า
+*/
+content.getListByAccount = async (key: AccountId) 
+    : Promise<BasicFetch[]> =>
+{
+    const queryList = await sql.select (
+        "SELECT * FROM OrderList WHERE AccountId = ?", [key]
+    );
+
+    if (queryList.length === 0) {
+        return [];
+    }
+
+    return await Promise.all (queryList.map ((x) =>
+    {
+        return sql.select (
+            "SELECT * FROM OrderItem WHERE = OrderId = ?", []
+        )
+        .then ((y) =>
+        {
+            return content.readBasic (objectReader (x), y.map ((z) =>
+            {
+                return objectReader (z);
+            }));
+        });
+    }))
 }
 /**
  * เปลี่ยนแปลงข้อมูลคำสั่งซื้อสินค้า 

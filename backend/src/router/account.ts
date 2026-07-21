@@ -46,6 +46,15 @@ content.getRouteCart = () =>
 
     return router;
 }
+content.getRouteOrder = () =>
+{
+    const router = http.router ();
+    const authUser = controlAuth.validateLeastUser ();
+
+    router.get ("/", authUser, control.getOrder);
+
+    return router;
+}
 /**
  * ส่งออกตัวแปร
 */

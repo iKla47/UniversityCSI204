@@ -11,6 +11,7 @@ import sql                  from "#core/sql.ts";
 import routerAuth           from "#router/auth.ts";
 import routerAccount        from "#router/account.ts";
 import routerProduct        from "#router/product.ts";
+import routerOrder          from "#router/order.ts";
 import routerStorage        from "#router/storage.ts";
 
 import modelAuth            from "#model/auth.ts";
@@ -42,11 +43,13 @@ content.start = async () =>
         http.routeTo ("/account", routerAccount.getRoute ());
         http.routeTo ("/account-list", routerAccount.getRouteList ());
         http.routeTo ("/account-cart", routerAccount.getRouteCart ());
+        http.routeTo ("/account-order", routerAccount.getRouteOrder ());
         http.routeTo ("/product", routerProduct.getRoute ());
         http.routeTo ("/product-category", routerProduct.getRouteCategory ());
         http.routeTo ("/product-comment", routerProduct.getRouteComment ());
         http.routeTo ("/product-review", routerProduct.getRouteReview ());
         http.routeTo ("/product-stock", routerProduct.getRouteStock ());
+        http.routeTo ("/order", routerOrder.getRoute ());
         http.routeTo ("/storage", routerStorage.getRoute ());
         return;
     });

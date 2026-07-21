@@ -4,7 +4,9 @@ import logging          from "#core/log.ts"
 import error            from "#core/error.ts";
 import objectReader     from "#core/object.reader.ts";
 import auth             from "#controller/auth.ts";
+import controlOrder     from "#controller/order.ts";
 import model            from "#model/account.ts";
+import modelOrder       from "#model/order.ts";
 import modelStorage     from "#model/storage.ts";
 import 
 { 
@@ -34,7 +36,7 @@ from "#model/storage.ts";
 /**
  * ระบบบันทึกกิจกรรมเริ่มต้น
 */
-const log = logging.scoped ("User");
+const log = logging.scoped ("Account");
 /**
  * ระบบจัดการข้อมูลบัญชี
 */
@@ -114,16 +116,30 @@ content.getCart = (request: Request, response: Response) =>
     const authenticate = auth.validateResult (response);
     const accountId = authenticate.id;
 
-    if (authenticate.id !== accountId)
-    {
-        response.status (http.STATUS_FORBIDDEN);
-        response.end ();
-        return;
-    }
     void model.getCartByAccount (accountId).then ((x) =>
     {
         content.outputGetCart (response, x);
     });
+}
+/**
+ * ดึงข้อมูลคำสั่งซื้อสินค้าของบัญชีตนเองที่กำลังใช้งานอยู่ 
+ * 
+ * @param request คำขอ
+ * @param response คำตอบ
+*/
+content.getOrder = (request: Request, response: Response) =>
+{
+    const authenticate = auth.validateResult (response);
+    const accountId = authenticate.id;
+
+    void modelOrder.getListByAccount (accountId).then ((x) =>
+    {
+        controlOrder.outputGetList (response, x);
+    })
+    .catch ((e: unknown) =>
+    {
+        controlOrder.errorGetList (response, e);
+    })
 }
 /**
  * ปรับเปลี่ยนข้อมูลพื้นฐานบัญชีของตนเอง

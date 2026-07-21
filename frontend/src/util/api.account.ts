@@ -12,7 +12,8 @@ import objectReader from "#util/common.objectReader.ts";
 import common       from "#util/api.common.ts";
 
 import { type ObjectReader } from "#util/common.objectReader.ts";
-import { type BasicId as ProductId } from "#util/api.product";
+import { type BasicId as ProductId } from "#util/api.product.ts";
+import { type BasicId as OrderId } from "#util/api.order.ts";
 
 /**
  * โมดูลหลักที่ใช้ในการสื่อสารระหว่างส่วนติดต่อผู้ใช้และเซิร์ฟเวอร์
@@ -48,6 +49,16 @@ content.getCart = async (session: string) =>
     const result = reader.requireArrayRecord ("Item").map ((x) =>
     {
         return content.outputGetCart (objectReader (x));
+    });
+    return result;
+}
+content.getOrder = async (session: string) =>
+{
+    const url = content.NET_URL_ORDER;
+    const reader = await common.getJson (session, url);
+    const result = reader.requireArrayRecord ("Item").map ((x) =>
+    {
+        return content.outputGetOrder (objectReader (x));
     });
     return result;
 }
@@ -172,6 +183,29 @@ content.outputGetCart = (reader: ObjectReader) : CartFetch =>
 /**
  * (ฟังก์ชั่นภายใน)
 */
+content.outputGetOrder = (reader: ObjectReader) : OrderFetch =>
+{
+    const result: OrderFetch =
+    {
+        orderId: reader.requireInteger ("OrderId"),
+        accountId: reader.requireInteger ("AccountId"),
+        created: reader.requireDate ("Created"),
+        delivered: reader.requireDateOrNull ("Delivered"),
+        status: reader.requireInteger ("Status"),
+        item: reader.requireArrayRecord ("Item").map ((x) =>
+        {
+            const inner = objectReader (x);
+            return {
+                productId: inner.requireInteger ("ProductId"),
+                quantity: inner.requireInteger ("Quantity"),
+            }
+        })
+    };
+    return result;
+}
+/**
+ * (ฟังก์ชั่นภายใน)
+*/
 content.outputPostBasic = (reader: ObjectReader) : BasicCreateResult =>
 {
     return {
@@ -211,6 +245,10 @@ content.NET_PREFIX = "/account";
 */
 content.NET_PREFIX_CART = "/account-cart";
 /**
+ * เส้นทางนำหน้าหลังจากที่อยู่ของเซิร์ฟเวอร์ สำหรับข้อมูลคำสั่งซื้อ
+*/
+content.NET_PREFIX_ORDER = "/account-order";
+/**
  * ระหว่างเวลาการเชื่อมต่อกับเซิร์ฟเวอร์ก่อนที่จะตัดขาด
 */
 content.NET_TIMEOUT = 10000;
@@ -222,6 +260,10 @@ content.NET_URL = `${content.NET_PROTOCOL}://${content.NET_ADDRESS}:${String (co
  * ลิงค์เต็มของที่อยู่เซิร์ฟเวอร์ สำหรับระบบตะกร้า
 */
 content.NET_URL_CART = `${content.NET_PROTOCOL}://${content.NET_ADDRESS}:${String (content.NET_PORT)}${content.NET_PREFIX_CART}`;
+/**
+ * ลิงค์เต็มของที่อยู่เซิร์ฟเวอร์ สำหรับระบบคำสั่งซื้อ
+*/
+content.NET_URL_ORDER = `${content.NET_PROTOCOL}://${content.NET_ADDRESS}:${String (content.NET_PORT)}${content.NET_PREFIX_ORDER}`;
 /**
  * บทบาทบัญชี: ผู้ใช้
 */
@@ -361,6 +403,43 @@ export interface CartCreate
      * จำนวนของในตะกร้า
     */
     quantity: number;
+}
+
+export interface OrderFetch
+{
+    /**
+     * รหัสคำสั่งซื้อ
+    */
+    readonly orderId: OrderId;
+    /**
+     * รหัสบัญชี
+    */
+    readonly accountId: BasicId;
+    /**
+     * วันที่สร้างคำสั่งซื้อ
+    */
+    readonly created: Date;
+    /**
+     * วันที่ได้ลูกค้ารับสินค้า
+    */
+    readonly delivered: Date | null;
+    /**
+     * สถานะคำสั่งซื้อ
+    */
+    readonly status: number;
+    /**
+     * รายการสินค้า
+    */
+    readonly item: {
+        /**
+         * รหัสสินค้า
+        */
+        productId: ProductId;
+        /**
+         * จำนวนสินค้า
+        */
+        quantity: number;
+    } [];
 }
 
 /**
