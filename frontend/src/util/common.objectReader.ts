@@ -296,7 +296,7 @@ content.catchNonFloat = (name: string, value: unknown) =>
             `${name} ประเภทไม่ถูกต้อง (ต้องเป็น float)`
         );
     }
-    if (!Number.isSafeInteger (value))
+    if (!Number.isFinite (value))
     {
         throw new error.BadData (
             `${name} คุณสมบัติไม่ถูกต้อง (ต้องเป็นทศนิยมที่ใช้งานได้)`
