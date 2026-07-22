@@ -47,7 +47,8 @@ content.getBasicList = async (session: string, option ?: BasicFetchOption)
     const result = content.readBasicList (data);
 
     return result;
-}/**
+}
+/**
  * ทำการดึงข้อมูลหมวดหมู่ของสินค้า
  * 
  * @param session ชุดรหัสยืนยันตัวตน

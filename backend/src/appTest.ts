@@ -94,7 +94,7 @@ content.setupProduct = async () =>
                 const coverId = coverBin ?  
                     await modelStorage.createWriter (coverBin) : undefined;
 
-                await modelProd.create ({
+                const newId = await modelProd.create ({
                     name: name,
                     description: desc,
                     price: price,
@@ -102,6 +102,10 @@ content.setupProduct = async () =>
                     platform: platform,
                     background: bgId ?? "",
                     cover: coverId ?? "",
+                });
+                await modelProd.updateStock ({
+                    productId: newId,
+                    quantity: 100,
                 });
             }
             catch (e: unknown)
