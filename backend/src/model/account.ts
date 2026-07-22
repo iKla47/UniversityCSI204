@@ -83,6 +83,17 @@ content.getCartByAccount = async (key: BasicId)
         return content.readCart (objectReader (x));
     });
 }
+content.getContact = async (key: BasicId) =>
+{
+    const cmd = `SELECT * FROM AccountContact WHERE Id = ?`;
+    const param = [key];
+    const query = await sql.select (cmd, param);
+
+    if (query.length === 0) {
+        throw new error.NotFound (`ไม่พบข้อมูลติดต่อ: ${String (key)}`);
+    }
+    return content.readContact (objectReader (query [0]));
+}
 
 /**
  * แก้ไขข้อมูลบัญชีดังกล่าว
@@ -147,6 +158,36 @@ content.updateCart = async (info: CartUpdate)
         throw new error.NotFound (`ไม่พบข้อมูลตะกร้า: ${String (info.itemId)}`);
     }
 }
+content.updateContact = async (info: ContactUpdate) 
+    : Promise<void> =>
+{
+    const key = 
+    [
+        (info.email !== undefined) ? "Email = ?" : undefined,
+        (info.phone !== undefined) ? "Phone = ?" : undefined,
+        (info.address !== undefined) ? "Address = ?" : undefined,
+    ]
+    .filter (x => x !== undefined)
+    .join (", ")
+    .concat (" ")
+    .concat ("WHERE Id = ?");
+
+    const value = 
+    [
+        info.email,
+        info.phone,
+        info.address,
+        info.id
+    ]
+    .filter (x => x !== undefined);
+
+    const result = await sql.update (`UPDATE AccountContact SET ${key}`, value);
+
+    if (result === 0) 
+    {
+        throw new error.NotFound (`ไม่พบข้อมูลติดต่อ: ${String (info.id)}`);
+    }
+}
 
 /**
  * สร้างบัญชีใหม่ขึ้นมาในระบบ 
@@ -164,9 +205,9 @@ content.create = async (info: BasicCreate) : Promise<BasicId> =>
             [info.name, info.role, info.icon, info.status]
         ) as BasicId;
         await ctx.insert (`
-            INSERT INTO AccountContact (Id)
-            VALUES (?)`,
-            [id]
+            INSERT INTO AccountContact (Id, Email, Phone, Address)
+            VALUES (?, ?, ?, ?)`,
+            [id, "", "", ""]
         );
         await ctx.commit ();
         return id;
@@ -248,6 +289,15 @@ content.readCart = (reader: ObjectReader) : CartFetch =>
         accountId: reader.requireInteger ("AccountId"),
         productId: reader.requireInteger ("ProductId"),
         quantity: reader.requireInteger ("Quantity")
+    }
+}
+content.readContact = (reader: ObjectReader) : ContactFetch =>
+{
+    return {
+        id: reader.requireInteger ("Id"),
+        email: reader.requireString ("Email"),
+        phone: reader.requireString ("Phone"),
+        address: reader.requireString ("Address"),
     }
 }
 
@@ -396,6 +446,45 @@ export interface CartCreate
     accountId: BasicId;
     productId: ProductId;
     quantity: number;
+}
+
+export interface ContactFetch
+{
+    /**
+     * รหัสบัญชี
+    */
+    id: BasicId;
+    /**
+     * อีเมล
+    */
+    email: string;
+    /**
+     * เบอร์โทรศัพท์
+    */
+    phone: string;
+    /**
+     * ที่อยู่จัดส่ง
+    */
+    address: string;
+}
+export interface ContactUpdate
+{
+    /**
+     * รหัสบัญชี
+    */
+    id: BasicId;
+    /**
+     * อีเมล
+    */
+    email ?: string | undefined;
+    /**
+     * เบอร์โทรศัพท์
+    */
+    phone ?: string | undefined;
+    /**
+     * ที่อยู่จัดส่ง
+    */
+    address ?: string | undefined;
 }
 
 /**

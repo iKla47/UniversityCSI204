@@ -14,6 +14,7 @@ import common       from "#util/api.common.ts";
 import { type ObjectReader } from "#util/common.objectReader.ts";
 import { type BasicId as ProductId } from "#util/api.product.ts";
 import { type BasicId as OrderId } from "#util/api.order.ts";
+import { type BasicId as PromotionId } from "#util/api.promotion";
 
 /**
  * โมดูลหลักที่ใช้ในการสื่อสารระหว่างส่วนติดต่อผู้ใช้และเซิร์ฟเวอร์
@@ -143,6 +144,12 @@ content.createOrder = async (session: string, data: OrderCreate) =>
 {
     const url = content.NET_URL_ORDER;
     const response = await common.postJson (session, url, {
+        "ShipName": data.shipName,
+        "ShipAddress": data.shipAddress,
+        "ShipPhone": data.shipPhone,
+        "ShipEmail": data.shipEmail,
+        "PaymentType": data.paymentType,
+        "PromotionId": data.promotionId,
         "Item": data.item.map ((x) => {
             return {
                 "ProductId": x.productId,
@@ -211,6 +218,12 @@ content.outputGetOrder = (reader: ObjectReader) : OrderFetch =>
         created: reader.requireDate ("Created"),
         delivered: reader.requireDateOrNull ("Delivered"),
         status: reader.requireInteger ("Status"),
+        shipName: reader.requireString ("ShipName"),
+        shipAddress: reader.requireString ("ShipAddress"),
+        shipPhone: reader.requireString ("ShipPhone"),
+        shipEmail: reader.requireString ("ShipEmail"),
+        paymentType: reader.requireInteger ("PaymentType"),
+        promotionId: reader.requireString ("PromotionId"),
         item: reader.requireArrayRecord ("Item").map ((x) =>
         {
             const inner = objectReader (x);
@@ -461,21 +474,69 @@ export interface OrderFetch
     */
     readonly status: number;
     /**
+     * ชื่อผู้รับ
+    */
+    readonly shipName: string;
+    /**
+     * ที่อยู่ผู้รับ
+    */
+    readonly shipAddress: string;
+    /**
+     * เบอร์โทรศัพท์ผู้รับ
+    */
+    readonly shipPhone: string;
+    /**
+     * อีเมลผู้รับ
+    */
+    readonly shipEmail: string;
+    /**
+     * ประเภทชำระเงิน
+    */
+    readonly paymentType: number;
+    /**
+     * รหัสโปรโมชั่น
+    */
+    readonly promotionId: PromotionId;
+    /**
      * รายการสินค้า
     */
     readonly item: {
         /**
          * รหัสสินค้า
         */
-        productId: ProductId;
+        readonly productId: ProductId;
         /**
          * จำนวนสินค้า
         */
-        quantity: number;
+        readonly quantity: number;
     } [];
 }
 export interface OrderCreate
 {
+    /**
+     * ชื่อผู้รับ
+    */
+    readonly shipName: string;
+    /**
+     * ที่อยู่ผู้รับ
+    */
+    readonly shipAddress: string;
+    /**
+     * เบอร์โทรศัพท์ผู้รับ
+    */
+    readonly shipPhone: string;
+    /**
+     * อีเมลผู้รับ
+    */
+    readonly shipEmail: string;
+    /**
+     * ประเภทชำระเงิน
+    */
+    readonly paymentType: number;
+    /**
+     * รหัสโปรโมชั่น
+    */
+    readonly promotionId: PromotionId;
     /**
      * รายการสินค้าในคำสั้งซื้อสินค้า
     */
@@ -483,11 +544,11 @@ export interface OrderCreate
         /**
          * รหัสสินค้า
         */
-        productId: ProductId;
+        readonly productId: ProductId;
         /**
          * จำนวนสินค้าที่สั่งซื้อ
         */
-        quantity: number;
+        readonly quantity: number;
     }[];
 }
 

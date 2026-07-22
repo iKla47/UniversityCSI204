@@ -188,14 +188,15 @@ content.challengeFacebook = async (
 
     try
     {
-        void email;
-        void icon;
-
         const accountId = await modelAccount.create ({
             name: name,
             role: modelAccount.ROLE_USER,
             icon: icon,
             status: modelAccount.RESTRICTION_NONE,
+        });
+        await modelAccount.updateContact ({
+            id: accountId,
+            email: email,
         });
         await content.createDbFacebook (userId, accountId);
 

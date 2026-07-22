@@ -7,6 +7,7 @@ import { type InputCommand, type InputValue } from "#core/sql.ts";
 import { type ObjectReader } from "#core/object.reader.ts";
 import { type BasicId as AccountId } from "#model/account.ts";
 import { type BasicId as ProductId } from "#model/product.ts";
+import { type BasicId as PromotionId } from "#model/promotion.ts";
 
 /**
  * ระบบจัดการคำสั่งซื้อสินค้า
@@ -263,6 +264,12 @@ content.readBasic = (root: ObjectReader, item: ObjectReader []) : BasicFetch =>
         created: root.requireDate ("Created"),
         delivered: root.requireDateOrNull ("Delivered"),
         status: root.requireInteger ("Status"),
+        shipName: root.requireString ("ShipName"),
+        shipAddress: root.requireString ("ShipAddress"),
+        shipPhone: root.requireString ("ShipPhone"),
+        shipEmail: root.requireString ("ShipEmail"),
+        paymentType: root.requireInteger ("PaymentType"),
+        promotionId: root.requireString ("PromotionId"),
         item: item.map ((x) =>
         {
             return {
@@ -298,6 +305,30 @@ export interface BasicFetch
      * สถานะคำสั่งซื้อ
     */
     readonly status: number;
+     /**
+     * ชื่อผู้รับ
+    */
+    readonly shipName: string;
+    /**
+     * ที่อยู่ผู้รับ
+    */
+    readonly shipAddress: string;
+    /**
+     * เบอร์โทรศัพท์ผู้รับ
+    */
+    readonly shipPhone: string;
+    /**
+     * อีเมลผู้รับ
+    */
+    readonly shipEmail: string;
+    /**
+     * ประเภทชำระเงิน
+    */
+    readonly paymentType: number;
+    /**
+     * รหัสโปรโมชั่น
+    */
+    readonly promotionId: PromotionId;
     /**
      * รายการสินค้า
     */
@@ -351,6 +382,30 @@ export interface BasicCreate
      * สถานะคำสั่งซื้อ
     */
     readonly status: number;
+     /**
+     * ชื่อผู้รับ
+    */
+    readonly shipName: string;
+    /**
+     * ที่อยู่ผู้รับ
+    */
+    readonly shipAddress: string;
+    /**
+     * เบอร์โทรศัพท์ผู้รับ
+    */
+    readonly shipPhone: string;
+    /**
+     * อีเมลผู้รับ
+    */
+    readonly shipEmail: string;
+    /**
+     * ประเภทชำระเงิน
+    */
+    readonly paymentType: number;
+    /**
+     * รหัสโปรโมชั่น
+    */
+    readonly promotionId: PromotionId;
     /**
      * รายการสินค้าในคำสั้งซื้อสินค้า
     */

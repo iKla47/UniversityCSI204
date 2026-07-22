@@ -196,7 +196,7 @@ COMMENT = 'ข้อมูลหมวดหมู่สินค้า';
 -- #
 CREATE TABLE IF NOT EXISTS `project`.`Promotion`
 (
-    `PromotionId` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'รหัสสินค้า' ,
+    `Id`          CHAR(32) NOT NULL COMMENT 'โค็ดสินค้า' ,
     `Created`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP 
                   COMMENT 'วันที่สร้าง' ,
     `Expire`      DATETIME NOT NULL COMMENT 'วันหมดอายุ' , 
@@ -205,7 +205,7 @@ CREATE TABLE IF NOT EXISTS `project`.`Promotion`
     `MinPrice`    FLOAT NOT NULL COMMENT 'ขั้นต่ำการใช้งาน' ,
     `MaxDiscount` FLOAT NOT NULL COMMENT 'ลดสูงสุด' ,
 
-    CONSTRAINT PK_Promotion_PromotionId PRIMARY KEY (`PromotionId`)
+    CONSTRAINT PK_Promotion_Code PRIMARY KEY (`Id`)
 )
 ENGINE = InnoDB 
 COMMENT = 'ข้อมูลโปรโมชั่น';
@@ -227,7 +227,7 @@ CREATE TABLE IF NOT EXISTS `project`.`OrderList`
     `ShipPhone` CHAR(16) NOT NULL COMMENT 'เบอร์โทรศัพท์ผู้รับ' ,
     `ShipEmail` CHAR(32) NOT NULL COMMENT 'อีเมลของผู้รับ' ,
     `PaymentType` INT NOT NULL COMMENT 'รูปแบบชำระเงิน' ,
-    `PromotionId` BIGINT NOT NULL COMMENT 'รหัสโปรโมชั่น' ,
+    `PromotionId` CHAR(32) NOT NULL COMMENT 'รหัสโปรโมชั่น' ,
 
     CONSTRAINT PK_Order_OrderId PRIMARY KEY (`OrderId`) ,
     CONSTRAINT UK_Order_OrderId UNIQUE (`OrderId`) ,
@@ -236,7 +236,7 @@ CREATE TABLE IF NOT EXISTS `project`.`OrderList`
         REFERENCES Account (`Id`),
     CONSTRAINT FK_Order_PromotionId
         FOREIGN KEY (`PromotionId`)
-        REFERENCES Promotion (`PromotionId`)
+        REFERENCES Promotion (`Id`)
 )
 ENGINE = InnoDB 
 COMMENT = 'รายการคำสั่งซื้อ';

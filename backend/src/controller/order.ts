@@ -158,6 +158,12 @@ content.inputPost = (request: Request): BasicCreate => {
         created: new Date(),
         delivered: null,
         status: reader.requireInteger("Status"),
+        shipName: reader.requireString ("ShipName"),
+        shipAddress: reader.requireString ("ShipAddress"),
+        shipPhone: reader.requireString ("ShipPhone"),
+        shipEmail: reader.requireString ("ShipEmail"),
+        paymentType: reader.requireInteger ("PaymentType"),
+        promotionId: reader.requireString ("PromotionId"),
         item: rawItems.map((item) => {
             const itemReader = objectReader(item);
             return {
@@ -258,6 +264,12 @@ content.outputGet = (r: Response, x: BasicFetch) => {
         Created: x.created.getTime(),
         Delivered: x.delivered ? x.delivered.getTime() : null,
         Status: x.status,
+        ShipName: x.shipName,
+        ShipAddress: x.shipAddress,
+        ShipPhone: x.shipPhone,
+        ShipEmail: x.shipEmail,
+        PaymentType: x.paymentType,
+        PromotionId: x.promotionId,
         Item: x.item.map((i) => ({
             ProductId: i.productId,
             Quantity: i.quantity,
@@ -275,6 +287,12 @@ content.outputGetList = (r: Response, x: BasicFetch[]) => {
             Created: y.created.getTime(),
             Delivered: y.delivered ? y.delivered.getTime() : null,
             Status: y.status,
+            ShipName: y.shipName,
+            ShipAddress: y.shipAddress,
+            ShipPhone: y.shipPhone,
+            ShipEmail: y.shipEmail,
+            PaymentType: y.paymentType,
+            PromotionId: y.promotionId,
             Item: y.item.map((i) => ({
                 ProductId: i.productId,
                 Quantity: i.quantity,

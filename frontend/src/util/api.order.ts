@@ -2,6 +2,7 @@ import common from "#util/api.common.ts";
 import objectReader from "#util/common.objectReader.ts";
 import { type BasicId as AccountId } from "#util/api.account.ts";
 import { type BasicId as ProductId } from "#util/api.product.ts";
+import { type BasicId as PromotionId } from "#util/api.promotion";
 import type { ObjectReader } from "#util/common.objectReader.ts";
 
 const content = () =>
@@ -50,6 +51,12 @@ content.outputGetOrder = (reader: ObjectReader) : BasicFetch =>
         created: reader.requireDate ("Created"),
         delivered: reader.requireDateOrNull ("Delivered"),
         status: reader.requireInteger ("Status"),
+        shipName: reader.requireString ("ShipName"),
+        shipAddress: reader.requireString ("ShipAddress"),
+        shipPhone: reader.requireString ("ShipPhone"),
+        shipEmail: reader.requireString ("ShipEmail"),
+        paymentType: reader.requireInteger ("PaymentType"),
+        promotionId: reader.requireString ("PromotionId"),
         item: reader.requireArrayRecord ("Item").map ((x) =>
         {
             const inner = objectReader (x);
@@ -108,6 +115,30 @@ export interface BasicFetch
      * สถานะคำสั่งซื้อ
     */
     readonly status: number;
+    /**
+     * ชื่อผู้รับ
+    */
+    readonly shipName: string;
+    /**
+     * ที่อยู่ผู้รับ
+    */
+    readonly shipAddress: string;
+    /**
+     * เบอร์โทรศัพท์ผู้รับ
+    */
+    readonly shipPhone: string;
+    /**
+     * อีเมลผู้รับ
+    */
+    readonly shipEmail: string;
+    /**
+     * ประเภทชำระเงิน
+    */
+    readonly paymentType: number;
+    /**
+     * รหัสโปรโมชั่น
+    */
+    readonly promotionId: PromotionId;
     /**
      * รายการสินค้า
     */
