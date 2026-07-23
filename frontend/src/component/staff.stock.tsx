@@ -15,7 +15,7 @@ export default function Stock() {
   const [adjustAmount, setAdjustAmount] = useState<number>(0);
   const auth = useAuth(); 
   
-  // รายการสินค้าพร้อมสต็อก
+  // ดึงรายการสินค้าพร้อมสต็อก
   const loadData = async () => {
     try {
       setLoading(true);
@@ -33,7 +33,7 @@ export default function Stock() {
           } catch {
             stockMap[item.id] = 0;
           }
-        }),
+        })
       );
 
       setStockCounts(stockMap);
@@ -60,7 +60,7 @@ export default function Stock() {
     setSelectedIds((prev) =>
       prev.includes(productId)
         ? prev.filter((id) => id !== productId)
-        : [...prev, productId],
+        : [...prev, productId]
     );
   };
 
@@ -72,6 +72,29 @@ export default function Stock() {
     if (adjustAmount <= 0) {
       alert("ตัวเลขต้องมากกว่า 0");
       return;
+    }
+
+    // เช็กสต็อกคงเหลือก่อนทำการลดสต็อก
+    if (type === "subtract") {
+      const insufficientProducts: string[] = [];
+
+      for (const id of selectedIds) {
+        const currentQty = stockCounts[id] ?? 0;
+        if (currentQty < adjustAmount) {
+          const prod = products.find((p) => p.id === id);
+          const name = prod ? prod.name : `ID: ${id}`;
+          insufficientProducts.push(`• ${name} (มีอยู่ ${currentQty} ชิ้น)`);
+        }
+      }
+
+      // ถ้ามีรายการที่สต็อกไม่พอ ให้แจ้งเตือนและหยุดการทำงานทันที
+      if (insufficientProducts.length > 0) {
+        alert(
+          `ไม่สามารถลดสต็อกได้ เนื่องจากสินค้าคงเหลือไม่พอ (${adjustAmount} ชิ้น):\n\n` +
+            insufficientProducts.join("\n")
+        );
+        return;
+      }
     }
 
     const session = auth.session;
@@ -90,7 +113,7 @@ export default function Stock() {
           });
 
           setStockCounts((prev) => ({ ...prev, [id]: newQty }));
-        }),
+        })
       );
 
       alert("อัปเดตสต็อกเรียบร้อยแล้ว");
@@ -105,7 +128,7 @@ export default function Stock() {
   };
 
   const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -256,6 +279,10 @@ export default function Stock() {
     </StockContainer>
   );
 }
+
+/* ==========================================================================
+   Styled Components
+   ========================================================================== */
 
 const StockContainer = styled.div`
   background: #0b1220;
