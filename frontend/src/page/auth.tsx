@@ -16,7 +16,7 @@ export default function Auth ()
     redirectSignedIn: url,
     redirectSignedUp: url,
     reason: REASON_NONE,
-  })
+  });
 
   function decodeContext (value: string) 
   {

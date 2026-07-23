@@ -1,133 +1,32 @@
-import react    from "react";
-import styled   from "styled-components";
-import bg       from "#asset/image/auth.bg.jpg";
+import bg from "#asset/image/auth.bg.jpg";
 
+import { styled } from "styled-components";
+import { useState, useRef, lazy } from "react";
 import { type Session } from "#util/api.auth.ts";
+import { 
+  type MouseEvent, 
+  type ReactNode, 
+  type ReactElement 
+
+} 
+from "react";
+
 import { ArrowLeft, ShieldAlert } from "lucide-react";
 import { keyframes } from "styled-components";
 
-
-const SignIn = react.lazy (() => import ("#component/auth.signin.tsx"));
-const SignUp = react.lazy (() => import ("#component/auth.signup.tsx"));
-
-export type ActivityMode = "visible" | "hidden" | undefined;
-
-/**
- * โครงสร้างคุณสมบัติของส่วนประกอบหลัก
-*/
-export interface PropContent
-{
-  /**
-   * ระบุสถานะการแสดงผล (แสดง/ซ่อน)
-  */
-  visible ?: boolean;
-  /**
-   * ระบุหน้าเริ่มต้น
-  */
-  page ?: number;
-  /**
-   * ระบุว่าพื้นหลังควรโปร่งใส่หรือไม่
-  */
-  transparent ?: boolean;
-  /**
-   * ข้อความหัวเรื่อง
-  */
-  title ?: string;
-  /**
-   * ข้อความอธิบาย
-  */
-  description ?: string;
-  /**
-   * ทำงานเมื่อผู้ใช้ทำการลงชื่อเข้าใช้สำเร็จ
-  */
-  onSignedIn ?: () => void;
-  /**
-   * ทำงานเมื่อผู้ใช้ทำการสร้างบัญชีสำเร็จ
-  */
-  onSignedUp ?: () => void;
-  /**
-   * ทำงานเมื่อผู้ใช้ทำการกดปุ่มยกเลิกการทำงาน
-  */
-  onCancel ?: () => void;
-}
-export interface PropView
-{
-  /**
-   * องค์ประกอบย่อยที่อยู่ในภายแท็กดังกล่าว (ถ้ามี)
-  */
-  children ?: react.ReactNode;
-}
-export interface PropViewForm
-{
-  transparent ?: boolean;
-  /**
-   * องค์ประกอบย่อยที่อยู่ในภายแท็กดังกล่าว (ถ้ามี)
-  */
-  children ?: react.ReactNode;
-}
-export interface PropViewFormPending
-{
-  /**
-   * ระบุสถานะการแสดงผล (แสดง/ซ่อน)
-  */
-  visible ?: boolean;
-}
-export interface PropTemplateDiv
-{
-  /**
-   * ระบุสถานะการแสดงผล (แสดง/ซ่อน)
-  */
-  visible ?: boolean;
-  /**
-   * องค์ประกอบย่อยที่อยู่ในภายแท็กดังกล่าว (ถ้ามี)
-  */
-  children ?: react.ReactNode;
-}
-export interface PropTemplateHeader
-{
-  title ?: string;
-  description ?: string;
-  onBack ?: () => void;
-}
-export interface PropTemplateMain
-{
-  /**
-   * องค์ประกอบย่อยที่อยู่ในภายแท็กดังกล่าว (ถ้ามี)
-  */
-  children ?: react.ReactNode;
-}
-export interface PropTemplateFooter
-{
-  /**
-   * องค์ประกอบย่อยที่อยู่ในภายแท็กดังกล่าว (ถ้ามี)
-  */
-  children ?: react.ReactNode;
-}
-export interface PropTemplateOption
-{
-  icon ?: string | react.JSX.Element;
-  text ?: string;
-  disabled ?: boolean;
-  onClick ?: () => void;
-}
-export interface PropTemplateFeedback
-{
-  type ?: number;
-  text ?: string;
-}
-
-
+const SignIn = lazy (() => import ("#component/auth.signin.tsx"));
+const SignUp = lazy (() => import ("#component/auth.signup.tsx"));
 
 /**
  * ส่วนประกอบแสดงผลแบบหน้าต่าง
 */
 const content = function Auth (prop: PropContent)
 {
-  const page = react.useState (content.PAGE_SIGN_IN_ID);
-  const pending = react.useState (false);
-  const feedback = react.useState (content.createEmptyFeedback ());
-  const session = react.useRef (content.createEmptySession ());
-  const id = react.useRef ("");
+  const page = useState (content.PAGE_SIGN_IN_ID);
+  const pending = useState (false);
+  const feedback = useState (content.createEmptyFeedback ());
+  const session = useRef (content.createEmptySession ());
+  const id = useRef ("");
 
   return (
     <content.View>
@@ -278,7 +177,7 @@ content.TemplateDiv = function AuthTempDiv (prop: PropTemplateDiv)
 }
 content.TemplateHeader = function AuthTempHeader (prop: PropTemplateHeader)
 {
-  const onBack = (event: react.MouseEvent) =>
+  const onBack = (event: MouseEvent) =>
   {
     event.preventDefault ();
     event.stopPropagation ();
@@ -318,7 +217,7 @@ content.TemplateFooter = function AuthTempFooter (prop: PropTemplateFooter)
 }
 content.TemplateOption = function AuthTempOption (prop: PropTemplateOption)
 {
-  const onClick = (event: react.MouseEvent) =>
+  const onClick = (event: MouseEvent) =>
   {
     event.preventDefault ();
     event.stopPropagation ();
@@ -570,10 +469,111 @@ const StyleTempFeedback = styled.p<{ $color: number; }>`
   }
 `;
 
+
 /**
- * แข็งวัตถุ (ความปลอดภัย)
+ * โครงสร้างคุณสมบัติของส่วนประกอบหลัก
 */
-Object.freeze (content);
+export interface PropContent
+{
+  /**
+   * ระบุสถานะการแสดงผล (แสดง/ซ่อน)
+  */
+  visible ?: boolean;
+  /**
+   * ระบุหน้าเริ่มต้น
+  */
+  page ?: number;
+  /**
+   * ระบุว่าพื้นหลังควรโปร่งใส่หรือไม่
+  */
+  transparent ?: boolean;
+  /**
+   * ข้อความหัวเรื่อง
+  */
+  title ?: string;
+  /**
+   * ข้อความอธิบาย
+  */
+  description ?: string;
+  /**
+   * ทำงานเมื่อผู้ใช้ทำการลงชื่อเข้าใช้สำเร็จ
+  */
+  onSignedIn ?: () => void;
+  /**
+   * ทำงานเมื่อผู้ใช้ทำการสร้างบัญชีสำเร็จ
+  */
+  onSignedUp ?: () => void;
+  /**
+   * ทำงานเมื่อผู้ใช้ทำการกดปุ่มยกเลิกการทำงาน
+  */
+  onCancel ?: () => void;
+}
+export interface PropView
+{
+  /**
+   * องค์ประกอบย่อยที่อยู่ในภายแท็กดังกล่าว (ถ้ามี)
+  */
+  children ?: ReactNode;
+}
+export interface PropViewForm
+{
+  transparent ?: boolean;
+  /**
+   * องค์ประกอบย่อยที่อยู่ในภายแท็กดังกล่าว (ถ้ามี)
+  */
+  children ?: ReactNode;
+}
+export interface PropViewFormPending
+{
+  /**
+   * ระบุสถานะการแสดงผล (แสดง/ซ่อน)
+  */
+  visible ?: boolean;
+}
+export interface PropTemplateDiv
+{
+  /**
+   * ระบุสถานะการแสดงผล (แสดง/ซ่อน)
+  */
+  visible ?: boolean;
+  /**
+   * องค์ประกอบย่อยที่อยู่ในภายแท็กดังกล่าว (ถ้ามี)
+  */
+  children ?: ReactNode;
+}
+export interface PropTemplateHeader
+{
+  title ?: string;
+  description ?: string;
+  onBack ?: () => void;
+}
+export interface PropTemplateMain
+{
+  /**
+   * องค์ประกอบย่อยที่อยู่ในภายแท็กดังกล่าว (ถ้ามี)
+  */
+  children ?: ReactNode;
+}
+export interface PropTemplateFooter
+{
+  /**
+   * องค์ประกอบย่อยที่อยู่ในภายแท็กดังกล่าว (ถ้ามี)
+  */
+  children ?: ReactNode;
+}
+export interface PropTemplateOption
+{
+  icon ?: string | ReactElement;
+  text ?: string;
+  disabled ?: boolean;
+  onClick ?: () => void;
+}
+export interface PropTemplateFeedback
+{
+  type ?: number;
+  text ?: string;
+}
+export type ActivityMode = "visible" | "hidden" | undefined;
 /**
  * ส่งออกตัวแปร
 */

@@ -369,12 +369,9 @@ content.Summary = function CartSummary({
   let discount = promotion ? 
     promotion.type === 1 ? promotion.discount :
     promotion.type === 2 ? (subtotal * (promotion.discount / 100)) : 0 : 0;
-  // const taxRate = 0.07;
-  // const tax = Math.round(subtotal * taxRate);
-  // const total = subtotal - discount + tax;
 
   discount -= Math.max (0, promotion ? promotion.minPrice - subtotal : 0);
-  discount = Math.min (discount, promotion ? promotion?.maxDiscount : discount);
+  discount = Math.min (discount, promotion ? promotion.maxDiscount : discount);
 
   if (promotion && promotion.minPrice > subtotal)
   {

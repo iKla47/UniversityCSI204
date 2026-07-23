@@ -1,8 +1,8 @@
 import error from "#util/common.error.ts";
 import apiAccount from "#util/api.account.ts";
 
-import PageList from "#component/customer.cart.list.tsx";
-import PageCheckout from "#component/customer.cart.checkout.tsx";
+import PageList from "#component/customer.cartList.tsx";
+import PageCheckout from "#component/customer.cartCheckout.tsx";
 
 import { styled } from "styled-components";
 import { useAuth } from "#context/common.ts";

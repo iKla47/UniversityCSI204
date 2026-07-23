@@ -3,13 +3,14 @@ import apiProduct from "#util/api.product";
 import { styled } from "styled-components";
 import { useAuth } from "#context/common.js";
 import { useEffect, useState, useMemo } from "react";
-import { type BasicFetch as RawOrder } from "#util/api.order";
-import { type BasicFetch as ProductFetch } from "#util/api.product";
+import { type BasicFetch as Order } from "#util/api.order";
+import { type BasicFetch as Product } from "#util/api.product";
 import 
 { 
   HistoryIcon, BoxIcon, TruckIcon, HashIcon, 
   ChevronDownIcon, ChevronUpIcon, PackageXIcon, CheckCircle2Icon,
-  ClockIcon, AlertCircleIcon, Loader2Icon
+  ClockIcon, AlertCircleIcon, Loader2Icon,
+  MapPin
 } 
 from "lucide-react";
 
@@ -22,7 +23,7 @@ const OrderCard = ({ order }: OrderCardProps) =>
   const [isOpen, setIsOpen] = useState(false);
 
   const hasMultipleItems = order.items.length > 1;
-  const statusInfo = getStatusInfo(order.status);
+  const statusInfo = formatStatusInfo(order.status);
 
   //
   // คำนวณยอดรวมราคาทั้งหมด
@@ -108,8 +109,15 @@ const OrderCard = ({ order }: OrderCardProps) =>
         {/* Footer */}
         <StyleReceiptFooter>
           <StyleFooterMeta>
-            <TruckIcon size={14} />
-            <span>วันจัดส่ง: <strong>{formatDate(order.deliveryDate)}</strong></span>
+            <TruckIcon size={16} />
+            <span>
+              วันจัดส่ง: <strong>{formatDate(order.deliveryDate)}</strong>
+            </span>
+            <br/>
+            <MapPin size={16}/>
+            <span>
+              ที่จัดส่ง: <strong>{order.address}</strong>
+            </span>
           </StyleFooterMeta>
           <StyleTotalGroup>
             <StyleTotalLabel>ยอดรวมสุทธิ</StyleTotalLabel>
@@ -148,17 +156,17 @@ export default function CustomerOrder ()
           apiAccount.getOrder(session).catch((e: unknown) => 
           {
             console.error("Order API Error:", e);
-            return [] as RawOrder[];
+            return [] as Order[];
           }),
           apiProduct.getBasicList(session).catch((e: unknown) => 
           {
             console.error("Product API Error:", e);
-            return [] as ProductFetch[];
+            return [] as Product[];
           }),
         ]);
   
         // 2. ทำ Product Cache (Map) เพื่อให้ค้นหาข้อมูลสินค้าได้เร็ว ไม่ต้องยิง API เพิ่ม
-        const productMap = new Map<number, ProductFetch>();
+        const productMap = new Map<number, Product>();
         if (Array.isArray(rawProducts)) {
           rawProducts.forEach((p) => productMap.set(p.id, p));
         }
@@ -176,13 +184,14 @@ export default function CustomerOrder ()
               quantity: it.quantity,
             };
           });
-  
+
           return {
             id: x.orderId,
             orderDate: new Date(x.created),
             deliveryDate: x.delivered ? new Date(x.delivered) : null,
             status: x.status,
             items: itemsWithDetails,
+            address: x.shipAddress
           };
         });
   
@@ -291,15 +300,23 @@ export default function CustomerOrder ()
    Helpers
    ========================================================================== 
 */
-const formatCurrency = (amount: number) => 
-  {
-    return new Intl.NumberFormat("th-TH", {
-      style: "currency",
-      currency: "THB",
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
-  
+
+/**
+ * รับข้อความสกุลเงิน
+*/
+function formatCurrency (amount: number) 
+{
+  return new Intl.NumberFormat("th-TH", {
+    style: "currency",
+    currency: "THB",
+    minimumFractionDigits: 2,
+  })
+  .format(amount);
+};
+
+/**
+ * รับข้อความแสดงวันที่
+*/
 function formatDate (date: Date | null)
 {
   if (!date) {
@@ -315,21 +332,34 @@ function formatDate (date: Date | null)
   );
 };
   
-function getStatusInfo (status: number) 
+/**
+ * รับข้อความสถานะการจัดส่ง
+*/
+function formatStatusInfo (status: number) 
 {
   switch (status) 
   {
-    case 1:
-      return { label: "กำลังจัดส่ง", icon: <TruckIcon size={13} />, bg: "#cce5ff", text: "#004085" };
-    case 2:
-      return { label: "จัดส่งสำเร็จแล้ว", icon: <CheckCircle2Icon size={13} />, bg: "#d4edda", text: "#155724" };
-    case 3:
-      return { label: "ล่าช้า", icon: <AlertCircleIcon size={13} />, bg: "#fff3cd", text: "#856404" };
+    case 1: return { 
+      label: "กำลังจัดส่ง", icon: <TruckIcon size={13} />, 
+      bg: "#cce5ff", text: "#004085" 
+    };
+    case 2: return { 
+      label: "จัดส่งสำเร็จแล้ว", icon: <CheckCircle2Icon size={13} />, 
+      bg: "#d4edda", text: "#155724" 
+      };
+    case 3: return { 
+      label: "ล่าช้า", icon: <AlertCircleIcon size={13} />, 
+      bg: "#fff3cd", text: "#856404" 
+      };
     case 0:
-    case 4:
-      return { label: "ยกเลิกแล้ว", icon: <PackageXIcon size={13} />, bg: "#f8d7da", text: "#721c24" };
-    default:
-      return { label: "รอดำเนินการ", icon: <ClockIcon size={13} />, bg: "#e2e8f0", text: "#334155" };
+    case 4: return { 
+      label: "ยกเลิกแล้ว", icon: <PackageXIcon size={13} />, 
+      bg: "#f8d7da", text: "#721c24" 
+    };
+    default: return { 
+      label: "รอดำเนินการ", icon: <ClockIcon size={13} />, 
+      bg: "#e2e8f0", text: "#334155" 
+    };
   }
 };
 
@@ -590,7 +620,8 @@ const StylePrice = styled.span`
    Interfaces
    ========================================================================== 
 */
-interface OrderProduct {
+interface OrderProduct 
+{
   productId: number;
   name: string;
   price: number;
@@ -600,9 +631,13 @@ interface OrderProduct {
 interface OrderItem 
 {
   id: number;
+  address: string;
   orderDate: Date;
   deliveryDate: Date | null;
   status: number;
+  /**
+   * รายการสินค้า
+  */
   items: OrderProduct[];
 }
 
