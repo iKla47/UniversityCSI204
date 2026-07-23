@@ -178,6 +178,7 @@ content.updateContact = async (info: ContactUpdate)
         (info.email !== undefined) ? "Email = ?" : undefined,
         (info.phone !== undefined) ? "Phone = ?" : undefined,
         (info.address !== undefined) ? "Address = ?" : undefined,
+        (info.name !== undefined) ? "Name = ?" : undefined,
     ]
     .filter (x => x !== undefined)
     .join (", ")
@@ -189,6 +190,7 @@ content.updateContact = async (info: ContactUpdate)
         info.email,
         info.phone,
         info.address,
+        info.name,
         info.id
     ]
     .filter (x => x !== undefined);
@@ -217,9 +219,9 @@ content.create = async (info: BasicCreate) : Promise<BasicId> =>
             [info.name, info.role, info.icon, info.status]
         ) as BasicId;
         await ctx.insert (`
-            INSERT INTO AccountContact (Id, Email, Phone, Address)
-            VALUES (?, ?, ?, ?)`,
-            [id, "", "", ""]
+            INSERT INTO AccountContact (Id, Email, Phone, Address, Name)
+            VALUES (?, ?, ?, ?, ?)`,
+            [id, "", "", "", ""]
         );
         await ctx.commit ();
         return id;
@@ -352,6 +354,7 @@ content.readContact = (reader: ObjectReader) : ContactFetch =>
         email: reader.requireString ("Email"),
         phone: reader.requireString ("Phone"),
         address: reader.requireString ("Address"),
+        name: reader.requireString ("Name"),
     }
 }
 content.readFavorite = (reader: ObjectReader) : FavoriteFetch =>
@@ -528,6 +531,10 @@ export interface ContactFetch
      * ที่อยู่จัดส่ง
     */
     address: string;
+    /**
+     * ชื่อผู้รับ
+    */
+    name: string;
 }
 export interface ContactUpdate
 {
@@ -547,6 +554,10 @@ export interface ContactUpdate
      * ที่อยู่จัดส่ง
     */
     address ?: string | undefined;
+    /**
+     * ชื่อผู้รับ
+    */
+    name ?: string | undefined;
 }
 export interface FavoriteFetch
 {

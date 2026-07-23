@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS `project`.`AccountContact`
     `Email`     CHAR(32) DEFAULT "" COMMENT 'อีเมล' ,
     `Phone`     CHAR(16) DEFAULT "" COMMENT 'เบอร์โทรศัพท์' ,
     `Address`   CHAR(255) DEFAULT "" COMMENT 'ที่อยู่จัดส่ง' ,
+    `Name`      CHAR(64) DEFAULT "" COMMENT 'ชื่อผู้รับสินค้า' ,
 
     CONSTRAINT  PK_AccountContact_Id PRIMARY KEY (`Id`),
     CONSTRAINT  UK_AccountContact_Id UNIQUE (`Id`) ,

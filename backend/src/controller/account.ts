@@ -330,7 +330,7 @@ content.putContact = async (request: Request, response: Response) =>
  * @param request คำขอ
  * @param response คำตอบ
 */
-content.putContactOf = async (request: Request, response: Response) =>
+content.putContactOf = (request: Request, response: Response) =>
 {
     const authenticate = auth.validateResult (response);
     const accountId = authenticate.id;
@@ -583,6 +583,7 @@ content.inputPutContact = (request: Request, accountId: BasicId) : ContactUpdate
         email: reader.optionalString ("Email"),
         phone: reader.optionalString ("Phone"),
         address: reader.optionalString ("Address"),
+        name: reader.optionalString ("Name"),
     };
     return result;
 }
@@ -697,7 +698,8 @@ content.outputGetContact = (r: Response, x: ContactFetch) =>
         "Email": x.email,
         "Phone": x.phone,
         "Address": x.address,
-    });
+        "Name": x.name,
+     });
     r.end ();
 }
 content.outputGetFavorite = (r: Response, x: FavoriteFetch []) =>
