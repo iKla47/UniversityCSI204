@@ -1,7 +1,7 @@
 import react from "react";
 import styled from "styled-components";
-import context from "#context/common.ui.ts";
 import empty from "#asset/image/empty.png";
+import { useMenuContext } from "#context/common.ui.ts";
 
 /**
  * โครงสร้างคุณสมบัติของส่วนประกอบหลัก
@@ -186,7 +186,7 @@ content.Item = function MenuContextItem (prop: PropItem)
 }
 content.Provider = function MenuContextProvider ()
 {
-  const ctx = react.useContext (context.ProviderMenuContext);
+  const ctx = useMenuContext ();
   const [visible, setVisible] = react.useState (false);
   const [child, setChild] = react.useState<react.ReactNode> (<></>);
   const [inset, setInset] = react.useState<string | undefined> (undefined);

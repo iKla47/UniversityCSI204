@@ -1,15 +1,10 @@
-import react from "react";
+import react, { useRef } from "react";
 import styled from "styled-components";
-import ctx from "#context/common.ts";
-import ctxUI from "#context/common.ui.ts";
-
-import apiAccount from "#util/api.account.ts";
 import apiStorage from "#util/api.storage.ts";
 
-import { useQuery } from "@tanstack/react-query";
-
-import { type IrNavBar } from "#context/common.ui.ts";
+import { CtxIrNavBar, useIrNavBar, type IrNavBar } from "#context/common.ui.ts";
 import { CircleUser } from "lucide-react";
+import { useAccountBasic } from "#context/customer.ts";
 
 /**
  * โครงสร้างคุณสมบัติของส่วนประกอบหลัก
@@ -51,7 +46,7 @@ interface PropSearch
   /**
    * ทำงานเมื่อผู้ใช้กดช่องค้นหา
   */
-  onClick ?: () => void;
+  onClick ?: (value: string) => void;
   /**
    * ทำงานเมื่อผู้ใช้เสร็จสิ้นป้อนคำค้นหา
   */
@@ -181,9 +176,9 @@ const content = function NavBar (prop: PropContent)
 
   return (
     <Root ref={reference}>
-      <ctxUI.ProviderIrNavBar value={context}>
+      <CtxIrNavBar value={context}>
         {prop.children}
-      </ctxUI.ProviderIrNavBar>
+      </CtxIrNavBar>
     </Root>
   );
 }
@@ -192,7 +187,7 @@ const content = function NavBar (prop: PropContent)
 */
 content.Branding = function NavBarBranding (prop: PropBranding)
 {
-  const context = ctxUI.useIrNavBar ();
+  const context = useIrNavBar ();
   const readable = context.width >= 1268;
 
   /**
@@ -220,13 +215,15 @@ content.Branding = function NavBarBranding (prop: PropBranding)
 */
 content.Search = function NavBarSearch (prop: PropSearch)
 {
+  const ref = useRef<HTMLInputElement> (null);
+
   const onClick = (event: react.MouseEvent) =>
   {
     event.preventDefault ();
     event.stopPropagation ();
 
-    if (prop.onClick) {
-      prop.onClick ();
+    if (prop.onClick && ref.current) {
+      prop.onClick (ref.current.value);
     }
   }
   const onChange = (event: react.ChangeEvent<HTMLInputElement>) =>
@@ -237,6 +234,7 @@ content.Search = function NavBarSearch (prop: PropSearch)
   }
   return (
     <Search 
+      ref={ref}
       placeholder={prop.placeholder}
       onClick={onClick}
       onChange={onChange}/>
@@ -247,12 +245,7 @@ content.Search = function NavBarSearch (prop: PropSearch)
 */
 content.Profile = function NavBarProfile (prop: PropProfile)
 {
-  const auth = ctx.useAuth ();
-  const { data } = useQuery ({
-    queryKey: ["Account", "Basic"],
-    queryFn: () => apiAccount.getBasic (auth.session),
-    enabled: () =>  auth.session.length > 0
-  });
+  const { data } = useAccountBasic ();
 
   const onClick = (event: react.MouseEvent) =>
   {
@@ -305,7 +298,7 @@ content.SignIn = function NavBarSignIn (prop: PropSignIn)
 */
 content.Menu = function NavBarMenu (prop: PropMenu)
 {
-  const context = ctxUI.useIrNavBar ();
+  const context = useIrNavBar ();
   const visible = prop.hideOnWidth ? (prop.hideOnWidth <= context.width) : true;
 
   return (
@@ -317,7 +310,7 @@ content.Menu = function NavBarMenu (prop: PropMenu)
 */
 content.MenuItem = function NavBarMenuItem (prop: PropMenuItem)
 {
-  const context = ctxUI.useIrNavBar ();
+  const context = useIrNavBar ();
   const visible = prop.hideOnWidth ? (prop.hideOnWidth <= context.width) : true;
   const source = prop.icon;
 

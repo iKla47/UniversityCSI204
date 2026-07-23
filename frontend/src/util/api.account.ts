@@ -57,10 +57,8 @@ content.getContact = async (session: string, id ?: BasicId) =>
 {    
     const url = content.NET_URL_CONTACT + (id ? `/${String (id)}` : "");
     const reader = await common.getJson (session, url);
-    const result = reader.requireArrayRecord ("Item").map ((x) =>
-    {
-        return content.outputGetCart (objectReader (x));
-    });
+    const result = content.outputGetContact (reader);
+
     return result;
 }
 content.getOrder = async (session: string) =>
@@ -317,7 +315,7 @@ content.NET_PREFIX_CART = "/account-cart";
 /**
  * เส้นทางนำหน้าหลังจากที่อยู่ของเซิร์ฟเวอร์ สำหรับข้อมูลติดต่อ
 */
-content.NET_PREFIX_CONTACT = "/account-cart";
+content.NET_PREFIX_CONTACT = "/account-contact";
 /**
  * เส้นทางนำหน้าหลังจากที่อยู่ของเซิร์ฟเวอร์ สำหรับข้อมูลคำสั่งซื้อ
 */

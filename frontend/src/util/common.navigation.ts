@@ -36,9 +36,33 @@ content.toAbout = () =>
 {
     return router (content.PATH_ABOUT);
 }
-content.toAuth = () =>
+content.toAuth = (option ?: 
 {
-    return router (content.PATH_AUTH);
+    redirectSignIn ?: string;
+    redirectSignUp ?: string;
+    reason ?: number;
+}) =>
+{
+    function encodeContext(value: string) 
+    {
+        const utf8Bytes = new TextEncoder().encode(value);
+        const binaryString = String.fromCharCode(...utf8Bytes);
+
+        return btoa(binaryString);
+    }
+
+    const param = new URLSearchParams ();
+    const context = {
+        "RedirectSignedIn": option ? option.redirectSignIn : undefined,
+        "RedirectSignedUp": option ? option.redirectSignUp : undefined,
+        "Reason": option ? option.reason : undefined,
+    }
+    param.append ("context", encodeContext (JSON.stringify (context)));
+
+    const paramOut = param.toString ();
+    const paramFormatted = paramOut.length !== 0 ? `?${paramOut}` : ``;
+
+    return router (content.PATH_AUTH + paramFormatted);
 }
 content.toConsole = () =>
 {
@@ -61,7 +85,6 @@ content.toProductBrowser = (search ?: string) =>
     }
     const paramOut = param.toString ();
     const paramFormatted = paramOut.length !== 0 ? `?${paramOut}` : ``;
-
 
     return router (content.PATH_PRODUCT_BROWSER + paramFormatted);
 }

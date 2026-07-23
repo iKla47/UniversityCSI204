@@ -1,17 +1,25 @@
-import styled           from "styled-components";
-import ctx              from "#context/common.ts";
-import ctxUI            from "#context/common.ui.ts";
-import ctxCustomer      from "#context/customer.ts";
-import apiAccount       from "#util/api.account.ts";
-import apiStorage       from "#util/api.storage.ts";
+import apiAccount from "#util/api.account.ts";
+import apiStorage from "#util/api.storage.ts";
 
-import MenuBar          from "#component/menu.bar.tsx";
+import MenuBar from "#component/menu.bar.tsx";
 
+import { styled } from "styled-components";
 import { useSearchParams } from "react-router";
-
 import { useState, type MouseEvent } from "react";
-
-import { ShoppingCart, Share2Icon, Heart, StarIcon, MessageSquare, TextAlignStart, MonitorCog, Package, ShoppingBasket } from "lucide-react";
+import { useAuth } from "#context/common.ts";
+import { useDialog, useToast } from "#context/common.ui.ts";
+import 
+{ 
+  useAccountBasic, useCart, useCartQuery, useProduct, useProductComment, 
+  useProductCommentList, useProductReviewList 
+} 
+from "#context/customer.ts";
+import 
+{ 
+  ShoppingCart, Share2Icon, Heart, StarIcon, 
+  MessageSquare, TextAlignStart, MonitorCog, ShoppingBasket 
+} 
+from "lucide-react";
 
 /**
  * ส่วนประกอบแสดงรายละเอียดสินค้าที่ผู้ใช้กำลังเลือก
@@ -20,7 +28,7 @@ const content = function Product ()
 {
   const [param] = useSearchParams ();
   const id = param.get ("id");
-  const queryBasic = ctxCustomer.useProduct (Number (id));
+  const queryBasic = useProduct (Number (id));
   const basic = queryBasic.data;
   const bg = basic ? apiStorage.getUrlStream (basic.background) : undefined;
 
@@ -38,9 +46,9 @@ const content = function Product ()
 */
 content.Cart = function ProductBrowserCart ()
 {
-  const auth = ctx.useAuth ();
-  const cart = ctxCustomer.useCart ();
-  const cartQuery = ctxCustomer.useCartQuery ();
+  const cart = useCart ();
+  const cartQuery = useCartQuery ();
+  const accountQuery = useAccountBasic ();
 
   /**
    * ทำงานเมื่อผู้ใช้ต้องกดเปิดตะกร้าของตนเอง
@@ -58,7 +66,7 @@ content.Cart = function ProductBrowserCart ()
   const count = data ? data.reduce ((x, y) => x += y.quantity, 0) : 0;
 
   return (
-    <StyledCart onClick={onClick} $visible={ctx.authSigned (auth)}>
+    <StyledCart onClick={onClick} $visible={accountQuery.data !== undefined}>
       <StyledCartLabel>{count}</StyledCartLabel>
       <ShoppingBasket/>
     </StyledCart>
@@ -68,14 +76,16 @@ content.Main = function ProductMainContent ()
 {
   const [param] = useSearchParams ();
   const id = param.get ("id");
-  const auth = ctx.useAuth ();
-  const toast = ctxUI.useToast ();
-  const queryBasic = ctxCustomer.useProduct (Number (id));
-  const queryReview = ctxCustomer.useProductReviewList (Number (id));
+  const auth = useAuth ();
+  const toast = useToast ();
+  const queryBasic = useProduct (Number (id));
+  const queryReview = useProductReviewList (Number (id));
+  const queryAct = useAccountBasic ();
   const basic = queryBasic.data;
   const review = queryReview.data;
 
   const [menu, setMenu] = useState (1);
+  const [dialog] = useDialog ();
 
   /**
    * เพิ่มสินค้านี้ลงในตะกร้าของผู้ใช้งานระบบ
@@ -85,7 +95,7 @@ content.Main = function ProductMainContent ()
     event.preventDefault ();
     event.stopPropagation ();
 
-    if (ctx.authSigned (auth))
+    if (queryAct.data !== undefined)
     {
       const query = queryBasic;
       const queryData = query.data;
@@ -123,7 +133,7 @@ content.Main = function ProductMainContent ()
     event.preventDefault ();
     event.stopPropagation ();
 
-    if (ctx.authSigned (auth))
+    if (queryAct.data !== undefined)
     {
       return;
     }
@@ -141,6 +151,24 @@ content.Main = function ProductMainContent ()
   {
     event.preventDefault ();
     event.stopPropagation ();
+
+    void navigator.clipboard.writeText(window.location.href).then (() =>
+    {
+      toast.setDuration (5000);
+      toast.setText ("คัดลอกลิงค์แชร์เรียบร้อย");
+      toast.setVisible (true);
+    })
+    .catch (() =>
+    {
+      dialog.reset ();
+      dialog.setTitle ("คัดลอกลิงค์แชร์ผิดพลาด");
+      dialog.setMessage ("เกิดข้อผิดพลาดบางอย่าง โปรดทำการลองใหม่อีกครั้ง");
+      dialog.setPrimary ("เข้าใจแล้ว", () =>
+      {
+        dialog.setVisible (false);
+      });
+      dialog.setVisible (true);
+    })
   }
 
   const name = basic ? basic.name : "";
@@ -208,10 +236,14 @@ content.Main = function ProductMainContent ()
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                     referrerPolicy="strict-origin-when-cross-origin"
                     allowFullScreen={true}
+                    style={{ aspectRatio: "16 / 9 "}}
                     />
                 }
                 if (x.mime === "image/jpeg" || x.mime === "image/png") {
-                  return <img key={x.reviewId} src={x.link}/>
+                  return <img 
+                    key={x.reviewId} 
+                    src={x.link} 
+                    style={{ aspectRatio: "16 / 9 "}}/>
                 }
               }))
             }
@@ -245,11 +277,11 @@ content.Comment = function ProductComment ()
 {
   const [param] = useSearchParams ();
   const id = param.get ("id");
-  const auth = ctx.useAuth ();
-  const queryList = ctxCustomer.useProductCommentList (Number (id));
+  const queryList = useProductCommentList (Number (id));
+  const queryAct = useAccountBasic ();
   const queryData = queryList.data;
 
-  const toast = ctxUI.useToast ();
+  const toast = useToast ();
   const rating = (queryData ? 
       queryData.length > 0 ?
       queryData.reduce ((x, y) => x += y.rating, 0) / queryData.length : 0.0 : 0.0).toFixed (1);
@@ -262,7 +294,7 @@ content.Comment = function ProductComment ()
     event.preventDefault ();
     event.stopPropagation ();
 
-    if (ctx.authSigned (auth))
+    if (queryAct.data !== undefined)
     {
       return;
     }
@@ -296,7 +328,9 @@ content.Comment = function ProductComment ()
           <p>สินค้ายังไม่ใครรีวิวเลย เป็นคนแรกที่รีวิวเลย</p> : <></>
         }
         { (queryData) ? 
-          (queryData.map ((x) => <content.CommentItem id={x.commentId}/>)) : <></>
+          (queryData.map ((x) => <content.CommentItem
+            key={x.commentId}
+            id={x.commentId}/>)) : <></>
         }
       </StyleCommentBody>
     </StyleComment>
@@ -304,8 +338,8 @@ content.Comment = function ProductComment ()
 }
 content.CommentItem = function ProductCommentItem ({id}: {id: number;})
 {
-  const queryComment = ctxCustomer.useProductComment (id);
-  const queryAccount = ctxCustomer.useAccountBasic ();
+  const queryComment = useProductComment (id);
+  const queryAccount = useAccountBasic ();
 
   const comment = queryComment.data;
   const account = queryAccount.data;
@@ -361,6 +395,7 @@ const StyleCover = styled.img`
   width: 550px;
   height: 100%;
   object-fit: cover;
+  aspect-ratio: 3 / 4;
 
   @media (max-width: 1268px)
   {

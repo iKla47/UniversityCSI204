@@ -1,8 +1,6 @@
 import react      from "react";
 import styled     from "styled-components";
 import MenuBar    from "#component/menu.bar.tsx";
-import Context    from "#context/common.ts";
-import ContextUI  from "#context/common.ui.ts";
 import ApiAccount from "#util/api.account.ts";
 import ApiStorage from "#util/api.storage.ts";
 
@@ -19,6 +17,9 @@ import {
 import { 
   type ChangeEvent, type MouseEvent 
 } from "react";
+import { useAuth } from "#context/common.ts";
+import { useDialog, useSettings, useToast } from "#context/common.ui.ts";
+import { useAccountBasic, useAccountContact } from "#context/customer.ts";
 
 interface PropRoot
 {
@@ -248,8 +249,8 @@ content.Menu = function SettingsMenu (prop: PropMenu)
         text="ความปลอดภัย" icon={<UserLock/>}/>
       <MenuBar.Item value={content.CONTENT_SHIPPING} 
         text="การจัดส่ง" icon={<Container/>}/>
-      <MenuBar.Item value={content.CONTENT_PAYMENT} 
-        text="การชำระเงิน" icon={<Coins/>}/>
+      {/* <MenuBar.Item value={content.CONTENT_PAYMENT} 
+        text="การชำระเงิน" icon={<Coins/>}/> */}
     </MenuBar>
   );
 }
@@ -278,15 +279,14 @@ content.Content = function SettingsContent (prop: PropContent)
 content.ContentGeneral = function SettingsContentGeneral
   (prop: PropContentGeneral) : react.ReactElement
 {
-  const auth = Context.useAuth ();
-  const toast = ContextUI.useToast ();
+  const auth = useAuth ();
+  const toast = useToast ();
   const iconInput = useRef (HTMLInputElement.prototype);
+  const [dialog] = useDialog ();
   const [pending, setPending] = useState (false);
 
-  const queryBasic = useQuery ({
-    queryKey: ["Account", "Basic"],
-    queryFn: () => ApiAccount.getBasic (auth.session)
-  });
+  const queryBasic = useAccountBasic ();
+  const queryContact = useAccountContact ();
 
   /**
    * ทำงานเมื่อผู้ใช้กดเปลี่ยนรูป
@@ -329,10 +329,15 @@ content.ContentGeneral = function SettingsContentGeneral
       })
       .catch (() =>
       {
-          toast.setText ("เกิดข้อผิดพลาดในการเปลี่ยนรูปโปรไฟล์ กรุณาลองใหม่อีกครั้ง");
-          toast.setDuration (5000);
-          toast.setVisible (true);
-          setPending (false);
+        dialog.reset ();
+        dialog.setTitle ("เกิดข้อผิดพลาด");
+        dialog.setMessage ("เกิดข้อผิดพลาดในการเปลี่ยนรูปโปรไฟล์ กรุณาลองใหม่อีกครั้ง");
+        dialog.setPrimary ("เข้าใจแล้ว", () =>
+        {
+          dialog.setVisible (false);
+        });
+        dialog.setVisible (true);
+        setPending (false);
       });
   }
   const onNameChange = (event: MouseEvent) =>
@@ -351,10 +356,11 @@ content.ContentGeneral = function SettingsContentGeneral
     event.stopPropagation ();
   }
 
-  const block = queryBasic.data;
-  const icon = block ? ApiStorage.getUrlStream (block.icon) : "";
-  const name = block ? block.name : "";
-  const email = block ? block.name : "";
+  const basic = queryBasic.data;
+  const contact = queryContact.data;
+  const icon = basic ? ApiStorage.getUrlStream (basic.icon) : "";
+  const name = basic ? basic.name : "";
+  const email = contact ? contact.email : "";
 
   return (
     <react.Activity mode={prop.visible ? "visible" : "hidden"}>
@@ -452,28 +458,69 @@ content.ContentSecurity = function SettingsContentSecurity
 content.ContentShipping = function SettingsContentShipping
   (prop: PropContentShipping) : react.ReactElement
 {
+  const queryContact = useAccountContact ();
+  const contact = queryContact.data;
+
+  const address = contact ? contact.address : "";
+  const receiver = "";
+  const phone = contact ? contact.phone : "";
+
   return (
     <react.Activity mode={prop.visible ? "visible" : "hidden"}>
       <content.TemplateBackButton 
         visible={prop.onBack != undefined} 
         onClick={prop.onBack}/>
       <StyleTemplateHeader>การจัดส่ง</StyleTemplateHeader>
+      <p style={{
+        padding: '16px',
+        backgroundColor: 'var(--bg-secondary)',
+        borderRadius: '4px',
+        marginBottom: '8px'
+      }}>
+        ชุดข้อมูลนี้จะเป็นข้อมูลเริ่มต้นเมื่อคุณดำเนินการชำระเงิน
+      </p>
       <StyleTemplateField>
         <div>
           <label>ที่อยู่เริ่มต้น</label>
           <br/>
-          <label>999/999 ดาวเคราะห์โลก</label>
+          <label>{address}</label>
         </div>
         <div>
-          <button>เลือก</button>
+          <button>
+            {address.length > 0 ? "แก้ไข" : "เพิ่ม"}
+          </button>
         </div>
       </StyleTemplateField>
-      <StyleTemplateHeader2>รายการบันทึกที่อยู่</StyleTemplateHeader2>
+      <StyleTemplateField>
+        <div>
+          <label>ชื่อผู้รับ</label>
+          <br/>
+          <label>{receiver}</label>
+        </div>
+        <div>
+          <button>
+            {receiver.length > 0 ? "แก้ไข" : "เพิ่ม"}
+          </button>
+        </div>
+      </StyleTemplateField>
+      <StyleTemplateField>
+        <div>
+          <label>เบอร์โทรศัพท์</label>
+          <br/>
+          <label>{phone}</label>
+        </div>
+        <div>
+          <button>
+            {phone.length > 0 ? "แก้ไข" : "เพิ่ม"}
+          </button>
+        </div>
+      </StyleTemplateField>
+      {/* <StyleTemplateHeader2>รายการบันทึกที่อยู่</StyleTemplateHeader2>
       <StyleTemplateField>
         <div>
           <button>เพิ่มที่อยู่</button>
         </div>
-      </StyleTemplateField>
+      </StyleTemplateField> */}
     </react.Activity>
   );
 }
@@ -507,7 +554,7 @@ content.ContentPayment = function SettingsContentPayment
 }
 content.Provider = function SettingsProvider ()
 {
-  const ctx = ContextUI.useSettings ();
+  const ctx = useSettings ();
   const onClose = react.useRef<(() => void)> (undefined);
   const [visible, setVisible] = react.useState (false);
 

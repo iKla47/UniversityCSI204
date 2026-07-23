@@ -1,7 +1,7 @@
 import styled from "styled-components";
-import context from "#context/common.ui.ts";
 
 import { useEffect, useRef, useState } from "react";
+import { useToast } from "#context/common.ui.ts";
 
 const content = function Toast ()
 {
@@ -27,7 +27,7 @@ content.Provider = function ToastProvider ()
   const duration = useRef (0);
 
   const timeout = useRef (0);
-  const toast = context.useToast ();
+  const toast = useToast ();
 
   const runTimeout = () =>
   {

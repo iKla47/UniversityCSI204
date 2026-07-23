@@ -1,28 +1,42 @@
-import react from "react";
 import objReader from "#util/common.objectReader";
-
 import Self from "#component/auth.tsx";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * ส่วนประกอบแสดงผลสำหรับหน้าจอลงชื่อเข้าใช้งานบัญชี
 */
-const content = function Auth ()
+export default function Auth ()
 {
   const url = `${location.origin}/`;
-  const context = react.useRef ({
+  const [title] = useState ("ร้านขายแผ่นและตลับเกม");
+  const [desc, setDesc] = 
+    useState ("ยินดีต้อนรับ โปรดป้อนรหัสบัญชีของคุณเพื่อลงชื่อเข้าใช้");
+
+  const context = useRef ({
     redirectSignedIn: url,
     redirectSignedUp: url,
-    reason: content.REASON_NONE
+    reason: REASON_NONE,
   })
 
-  const decodeContext = (value: string) => 
+  function decodeContext (value: string) 
   {
     return decodeURIComponent(atob(value).split('').map((c) => {
       return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
     }).join(''));
   }
 
-  const onLoadContext = () =>
+  function onSignedIn ()
+  {
+    location.replace (context.current.redirectSignedIn);
+    return;
+  }
+  function onSignedUp ()
+  {
+    location.replace (context.current.redirectSignedUp);
+    return;
+  }
+
+  useEffect (() =>
   {
     const search = new URLSearchParams (location.search);
     const raw = search.get ("context");
@@ -33,36 +47,50 @@ const content = function Auth ()
     const jsonRaw = decodeContext (raw);
     const json = JSON.parse (jsonRaw) as Record<string, unknown>;
     const read = objReader (json);
-    const ctx = context.current;
 
     const readSignIn = read.optionalString ("RedirectSignedIn");
     const readSignUp = read.optionalString ("RedirectSignedUp");
     const readReason = read.optionalInteger ("Reason");
 
-    ctx.redirectSignedIn = readSignIn ?? url;
-    ctx.redirectSignedUp = readSignUp ?? url;
-    ctx.reason = readReason ?? content.REASON_NONE;
-
+    context.current = 
+    {
+      redirectSignedIn: readSignIn ?? url,
+      redirectSignedUp: readSignUp ?? url,
+      reason: readReason ?? REASON_NONE,
+    }
+    switch (context.current.reason)
+    {
+      case REASON_NONE: break;
+      case REASON_ADDON:
+        setDesc ("เพิ่มบัญชีใหม่ของคุณ");
+        break;
+      case REASON_EXPIRED:
+        setDesc (
+          "รหัสการเชื่อมต่อของคุณหมดอายุ กรุณาป้อนรหัสประจำตัวใหม่อีกครั้ง"
+        );
+        break;
+      case REASON_IDENTITY:
+        setDesc (
+          "เพื่อให้แน่ใจว่าเป็นคุณ กรุณาป้อนรหัสผ่านของคุณ"
+        );
+        break;
+      case REASON_VERIFICATION:
+        setDesc (
+          "เพื่อให้แน่ใจว่าเป็นคุณ กรุณาป้อนรหัสยืนยันตนของคุณ"
+        );
+        break;
+    }
     history.replaceState (null, "", url);
-  }
-  const onSignedIn = () =>
-  {
-    location.replace (context.current.redirectSignedIn);
-    return;
-  }
-
-  react.useEffect (() =>
-  {
-    onLoadContext ();
   },
-  []);
+  [url]);
 
   return (
     <Self
-      title="ร้านขายแผ่นและตลับเกม"
-      description="ยินดีต้อนรับ โปรดป้อนรหัสบัญชีของคุณเพื่อลงชื่อเข้าใช้"
+      title={title}
+      description={desc}
       transparent={false}
       onSignedIn={onSignedIn}
+      onSignedUp={onSignedUp}
     />
   );
 }
@@ -70,29 +98,20 @@ const content = function Auth ()
 /**
  * เหตุผล: ไม่มี/ไม่ระบุ
 */
-content.REASON_NONE = 0;
+const REASON_NONE = 0;
 /**
  * เหตุผล: จำเป็นต้องระบุตัวตน
 */
-content.REASON_IDENTITY = 1;
+const REASON_IDENTITY = 1;
 /**
  * เหตุผล: ต้องยืนยันสองชั้น
 */
-content.REASON_VERIFICATION = 2;
+const REASON_VERIFICATION = 2;
 /**
  * เหตุผล: เพิ่มบัญชีใหม่
 */
-content.REASON_ADDON = 3;
+const REASON_ADDON = 3;
 /**
  * เหตุผล: รหัสยืนยันตัวตนหมดอายุ
 */
-content.REASON_EXPIRED = 4;
-
-/**
- * แข็งวัตถุ (ความปลอดภัย)
-*/
-Object.freeze (content);
-/**
- * ส่งออกตัวแปร
-*/
-export default content;
+const REASON_EXPIRED = 4;

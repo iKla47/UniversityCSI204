@@ -1,14 +1,20 @@
-import styled from "styled-components";
-import ctx from "#context/common.ts";
-import ctxUI from "#context/common.ui.ts";
-import ctxCustomer from "#context/customer.ts";
 import apiAccount from "#util/api.account.ts";
 import apiPromotion from "#util/api.promotion.ts";
 import apiStorage from "#util/api.storage.ts";
-import { XIcon, MinusIcon, PlusIcon, Trash2Icon, TagIcon, TicketIcon, ArrowRightIcon } from "lucide-react";
 
-import { useRef, useState, type ChangeEvent } from "react";
-import { type MouseEvent } from "react";
+import { useState, type MouseEvent } from "react";
+import { styled } from "styled-components";
+import { useAuth } from "#context/common.ts";
+import { useToast } from "#context/common.ui.ts";
+import { useCartQuery, useProduct, useProducts, usePromotion } 
+from "#context/customer.ts";
+
+import 
+{ 
+  XIcon, MinusIcon, PlusIcon, Trash2Icon, 
+  TagIcon, TicketIcon, ArrowRightIcon 
+} 
+from "lucide-react";
 
 const content = function CustomerCartList (prop: PropRoot)
 {
@@ -30,6 +36,8 @@ const content = function CustomerCartList (prop: PropRoot)
     }
   };
 
+  const queryList = useCartQuery ();
+
   return (
     <>
      <StyleHeader style={{ display: prop.visible ? "block" : "none" }}>
@@ -50,7 +58,9 @@ const content = function CustomerCartList (prop: PropRoot)
           <content.Receipt />
           <content.PromoCode callback={prop.promotion} />
           <content.Summary promotionCode={prop.promotion[0]} />
-          <StyleCheckoutBtn onClick={onClickContinue}>
+          <StyleCheckoutBtn 
+            onClick={onClickContinue}
+            disabled={queryList.data ? queryList.data.length === 0 : true}>
             <span>สั่งซื้อสินค้า</span>
             <ArrowRightIcon size={18} />
           </StyleCheckoutBtn>
@@ -60,8 +70,9 @@ const content = function CustomerCartList (prop: PropRoot)
   )
 }
 
-content.List = function CartList() {
-  const queryList = ctxCustomer.useCartQuery();
+content.List = function CartList() 
+{
+  const queryList = useCartQuery();
   const queryData = queryList.data;
 
   if (!queryData || queryData.length === 0) {
@@ -84,10 +95,10 @@ content.List = function CartList() {
 content.ListItem = function CartListItem({ uid, pid }: 
   { uid: number; pid: number }) 
 {
-  const auth = ctx.useAuth();
-  const toast = ctxUI.useToast();
-  const queryList = ctxCustomer.useCartQuery();
-  const queryItem = ctxCustomer.useProduct(pid);
+  const auth = useAuth ();
+  const toast = useToast ();
+  const queryList = useCartQuery ();
+  const queryItem = useProduct (pid);
   
   const list = queryList.data;
   const item = queryItem.data;
@@ -194,8 +205,9 @@ content.ListItem = function CartListItem({ uid, pid }:
   );
 };
 
-content.Receipt = function CartReceipt() {
-  const queryList = ctxCustomer.useCartQuery();
+content.Receipt = function CartReceipt() 
+{
+  const queryList = useCartQuery ();
   const queryData = queryList.data;
 
   return (
@@ -212,9 +224,16 @@ content.Receipt = function CartReceipt() {
   );
 };
 
-content.ReceiptItem = function CartReceiptItem({ uid, pid }: { uid: number; pid: number }) {
-  const queryList = ctxCustomer.useCartQuery();
-  const queryItem = ctxCustomer.useProduct(pid);
+content.ReceiptItem = function CartReceiptItem({ 
+  uid, pid 
+}: 
+{ 
+  uid: number; 
+  pid: number;
+}) 
+{
+  const queryList = useCartQuery();
+  const queryItem = useProduct(pid);
   const list = queryList.data;
   const item = queryItem.data;
   
@@ -236,12 +255,12 @@ content.ReceiptItem = function CartReceiptItem({ uid, pid }: { uid: number; pid:
 
 content.PromoCode = function CartPromoCode({ callback }: { callback: [string, (value: string) => void]; }) 
 {
-  const auth = ctx.useAuth();
-  const toast = ctxUI.useToast();
+  const auth = useAuth();
+  const toast = useToast();
   const [code, setCode] = useState ("");
 
-  const queryList = ctxCustomer.useCartQuery();
-  const queryBasics = ctxCustomer.useProducts(
+  const queryList = useCartQuery ();
+  const queryBasics = useProducts (
     !queryList.data ? [] : queryList.data.map((x) => x.productId)
   );
 
@@ -267,6 +286,8 @@ content.PromoCode = function CartPromoCode({ callback }: { callback: [string, (v
         toast.setText ("ไม่สามารถใช้งานโค้ดส่วนลดนี้ได้ เนื่องจากยอดรวมสินค้าไม่ถึงขั้นต่ำที่กำหนด");
         toast.setDuration (5000);
         toast.setVisible (true);
+
+        callback[1] ("");
         return;
       }
       if (promotion.used)
@@ -281,9 +302,7 @@ content.PromoCode = function CartPromoCode({ callback }: { callback: [string, (v
       toast.setDuration (5000);
       toast.setVisible (true);
 
-      if (callback) {
-        callback[1] (code);
-      }
+      callback[1] (code);
     })
     .catch (() =>
     {
@@ -291,9 +310,7 @@ content.PromoCode = function CartPromoCode({ callback }: { callback: [string, (v
       toast.setDuration (5000);
       toast.setVisible (true);
 
-      if (callback) {
-        callback[1] ("");
-      }
+      callback[1] ("");
     });
   }
 
@@ -307,10 +324,12 @@ content.PromoCode = function CartPromoCode({ callback }: { callback: [string, (v
         <StylePromoInput
           type="text"
           placeholder="ใส่โค้ดส่วนลดที่นี่"
-          onChange={(e) => setCode(e.target.value)}
+          onChange={(event) => { setCode(event.target.value); }}
           onSubmit={onClick}
         />
-        <StylePromoApplyBtn onClick={onClick}>
+        <StylePromoApplyBtn 
+          onClick={onClick} 
+          disabled={list ? list.length === 0 : true}>
           ใช้งาน
         </StylePromoApplyBtn>
       </StylePromoInputGroup>
@@ -318,12 +337,18 @@ content.PromoCode = function CartPromoCode({ callback }: { callback: [string, (v
   );
 };
 
-content.Summary = function CartSummary({ promotionCode }: { promotionCode: string }) {
-  const queryList = ctxCustomer.useCartQuery();
-  const queryBasics = ctxCustomer.useProducts(
+content.Summary = function CartSummary({ 
+  promotionCode 
+}: 
+{ 
+  promotionCode: string 
+}) 
+{
+  const queryList = useCartQuery ();
+  const queryBasics = useProducts (
     !queryList.data ? [] : queryList.data.map((x) => x.productId)
   );
-  const queryPromotion = ctxCustomer.usePromotion(promotionCode);
+  const queryPromotion = usePromotion (promotionCode);
 
   const list = queryList.data;
   const basic = queryBasics;

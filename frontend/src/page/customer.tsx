@@ -1,28 +1,28 @@
+import apiAuth from "#util/api.auth.ts";
+import apiAccount from "#util/api.account.ts";
+import cmmNavi from "#util/common.navigation.ts";
 
-import ctx          from "#context/common.ts";
-import ctxUI        from "#context/common.ui.ts";
-import ctxCustomer  from "#context/customer.ts";
-import apiAuth      from "#util/api.auth.ts";
-import apiAccount   from "#util/api.account.ts";
-import navigation   from "#util/common.navigation.ts";
-import branding     from "#asset/image/favicon.ico";
-
+import Branding from "#asset/image/favicon.ico";
 import MenuContext  from "#component/menu.context.tsx";
 import Toast        from "#component/toast.tsx";
 import Settings     from "#component/settings.tsx";
 import NavBar       from "#component/navbar.tsx";
-import Cart         from "#component/customer.cart";
+import CartUI       from "#component/customer.cart";
 
-import { useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useDialog, useMenuContext, useSettings } from "#context/common.ui.ts";
+import { defaultCart, Cart, useCart, useAccountBasic } 
+from "#context/customer.ts";
+
+import { useEffect, useRef } from "react";
 import { Outlet } from "react-router";
 import 
 { 
-  ShoppingCart, BookMarked, Info, SettingsIcon, LogOut,
-  ShoppingBasket, Truck,
-  SquareChevronRight
+  ShoppingCart, BookMarked, SettingsIcon, LogOut,
+  ShoppingBasket, Truck, SquareChevronRight
 } 
 from "lucide-react";
+import { DialogProvider } from "#component/common.tsx";
+import { useAuth } from "#context/common.ts";
 
 
 /**
@@ -30,45 +30,36 @@ from "lucide-react";
 */
 const content = function Customer ()
 {
-  const cart = useRef (ctxCustomer.defCart ());
+  const cart = useRef (defaultCart ());
 
   return (
   <>
-    <ctxCustomer.ProviderCart value={cart.current}>
+    <Cart.Provider value={cart.current}>
       <Outlet/>
       <content.NavBar/>
 
-      <Cart.Provider/>
+      <CartUI.Provider/>
       <Settings.Provider/>
       <Toast.Provider/>
+      <DialogProvider/>
       <MenuContext.Provider/>
-    </ctxCustomer.ProviderCart>
+    </Cart.Provider>
   </>
   );
 }
 content.NavBar = function PresetNavBar ()
 {
-  const menuCtx = ctxUI.useMenuContext ();
-  const cartCtx = ctxCustomer.useCart ();
-  const settings = ctxUI.useSettings ();
-  const auth = ctx.useAuth ();
-  const authSigned = ctx.authSigned (auth);
+  const menuCtx = useMenuContext ();
+  const cartCtx = useCart ();
+  const settings = useSettings ();
+  const account = useAccountBasic ();
+  const auth = useAuth ();
+  const [dialog] = useDialog ();
 
-  const { data: accountData } = useQuery ({
-    queryKey: ["Account", "Basic"],
-    queryFn: () => apiAccount.getBasic (auth.session),
-    enabled: apiAuth.checkSession ({
-      secret: auth.session,
-      issued: auth.sessionIssued,
-      expire: auth.sessionExpire
-    })
-  });
-  
-  const toHome = () => { void navigation.toIndex (); }
-  const toProductBrowser = () => { void navigation.toProductBrowser (); }
-  const toDoc = () => { navigation.toDoc (); }
-  const toAbout = () => { void navigation.toAbout (); }
-  const toSignIn = () => { void navigation.toAuth (); }
+  const toHome = () => { void cmmNavi.toIndex (); }
+  const toProductBrowser = () => { void cmmNavi.toProductBrowser (); }
+  const toDoc = () => { cmmNavi.toDoc (); }
+  const toSignIn = () => { void cmmNavi.toAuth (); }
   const toProfile = () => 
   {
     /**
@@ -87,7 +78,7 @@ content.NavBar = function PresetNavBar ()
     const onShipping = () =>
     {
       menuCtx.setVisible (false);
-      void navigation.toOrder ();
+      void cmmNavi.toOrder ();
       return;
     }
     /**
@@ -96,7 +87,7 @@ content.NavBar = function PresetNavBar ()
     const onConsole = () =>
     {
       menuCtx.setVisible (false);
-      void navigation.toConsole ();
+      void cmmNavi.toConsole ();
       return;
     }
     /**
@@ -135,10 +126,10 @@ content.NavBar = function PresetNavBar ()
         icon={<SettingsIcon/>}
         onClick={onSettings}/>
       { 
-      (accountData && 
-      (accountData.role == apiAccount.ROLE_STAFF ||
-        accountData.role == apiAccount.ROLE_MANAGER ||
-        accountData.role == apiAccount.ROLE_DEVELOPER)) ?
+      (account.data && 
+      (account.data.role == apiAccount.ROLE_STAFF ||
+        account.data.role == apiAccount.ROLE_MANAGER ||
+        account.data.role == apiAccount.ROLE_DEVELOPER)) ?
         <MenuContext.Item 
           text="คอนโซล" 
           icon={<SquareChevronRight/>}
@@ -155,20 +146,65 @@ content.NavBar = function PresetNavBar ()
     menuCtx.setVisible (true);
   }
 
+  useEffect (() =>
+  {
+    const intervalId = setInterval (() =>
+    {
+      const signed = auth.session.length > 0;
+      const valid = apiAuth.checkSession ({
+        secret: auth.session,
+        issued: auth.sessionIssued,
+        expire: auth.sessionExpire
+      });
+
+      if (signed && valid) {
+        return;
+      }
+      if (signed && !valid)
+      {
+        clearInterval (intervalId);
+
+        dialog.reset ();
+        dialog.setTitle ("หมดเวลาการเชื่อมต่อแล้ว");
+        dialog.setMessage ("คุณอาจจะต้องลงชื่อเข้าใช้ใหม่อีกครั้ง");
+        dialog.setPrimary ("ดำเนินการต่อ", () =>
+        {
+          void cmmNavi.toAuth ({
+            reason: 4
+          })
+        });
+        dialog.setSecondary ("ลงชื่อออก", () =>
+        {
+          apiAuth.saveSetPrefered (-1);
+          apiAuth.saveWrite ();
+          location.reload ();
+        });
+      }
+    },
+    1000);
+
+    return () =>
+    {
+      clearInterval (intervalId);
+    }
+  },
+  []);
 
   return (
   <>
     <NavBar>
       <NavBar.Branding 
-        icon={branding} 
+        icon={Branding} 
         text="ร้านขายแผ่นและตลับเกม" 
         onClick={toHome}/>
       <NavBar.Spacing/>
       <NavBar.Search 
         placeholder="ค้นหา เกมสุดที่รัก ..."
-        onClick={toProductBrowser}
+        onClick={(v) => {
+          void cmmNavi.toProductBrowser (v); 
+        }}
         onChange={(v) => {
-          void navigation.toProductBrowser (v);
+          void cmmNavi.toProductBrowser (v);
         }}/>
       <NavBar.Menu hideOnWidth={512}>
         <NavBar.MenuItem 
@@ -188,7 +224,7 @@ content.NavBar = function PresetNavBar ()
           hideOnWidth={768}
         /> */}
       </NavBar.Menu>
-      {authSigned ? 
+      {account.data ? 
         <NavBar.Profile onClick={toProfile}/> : 
         <NavBar.SignIn onClick={toSignIn}/> 
       }

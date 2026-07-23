@@ -1,7 +1,8 @@
-import react              from "react";
-import styled             from "styled-components";
-import context            from "#context/common.ui.ts";
-import { type IrMenuBar } from "#context/common.ui.ts";
+import react from "react";
+import styled from "styled-components";
+
+import { CtxIrMenuBar, useIrMenuBar, type IrMenuBar } 
+from "#context/common.ui.ts";
 
 type PropDirection = "row" | "column";
 type PropAlign = "start" | "center" | "end";
@@ -176,9 +177,9 @@ content.Root = function MenuBarRoot (prop: PropRoot)
       $margin={margin}
       $gap={gap}
       >
-      <context.ProviderIrMenuBar value={memory}>
+      <CtxIrMenuBar value={memory}>
         {prop.children}
-      </context.ProviderIrMenuBar>
+      </CtxIrMenuBar>
     </StyleRoot>
   );
 }
@@ -190,7 +191,7 @@ content.Heading = function MenuBarHeading (prop: PropHeading)
 }
 content.Item = function MenuBarItem (prop: PropItem)
 {
-  const ctx = context.useIrMenuBar ();
+  const ctx = useIrMenuBar ();
   const dir = ctx.direction;
   const row = dir === "row";
   const align = ctx.align;

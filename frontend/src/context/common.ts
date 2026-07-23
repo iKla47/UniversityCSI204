@@ -1,19 +1,28 @@
-import react from "react";
+import { createContext, useContext } from "react";
 
-interface ContextAuth
+/**
+ * โครงสร้างข้อมูลบริบทยืนยันตัวตน
+*/
+export interface CtxAuth
 {
     name: string;
     session: string;
     sessionIssued: Date;
     sessionExpire: Date;
 }
-interface ContextLanguage
+/**
+ * โครงสร้างข้อมูลบริบทข้อมูลภาษา
+*/
+export interface CtxLanguage
 {
     text: number;
     caption: number;
     voice: number;
 }
-const defAuth = () : ContextAuth =>
+/**
+ * รับข้อมูลการยืนยันตัวตนแบบเริ่มต้น
+*/
+export function defaultAuth () : CtxAuth
 {
     return {
         name: "",
@@ -22,7 +31,10 @@ const defAuth = () : ContextAuth =>
         sessionExpire: new Date (NaN),
     };
 }
-const defLanguage = () : ContextLanguage =>
+/**
+ * รับข้อมูลภาษารูปแบบเเริ่มต้น
+*/
+export function defaultLanguage () : CtxLanguage
 {
     return {
         text: 0,
@@ -30,41 +42,20 @@ const defLanguage = () : ContextLanguage =>
         voice: 0
     }
 }
-const useAuth = () =>
+/**
+ * ใช้งานบริบทการยืนยันตัวตน
+*/
+export function useAuth ()
 {
-    return react.useContext (ContextAuth);
+    return useContext (CtxAuth);
 }
-const useLanguage = () =>
+/**
+ * ใช้งานบริบทข้อมูลภาษา
+*/
+export function useLanguage ()
 {
-    return react.useContext (ContextLanguage);
-}
-
-const Content = () => { return; }
-const ContextAuth = react.createContext (defAuth ());
-const ContextLanguage = react.createContext (defLanguage ());
-
-Content.ProviderAuth = ContextAuth.Provider;
-Content.ProviderLanguage = ContextLanguage.Provider;
-Content.defAuth = defAuth;
-Content.defLanguage = defLanguage;
-Content.useAuth = useAuth;
-Content.useLanguage = useLanguage;
-
-Content.authSigned = (auth: ContextAuth) =>
-{
-    return (
-        auth.name != "" &&
-        auth.session != "" &&
-        Date.now () >= auth.sessionIssued.getTime () &&
-        Date.now () <= auth.sessionExpire.getTime ()
-    );
-}
-Content.authExpired = (auth: ContextAuth) =>
-{
-    return (
-        Date.now () < auth.sessionIssued.getTime () ||
-        Date.now () > auth.sessionExpire.getTime ()
-    );
+    return useContext (CtxLanguage);
 }
 
-export default Content;
+export const CtxAuth = createContext (defaultAuth ());
+export const CtxLanguage = createContext (defaultLanguage ());

@@ -1,37 +1,87 @@
-import react from "react";
+import 
+{ 
+    createContext, useContext, 
+    type ReactNode,
+    type ReactElement
+} 
+from "react";
 
+/**
+ * โครงสร้างข้อมูลบริบทแสดงหน้าเมนูบริบท
+*/
 export interface MenuContext
 {
     setVisible: (value: boolean) => void;
-    setChildren: (value: react.ReactNode) => void;
+    setChildren: (value: ReactNode) => void;
     setInset: (value ?: string) => void;
     setCancel: (value ?: () => void) => void;
 }
+/**
+ * โครงสร้างข้อมูลบริบทแสดงกหน้าตั้งค่าระบบ
+*/
 export interface Settings
 {
     setVisible: (value: boolean) => void;
     setClose: (value ?: () => void) => void;
 }
+/**
+ * โครงสร้างข้อมูลบริบทแสดงกล่าวข้อความขนาดเล็ก ๆ
+ * ตรงขอบหน้าจอของผู้ใช้งาน
+*/
 export interface Toast
 {
-    setIcon: (
-        value:  string | React.ComponentType<unknown> | React.ReactElement
-    ) => void;
+    setIcon: (value: string | ReactElement) => void;
     setText: (value: string) => void;
     setDuration: (value: number) => void;
     setVisible: (value: boolean) => void;
 }
-
-export interface IrMenuBar
+/**
+ * โครงสร้างข้อมูลบริบทแสดงกล่องข้อความหรือหน้าต่างป๊อปอัป
+ * ที่ปรากฏขึ้นบนหน้าจอเพื่อแจ้งเตือน, ขอข้อมูล, หรือให้ผู้ใช้งานตัดสินใจ
+*/
+export interface Dialog
 {
-  direction: "row" | "column";
-  align: "start" | "center" | "end";
-  selected: unknown;
-
-  onClick: (value: unknown, handled: boolean) => void;
+    setVisible: (value: boolean) => void;
+    setTitle: (value: string) => void;
+    setMessage: (value: string) => void;
+    setPrimary: (text: string, callback: () => void) => void;
+    setSecondary: (text: string, callback: () => void) => void;
+    reset: () => void;
 }
 /**
- * โครงสร้างข้อมูลบริบทของเมนูนำทาง
+ * โครงสร้างข้อมูลบริบทการแสดงเนื้อหาตัวอย่าง
+*/
+export interface Preview
+{
+    setVisible: (value: boolean) => void;
+    setSource: (value: string) => void;
+    reset: () => void;
+}
+
+/**
+ * โครงสร้างข้อมูลบริบทเมนูนำทางขนาดเล็ก (ข้อมูลใช้งานภายในส่วนประกอบ)
+*/
+export interface IrMenuBar
+{
+    /**
+     * ทิศทางการแสดงผล
+    */
+    direction: "row" | "column";
+    /**
+     * การจัดวางข้อความ
+    */
+    align: "start" | "center" | "end";
+    /**
+     * ค่าที่กำลังเลือก
+    */
+    selected: unknown;
+    /**
+     * คำสั่งที่ทำงานเมื่อผู้ใช้กดปุ่ม
+    */
+    onClick: (value: unknown, handled: boolean) => void;
+}
+/**
+ * โครงสร้างข้อมูลบริบทของเมนูนำทาง ข้อมูลใช้งานภายในส่วนประกอบ)
 */
 export interface IrNavBar
 {
@@ -42,7 +92,7 @@ export interface IrNavBar
 }
 
 
-const defMenuContext = () : MenuContext =>
+export function defaultMenuContext () : MenuContext
 {
     return {
         setVisible: () => { return; },
@@ -51,14 +101,14 @@ const defMenuContext = () : MenuContext =>
         setCancel: () => { return; }
     }
 }
-const defSettings = () : Settings =>
+export function defaultSettings () : Settings
 {
     return {
         setVisible: () => { return; },
         setClose: () => { return; }
     }
 }
-const defToast = () : Toast =>
+export function defaultToast () : Toast
 {
     return {
         setIcon: () => { return; },
@@ -67,7 +117,18 @@ const defToast = () : Toast =>
         setVisible: () => { return; },
     }
 }
-const defIrMenuBar = () : IrMenuBar =>
+export function defaultDialog () : Dialog
+{
+    return {
+        setVisible: () => { return; },
+        setTitle: () => { return; },
+        setMessage: () => { return; },
+        setPrimary: () => { return; },
+        setSecondary: () => { return; },
+        reset: () => { return; },
+    }
+}
+export function defaultIrMenuBar () : IrMenuBar
 {
     return {
         direction: "row",
@@ -77,59 +138,58 @@ const defIrMenuBar = () : IrMenuBar =>
         onClick: () => { return; }
     }
 }
-const defIrNavBar = () : IrNavBar =>
+export function defaultIrNavBar () : IrNavBar
 {
     return {
         width: 0
     }
 }
 
-
-const useMenuContext = () =>
+/**
+ * เรียกใช้งานบริบท: เมนูบริบท
+*/
+export function useMenuContext ()
 {
-    return react.useContext (ContextMenuContext);
+    return useContext (CtxMenuContext);
 }
-const useSettings = () =>
+/**
+ * เรียกใช้งานบริบท: หน้าต่างการตั้งค่า
+*/
+export function useSettings ()
 {
-    return react.useContext (ContextSettings);
+    return useContext (CtxSettings);
 }
-const useToast = () =>
+/**
+ * เรียกใช้งานบริบท: การแจ้งเตือนขนาดเล็ก
+*/
+export function useToast ()
 {
-    return react.useContext (ContextToast);
+    return useContext (CtxToast);
 }
-const useIrMenuBar = () =>
+/**
+ * เรียกใช้งานบริบท: การแจ้งเตือนขนาดใหญ่
+*/
+export function useDialog ()
 {
-    return react.useContext (ContextIrMenuBar);
+    return useContext (CtxDialog);
 }
-const useIrNavBar = () =>
+export function useIrMenuBar ()
 {
-    return react.useContext (ContextIrNavBar)
+    return useContext (CtxIrMenuBar);
+}
+export function useIrNavBar ()
+{
+    return useContext (CtxIrNavBar)
 }
 
-const Content = () => { return; }
-const ContextMenuContext = react.createContext (defMenuContext ());
-const ContextSettings = react.createContext (defSettings ());
-const ContextToast = react.createContext (defToast ());
-const ContextIrMenuBar = react.createContext (defIrMenuBar ());
-const ContextIrNavBar = react.createContext (defIrNavBar ());
+type CtxType<T> = [T, (V: T) => void];
 
-Content.ProviderMenuContext = ContextMenuContext;
-Content.ProviderSettings = ContextSettings;
-Content.ProviderToast = ContextToast;
-
-Content.defMenuContext = defMenuContext;
-Content.defSettings = defSettings;
-Content.defToast = defToast;
-Content.useMenuContext = useMenuContext
-Content.useSettings = useSettings;
-Content.useToast = useToast;
-
-Content.ProviderIrMenuBar = ContextIrMenuBar.Provider;
-Content.ProviderIrNavBar = ContextIrNavBar.Provider;
-
-Content.defIrMenuBar = defIrMenuBar;
-Content.defIrNavBar = defIrNavBar;
-Content.useIrMenuBar = useIrMenuBar;
-Content.useIrNavBar = useIrNavBar;
-
-export default Content;
+export const CtxMenuContext = createContext (defaultMenuContext ());
+export const CtxSettings = createContext (defaultSettings ());
+export const CtxToast = createContext (defaultToast ());
+export const CtxDialog = createContext<CtxType<Dialog>> ([
+    defaultDialog (),
+    function (value: Dialog) { void value; }
+]);
+export const CtxIrMenuBar = createContext (defaultIrMenuBar ());
+export const CtxIrNavBar = createContext (defaultIrNavBar ());

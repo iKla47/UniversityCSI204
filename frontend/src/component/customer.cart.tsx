@@ -1,12 +1,13 @@
 import styled from "styled-components";
-import ctx from "#context/common.ts";
-import ctxUI from "#context/common.ui.ts";
-import ctxCustomer from "#context/customer.ts";
 import apiAccount from "#util/api.account.ts";
 
-import { useRef, useState, useEffect } from "react";
 import PageList from "#component/customer.cart.list.tsx";
 import PageCheckout from "#component/customer.cart.checkout.tsx";
+
+import { useRef, useState, useEffect } from "react";
+import { useAuth } from "#context/common.ts";
+import { useCart, useCartQuery } from "#context/customer.ts";
+import { useToast } from "#context/common.ui.ts";
 
 /**
  * ส่วนประกอบการแสดงผลรายการในตะกร้าและการสั่งซื้อสินค้า
@@ -20,11 +21,20 @@ const content = function CustomerCart(prop: PropRoot) {
  */
 content.Root = function CartRoot(prop: PropRoot) 
 {
-  const auth = ctx.useAuth ();
-  const cart = ctxCustomer.useCartQuery ();
-  const toast = ctxUI.useToast ();
+  const auth = useAuth ();
+  const cart = useCartQuery ();
+  const toast = useToast ();
   const [code, setCode] = useState ("");
   const [window, setWindow] = useState (1);
+
+  useEffect (() =>
+  {
+    if (prop.visible) 
+    {
+      void cart.refetch ();
+    }
+  },
+  [prop.visible, cart]);
 
   return (
     <StyleView $visible={prop.visible ?? true}>
@@ -49,8 +59,7 @@ content.Root = function CartRoot(prop: PropRoot)
               shipPhone: payload.phone,
               promotionId: code.length > 0 ? code : null,
               paymentType: 
-                payload.method == "promptpay" ? 1 :
-                 payload.method == "bank" ? 2 : 0,
+                payload.method == "promptpay" ? 1 : 2,
               remark: payload.note,
               item: cart.data.map ((x) =>
               {
@@ -84,8 +93,9 @@ content.Root = function CartRoot(prop: PropRoot)
 };
 
 
-content.Provider = function CartProvider() {
-  const context = ctxCustomer.useCart();
+content.Provider = function CartProvider() 
+{
+  const context = useCart ();
   const close = useRef(() => {
     return;
   });

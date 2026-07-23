@@ -254,6 +254,7 @@ content.challengeFinalize = async (authLink: AccountId)
             content.STEP_CHALLENGE_COMPLETED
     }
 }
+
 /**
  * รับข้อมูลการลงชื่อเข้าใช้งานระบบ
 */

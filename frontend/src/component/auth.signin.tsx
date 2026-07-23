@@ -575,10 +575,12 @@ content.FormId = function AuthFormChallengeId
             onClick={onSubmitFacebook}>ดำเนินการต่อด้วย Facebook</button>
         </StyleChallengeOption>
         <base.TemplateOption 
+          disabled={prop.pending ?? false}
           text="ลืมรหัสผ่าน" 
           icon={<RotateCcw/>}
           onClick={onRecovery}/>
         <base.TemplateOption 
+          disabled={prop.pending ?? false}
           text="สร้างบัญชีใหม่" 
           icon={<UserRoundPlus/>}
           onClick={onCreate}/>

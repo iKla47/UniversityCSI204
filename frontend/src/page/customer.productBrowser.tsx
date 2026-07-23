@@ -1,7 +1,5 @@
 import react          from "react";
 import styled         from "styled-components";
-import ctx            from "#context/common.ts";
-import ctxCustomer    from "#context/customer.ts";
 import cmmNavigation  from "#util/common.navigation.ts";
 import apiStorage     from "#util/api.storage.ts";
 
@@ -12,6 +10,8 @@ import { useSearchParams } from "react-router";
 import type { MouseEvent } from "react";
 
 import { RefreshCwOff, ShoppingBasket, ShoppingCart } from "lucide-react";
+import { useAccountBasic, useCart, useCartQuery, useProductList } 
+from "#context/customer.ts";
 
 /**
  * ส่วนประกอบหน้าต่างเลือกสินค้า
@@ -28,7 +28,7 @@ content.List = function ProductBrowserList ()
 {  
   const [serachParam] = useSearchParams ();
   const search = serachParam.get ("search");
-  const queryList = ctxCustomer.useProductList ({
+  const queryList = useProductList ({
     search: search ?? ""
   });
   
@@ -173,9 +173,9 @@ content.Filter = function ProductBrowserFilter ()
 */
 content.Cart = function ProductBrowserCart ()
 {
-  const auth = ctx.useAuth ();
-  const cart = ctxCustomer.useCart ();
-  const cartQuery = ctxCustomer.useCartQuery ();
+  const cart = useCart ();
+  const cartQuery = useCartQuery ();
+  const accountQuery = useAccountBasic ();
 
   /**
    * ทำงานเมื่อผู้ใช้ต้องกดเปิดตะกร้าของตนเอง
@@ -193,7 +193,7 @@ content.Cart = function ProductBrowserCart ()
   const count = data ? data.reduce ((x, y) => x += y.quantity, 0) : 0;
 
   return (
-    <StyledCart onClick={onClick} $visible={ctx.authSigned (auth)}>
+    <StyledCart onClick={onClick} $visible={accountQuery.data !== undefined}>
       <StyledCartLabel>{count}</StyledCartLabel>
       <ShoppingBasket/>
     </StyledCart>
@@ -270,80 +270,6 @@ const StyleListContent = styled.div<{ $visible: boolean; }>`
   flex-direction: row;
   flex-wrap: wrap;
   gap: 8px;
-`;
-
-const StyledListItemContainer = styled.button`
-
-  min-width: 200px;
-  min-height: 300px;
-
-  max-width: 200px;
-  max-height: 300px;
-
-  display: block;
-  margin: 0px;
-  padding: 0px 0px 40px 0px;
-
-  outline: var(--bg-primary-border) solid 0px;
-  background-color: transparent;
-  transition: outline 66ms cubic-bezier(0.16, 1, 0.3, 1);
-  transition: width 500ms cubic-bezier(0.16, 1, 0.3, 1);
-  transition: height 500ms cubic-bezier(0.16, 1, 0.3, 1);
-
-  &:hover, &:focus
-  {
-    outline-width: 2px;
-  }
-  &:active
-  {
-    outline-width: 2px;
-  }
-
-  @media (max-width: 960px)
-  {
-    min-width: 200px;
-    min-height: 300px;
-
-    max-width: 200px;
-    max-height: 300px;
-  }
-  @media (max-width: 640px)
-  {
-    min-width: 100px;
-    min-height: 175px;
-
-    max-width: 100px;
-    max-height: 175px;
-  }
-  /* @media (max-width: 512px)
-  {
-    min-width: 75px;
-    min-height: 150px;
-
-    max-width: 75px;
-    max-height: 150px;
-  } */
-`;
-const StyledListItemText = styled.label`
-  display: block;
-  margin-top: 8px;
-`;
-const StyledListItem = styled.img`
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-  pointer-events: none;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-user-drag: none;
-  -ms-user-select: none;
-
-  position: relative;
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  background: linear-gradient(160deg, #223148 0%, #0F1A2A 100%);
-  overflow: hidden;
 `;
 const StyledFilter = styled.div`
   position: fixed;

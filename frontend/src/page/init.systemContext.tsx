@@ -1,10 +1,24 @@
-import Context    from "#context/common.ts";
-import ContextUI  from "#context/common.ui.ts";
-import ApiAuth    from "#util/api.auth.ts";
+import apiAuth from "#util/api.auth.ts";
 
 import { useEffect, useRef, useCallback } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode } from "react";
+
+import 
+{ 
+  CtxAuth, CtxLanguage, 
+  defaultAuth, defaultLanguage 
+} 
+from "#context/common.ts";
+
+import 
+{ 
+  CtxDialog,
+  CtxMenuContext, CtxSettings, CtxToast, 
+  defaultDialog, 
+  defaultMenuContext, defaultSettings, defaultToast 
+} 
+from "#context/common.ui.ts";
 
 /**
  * ระบบของ React Query
@@ -15,15 +29,17 @@ const query = new QueryClient ();
 */
 const content = function InitSystemContext (prop: ComponentProperty)
 {
-  const auth = useRef (Context.defAuth ());
-  const language = useRef (Context.defLanguage ());
-  const menuContext = useRef (ContextUI.defMenuContext ());
-  const settings = useRef (ContextUI.defSettings ());
-  const toast = useRef (ContextUI.defToast ());
+  const auth = useRef (defaultAuth ());
+  const language = useRef (defaultLanguage ());
+  const menuContext = useRef (defaultMenuContext ());
+  const settings = useRef (defaultSettings ());
+  const toast = useRef (defaultToast ());
+  const dialog = useRef (defaultDialog ());
+
 
   const onInitAuth = useCallback (() =>
   {
-    const saved = ApiAuth.saveGetItemPrefered ();
+    const saved = apiAuth.saveGetItemPrefered ();
     const ctx = auth.current;
 
     if (saved)
@@ -62,19 +78,24 @@ const content = function InitSystemContext (prop: ComponentProperty)
   ]);
 
   return (
-    <Context.ProviderAuth value={auth.current}>
-      <Context.ProviderLanguage value={language.current}>
-        <ContextUI.ProviderMenuContext value={menuContext.current}>
-          <ContextUI.ProviderToast value={toast.current}>
-            <ContextUI.ProviderSettings value={settings.current}>
-              <QueryClientProvider client={query}>
-                {prop.children}
-              </QueryClientProvider>
-            </ContextUI.ProviderSettings>
-          </ContextUI.ProviderToast>
-        </ContextUI.ProviderMenuContext>
-      </Context.ProviderLanguage>
-    </Context.ProviderAuth>
+    <CtxAuth.Provider value={auth.current}>
+      <CtxLanguage.Provider value={language.current}>
+        <CtxDialog.Provider value={[
+            dialog.current,
+            (v) => { dialog.current = v; }
+          ]}>
+          <CtxMenuContext.Provider value={menuContext.current}>
+            <CtxToast value={toast.current}>
+              <CtxSettings value={settings.current}>
+                <QueryClientProvider client={query}>
+                  {prop.children}
+                </QueryClientProvider>
+              </CtxSettings>
+            </CtxToast>
+          </CtxMenuContext.Provider>
+        </CtxDialog.Provider>
+      </CtxLanguage.Provider>
+    </CtxAuth.Provider>
   );
 }
 

@@ -1,39 +1,45 @@
-import react        from "react";
-import styled       from "styled-components";
-import MenuBar      from "#component/menu.bar.tsx";
-import MenuContext  from "#component/menu.context.tsx";
-import NavBar       from "#component/navbar.tsx";
-import Logo         from "#asset/image/favicon.ico";
-import apiAuth      from "#util/api.auth.ts";
-import ctxUI        from "#context/common.ui.ts";
 
+import Logo         from "#asset/image/favicon.ico";
+import MenuBar      from "#component/menu.bar.tsx";
+import NavBar       from "#component/navbar.tsx";
+import MenuContext  from "#component/menu.context.tsx";
 import Toast        from "#component/toast.tsx";
 import Settings     from "#component/settings.tsx";
 import ContentStock from "#component/staff.stock.tsx";
 import ContentOrder from "#component/staff.order.tsx";
-import ContentAccount from "#component/console.account.tsx";
 
-import
+import apiAuth      from "#util/api.auth.ts";
+import cmmNavi      from "#util/common.navigation.ts";
+
+import { styled } from "styled-components";
+import { useMenuContext, useSettings } from "#context/common.ui.ts";
+import 
+{ 
+  useState, useEffect, useRef, useCallback,
+  Activity,
+  type MouseEvent,
+  type SetStateAction,
+  type Dispatch,
+  type ReactElement,
+  type ReactNode,
+  type RefObject,
+} 
+from "react";
+import 
 {
-  ArrowLeftCircleIcon,
-  XIcon,
-  Cuboid,
-  PackageSearchIcon,
-  ShieldUser,
-  SettingsIcon,
-  LogOut
+  ArrowLeftCircleIcon, XIcon, Cuboid, PackageSearchIcon, ShieldUser,
+  SettingsIcon, LogOut
 }
 from "lucide-react";
-
 
 
 /**
  * องค์ประกอบแสดงผลหน้า Console
 */
-const content = function Console ()
+export default function Console ()
 {
-  const menuCtx = ctxUI.useMenuContext ();
-  const settings = ctxUI.useSettings ();
+  const menuCtx = useMenuContext ();
+  const settings = useSettings ();
   
   const toProfile = () => 
   {
@@ -56,7 +62,7 @@ const content = function Console ()
     {
       apiAuth.saveSetPrefered (-1);
       apiAuth.saveWrite ();
-      location.reload ();
+      void cmmNavi.toIndex ();
     }
     menuCtx.setChildren (<>
       <MenuContext.Item 
@@ -75,7 +81,7 @@ const content = function Console ()
   
   return (
     <>
-      <content.Root
+      <ComRoot
         visible={true}
         transparent={true}
         width="100%"
@@ -95,11 +101,29 @@ const content = function Console ()
     </>
   )
 }
-content.Root = function ConsoleRoot (prop: PropRoot)
+function ComRoot ({
+  visible, transparent, width, widthMax, height, heightMax, margin, 
+  onClose
+}:
+/**
+ * โครงสร้างประกอบสำหรับส่วนประกอบหลัก
+*/
 {
-  const visible = prop.visible ?? false;
-  const container = react.useRef<HTMLDivElement> (HTMLDivElement.prototype);
-  const [ctn, setCtn] = react.useState (content.CONTENT_STOCK);
+  visible ?: boolean;
+  transparent ?: boolean;
+  width ?: string;
+  widthMax ?: string;
+  height ?: string;
+  heightMax ?: string;
+  margin ?: string;
+  onClose ?: () => void;
+})
+/**
+ * โครงสร้างประกอบสำหรับส่วนประกอบหลัก
+*/
+{
+  const container = useRef<HTMLDivElement> (null);
+  const [ctn, setCtn] = useState (PAGE_STOCK);
 
   const SIZE_SMALL = "256px";
   const SIZE_THEREHOLD = 768;
@@ -107,28 +131,19 @@ content.Root = function ConsoleRoot (prop: PropRoot)
   /**
    * ทำงานเมื่อผู้ใช้กดปุ่มปิด
   */
-  const onClose = (event: react.MouseEvent) =>
+  function onButtonClose (event: MouseEvent)
   {
     event.preventDefault ();
     event.stopPropagation ();
 
-    if (prop.onClose) {
-      prop.onClose ();
-    }
+    if (onClose) { onClose (); }
   }
   /**
    * ทำงานเมื่อผู้ใช้กดปุ่มย้อนกลับ
   */
-  const onBack = () =>
+  function onButtonBack ()
   {
     setMenuSelected (false);
-  }
-  /**
-   * ทำงานเมื่อขนาดหน้าต่างมีการเปลี่ยนแปลง
-  */
-  const onResize = () =>
-  {
-    setMenuWidth (resizeValue ());
   }
   /**
    * รับค่าความกว้างของรายการเมนู
@@ -144,34 +159,47 @@ content.Root = function ConsoleRoot (prop: PropRoot)
     return (window.innerWidth) >= 
       SIZE_THEREHOLD ? SIZE_SMALL : "100%";
   }
-  const [menuWidth, setMenuWidth] = react.useState (resizeValue ());
-  const [menuSelected, setMenuSelected] = react.useState (false);
+  
+  const [menuWidth, setMenuWidth] = useState (SIZE_SMALL);
+  const [menuSelected, setMenuSelected] = useState (false);
 
+  /**
+   * ทำงานเมื่อขนาดหน้าต่างมีการเปลี่ยนแปลง
+  */
+  const onResize = useCallback(() =>
+  {
+    setMenuWidth (resizeValue ());
+  },
+  []);
   /**
    * ทำงานเมื่อส่วนประกอบนี้เริ่มทำงาน
   */
-  react.useEffect (() =>
+  useEffect (() =>
   {
     window.addEventListener ("resize", onResize);
 
+    if (container.current)
+    {
+      onResize ();
+    }
     return () =>
     {
       window.removeEventListener ("resize", onResize);
     }
   },
-  []);
+  [onResize]);
 
   return (
-    <react.Activity mode={visible ? "visible" : "hidden"}>
-      <content.View 
-          transparent={prop.transparent} 
-          width={prop.width}
-          widthMax={prop.widthMax}
-          height={prop.height}
-          heightMax={prop.heightMax}
-          margin={prop.margin}
+    <Activity mode={visible ? "visible" : "hidden"}>
+      <ComView 
+          transparent={transparent ?? true} 
+          width={width ?? "100%"}
+          widthMax={widthMax ?? "100%"}
+          height={height ?? "100%"}
+          heightMax={heightMax ?? "100%"}
+          margin={margin ?? "0px"}
           container={container}>
-        <content.Menu 
+        <ComMenu 
           visible={menuWidth === SIZE_SMALL ? true : !menuSelected}
           width={"100%"}
           widthMax={menuWidth}
@@ -179,45 +207,52 @@ content.Root = function ConsoleRoot (prop: PropRoot)
             setCtn (x);
             setMenuSelected (true);
           }]}/>
-        <content.Content 
+        <ComContent 
           visible={menuWidth === SIZE_SMALL ? true : menuSelected}
           content={ctn}
-          onBack={menuWidth === SIZE_SMALL ? undefined : onBack}
+          onBack={menuWidth === SIZE_SMALL ? undefined : onButtonBack}
         />
-        <StyleBack 
-          $visible={prop.onClose ? true : false} 
-          onClick={onClose}>
+        <StlBack 
+          $visible={onClose ? true : false} 
+          onClick={onButtonClose}>
           <XIcon/>
-        </StyleBack>
-      </content.View>
-    </react.Activity>
+        </StlBack>
+      </ComView>
+    </Activity>
   );
 }
-content.View = function ConsoleView (prop: PropView)
+function ComView ({ 
+  transparent, width, widthMax, height, heightMax, margin, container
+}:
+/**
+ * โครงสร้างประกอบสำหรับส่วนประกอบแสดงองค์ประกอบ
+*/
 {
-  const transparent = prop.transparent ?? true;
-  const width = prop.width ?? "100%";
-  const widthMax = prop.widthMax ?? "1024px";
-  const height = prop.height ?? "100%";
-  const heightMax = prop.heightMax ?? "512px";
-  const margin = prop.margin ?? "0px";
-
+  transparent: boolean;
+  width: string;
+  widthMax: string;
+  height: string;
+  heightMax: string;
+  margin: string;
+  container: RefObject<HTMLDivElement | null>;
+  children: ReactNode;
+})
+{
   return (
-    <StyleRoot ref={prop.container}
+    <StlRoot ref={container}
       $transparent={transparent}
       $width={width}
       $widthMax={widthMax}
       $height={height}
       $heightMax={heightMax}
       $margin={margin}>
-      {prop.children}
-    </StyleRoot>
+    </StlRoot>
   );
 }
 /**
  * องค์ประกอบแสดงรายการเมนูนำทาง
 */
-content.Menu = function ConsoleMenu (prop: PropMenu)
+function ComMenu (prop: PropMenu)
 {
   const selectEvent = (value: unknown) =>
   {
@@ -239,75 +274,71 @@ content.Menu = function ConsoleMenu (prop: PropMenu)
         margin={prop.widthMax != "100%" ? "0px 32px 0px 0px" : "0px"}
         onClick={selectEvent}>
       <MenuBar.Heading text="คอนโซล"/>
-      <MenuBar.Item value={content.CONTENT_STOCK} 
+      <MenuBar.Item value={PAGE_STOCK} 
         text="สต็อกสินค้า" icon={<Cuboid/>}/>
-      <MenuBar.Item value={content.CONTENT_ORDER} 
+      <MenuBar.Item value={PAGE_ORDER} 
         text="คำสั่งซื้อ" icon={<PackageSearchIcon/>}/>
-      <MenuBar.Item value={content.CONTENT_ACCOUNT} 
+      <MenuBar.Item value={PAGE_ACCOUNT} 
         text="ผู้ใช้" icon={<ShieldUser/>}/>
     </MenuBar>
   );
 }
-content.Content = function ConsoleContent (prop: PropContent)
+function ComContent (prop: PropContent)
 {
   const visible = prop.visible ?? true;
   const current = prop.content ?? 0;
-  const isStock = visible && current === content.CONTENT_STOCK;
-  const isOrder = visible && current === content.CONTENT_ORDER;
-  const isAct   = visible && current === content.CONTENT_ACCOUNT;
+  const isStock = visible && current === PAGE_STOCK;
+  const isOrder = visible && current === PAGE_ORDER;
+  const isAct   = visible && current === PAGE_ACCOUNT;
   const onBack = prop.onBack;
 
 
   return (
-    <StyleContent>
-      <content.ContentStock visible={isStock} onBack={onBack}/>
-      <content.ContentOrder visible={isOrder} onBack={onBack}/>
-      <content.ContentAccount visible={isAct} onBack={onBack}/>
-    </StyleContent>
+    <StlContent>
+      <ComContentStock visible={isStock} onBack={onBack}/>
+      <ComContentOrder visible={isOrder} onBack={onBack}/>
+      <ComContentAccount visible={isAct} onBack={onBack}/>
+    </StlContent>
   );
 }
 
-content.ContentStock = function ConsoleContentStock
-  (prop: PropContentGeneral) : react.ReactElement
+function ComContentStock (prop: PropContentGeneral) : ReactElement
 {
   return (
-    <react.Activity mode={prop.visible ? "visible" : "hidden"}>
-      <content.TemplateBackButton 
+    <Activity mode={prop.visible ? "visible" : "hidden"}>
+      <TemplateBackButton 
         visible={prop.onBack != undefined} 
         onClick={prop.onBack}/>
       <ContentStock/>
-    </react.Activity>
+    </Activity>
   );
 }
-content.ContentOrder = function ConsoleContentOrder
-  (prop: PropContentOrder) : react.ReactElement
+function ComContentOrder (prop: PropContentOrder) : ReactElement
 {
   return (
-    <react.Activity mode={prop.visible ? "visible" : "hidden"}>
-      <content.TemplateBackButton 
+    <Activity mode={prop.visible ? "visible" : "hidden"}>
+      <TemplateBackButton 
         visible={prop.onBack != undefined} 
         onClick={prop.onBack}/>
       <ContentOrder/>
-    </react.Activity>
+    </Activity>
   );
 }
-content.ContentAccount = function ConsoleContentAccount 
-  (prop: PropContentAccount) : react.ReactElement
+function ComContentAccount (prop: PropContentAccount) : ReactElement
 {
   return (
-    <react.Activity mode={prop.visible ? "visible" : "hidden"}>
-      <content.TemplateBackButton 
+    <Activity mode={prop.visible ? "visible" : "hidden"}>
+      <TemplateBackButton 
         visible={prop.onBack != undefined} 
         onClick={prop.onBack}/>
-      <ContentAccount/>
-    </react.Activity>
+      <ComContentAccount/>
+    </Activity>
   );
 }
 
-content.TemplateBackButton = function ConsoleTemplateBackButton 
-  (prop: PropTemplateBackButton) : react.ReactElement
+function TemplateBackButton (prop: PropTemplateBackButton) : ReactElement
 {
-  const onClick = (event: react.MouseEvent) =>
+  const onClick = (event: MouseEvent) =>
   {
     event.preventDefault ();
     event.stopPropagation ();
@@ -318,56 +349,29 @@ content.TemplateBackButton = function ConsoleTemplateBackButton
   }
 
   return (
-    <StyleTemplateBackButton onClick={onClick} $visible={prop.visible ?? false}>
+    <StlTemplateBackButton onClick={onClick} $visible={prop.visible ?? false}>
       <ArrowLeftCircleIcon/>
       ย้อนกลับ
-    </StyleTemplateBackButton>
+    </StlTemplateBackButton>
   );
 }
-/**
- * ไม่มีหน้าที่เลือก
-*/
-content.CONTENT_UNDEFINED = 0;
+
 /**
  * หน้าจัดการข้อมูลสต็อก
 */
-content.CONTENT_STOCK = 1;
+const PAGE_STOCK = 1;
 /**
  * หน้าจัดการข้อมูลคำสั่งซื้อ
 */
-content.CONTENT_ORDER = 2;
+const PAGE_ORDER = 2;
 /**
  * หน้าจัดการข้อมูลบัญชี
 */
-content.CONTENT_ACCOUNT = 3;
+const PAGE_ACCOUNT = 3;
 
-interface PropRoot
-{
-  visible ?: boolean;
-  transparent ?: boolean;
-  width ?: string;
-  widthMax ?: string;
-  height ?: string;
-  heightMax ?: string;
-  margin ?: string;
-
-  onClose ?: () => void;
-}
-interface PropView
-{
-  transparent ?: boolean;
-  width ?: string;
-  widthMax ?: string;
-  height ?: string;
-  heightMax ?: string;
-  margin ?: string;
-
-  container ?: react.Ref<HTMLDivElement> | undefined;
-  children ?: react.ReactNode;
-}
 interface PropMenu
 {
-  content ?: [number, react.Dispatch<react.SetStateAction<number>>];
+  content ?: [number, Dispatch<SetStateAction<number>>];
   visible ?: boolean;
   width ?: string;
   widthMax ?: string;
@@ -399,7 +403,7 @@ interface PropTemplateBackButton
   onClick ?: () => void;
 }
 
-const StyleRoot = styled.div<{ 
+const StlRoot = styled.div<{ 
   $transparent: boolean; 
   $width: string;
   $widthMax: string;
@@ -423,7 +427,7 @@ const StyleRoot = styled.div<{
   flex-wrap: nowrap;
   position: relative;
 `;
-const StyleBack = styled.button<{ $visible: boolean; }>`
+const StlBack = styled.button<{ $visible: boolean; }>`
   width: 32px;
   height: 32px;
   border: none;
@@ -441,11 +445,10 @@ const StyleBack = styled.button<{ $visible: boolean; }>`
     height: 24px;
   }
 `;
-const StyleContent = styled.div`
+const StlContent = styled.div`
   flex-grow: 1;
 `;
-
-const StyleTemplateBackButton = styled.button<{ $visible: boolean; }>`
+const StlTemplateBackButton = styled.button<{ $visible: boolean; }>`
   display: ${prop => prop.$visible ? "block" : "none"};
   width: 192px;
   height: 40px;
@@ -462,7 +465,3 @@ const StyleTemplateBackButton = styled.button<{ $visible: boolean; }>`
     margin-right: 16px;
   }
 `;
-/**
- * ส่งออกตัวแปร
-*/
-export default content;
