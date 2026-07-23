@@ -1,13 +1,13 @@
-import react          from "react";
+import react, { useState }          from "react";
 import styled         from "styled-components";
 import cmmNavigation  from "#util/common.navigation.ts";
 import apiStorage     from "#util/api.storage.ts";
 
 import Filter         from "#component/customer.productBrowser.filter.tsx";
-
+import { type FilterState } from "#component/customer.productBrowser.filter.tsx";
 
 import { useSearchParams } from "react-router";
-import type { MouseEvent } from "react";
+import type { Dispatch, MouseEvent, SetStateAction } from "react";
 
 import { RefreshCwOff, ShoppingBasket, ShoppingCart } from "lucide-react";
 import { useAccountBasic, useCart, useCartQuery, useProductList } 
@@ -18,13 +18,15 @@ from "#context/customer.ts";
 */
 const content = function ProductBrowser ()
 {
+  const [filter, setFilter] = useState<FilterState | undefined> (undefined);
+
   return (<>
-    <content.List/>
-    <content.Filter/>
+    <content.List filter={filter}/>
+    <content.Filter filter={[filter, setFilter]}/>
     <content.Cart/>
   </>);
 }
-content.List = function ProductBrowserList ()
+content.List = function ProductBrowserList ({ filter }: { filter: FilterState; })
 {  
   const [serachParam] = useSearchParams ();
   const search = serachParam.get ("search");
@@ -158,12 +160,14 @@ content.ListItem = function ProductBrowserListItem (prop: PropListItem)
 /**
  * ส่วนประกอบแสดงตัวเลือกการค้นหาสินค้า
 */
-content.Filter = function ProductBrowserFilter ()
+content.Filter = function ProductBrowserFilter (
+  { filter}: 
+  { filter: [FilterState | undefined, Dispatch<SetStateAction<FilterState | undefined>>];})
 {
   return (
     <StyledFilter>
       <StyledFilterInner>
-        <Filter/>
+        <Filter onChange={(next) => { filter[1] (next); }}/>
       </StyledFilterInner>
     </StyledFilter>
   );

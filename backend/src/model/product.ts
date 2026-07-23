@@ -68,6 +68,14 @@ content.getBasicList = async (option ?: BasicFetchOption) =>
         [
             "Description LIKE ?", 
             option?.search ? `%${option.search}%` : undefined
+        ],
+        [
+            "Price >= ?",
+            option?.minPrice ? option.minPrice : undefined
+        ],
+        [
+            "Price <= ?",
+            option?.maxPrice ? option.maxPrice : undefined
         ]
     ];
     const whereCmd = whereOr
@@ -806,6 +814,9 @@ export interface BasicFetch
 export interface BasicFetchOption
 {
     search ?: string | undefined;
+    category ?: number [] | undefined;
+    minPrice ?: number;
+    maxPrice ?: number;
 }
 /**
  * โครงสร้างข้อมูลที่ใช้ในการเปลี่ยนแปลงข้อมูลในฐานข้อมูล
