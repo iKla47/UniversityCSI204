@@ -1,0 +1,1 @@
+import{t as e}from"./index-Bt-SOZ_r.js";import{t}from"./settings-BkZqVGJo.js";var n=e(),r=()=>(0,n.jsx)(t,{visible:!0,transparent:!0});export{r as default};
