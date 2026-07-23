@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import styled from "styled-components";
 import productApi from "../util/api.product";
 import type { BasicFetch } from "../util/api.product";
-import context from "#context/common.ts";
+import { useAuth } from "#context/common.js";
 
 export default function Stock() {
   const [products, setProducts] = useState<BasicFetch[]>([]);
@@ -13,8 +13,7 @@ export default function Stock() {
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [adjustAmount, setAdjustAmount] = useState<number>(0);
-  
-  const auth = context.useAuth();
+  const auth = useAuth(); 
   
   // รายการสินค้าพร้อมสต็อก
   const loadData = async () => {
