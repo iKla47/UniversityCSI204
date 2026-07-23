@@ -595,9 +595,9 @@ export interface ContactFetch
 export interface ContactUpdate
 {
     /**
-     * รหัสเอกลักษณ์บัญชี
+     * รหัสบัญชี
     */
-    id: BasicId;
+    id ?: BasicId | undefined;
     /**
      * อีเมล
     */

@@ -322,7 +322,7 @@ content.putContact = async (request: Request, response: Response) =>
     const accountId = authenticate.id;
 
     request.params ["id"] = String (accountId);
-    return content.putBasicOf (request, response);
+    return content.putContactOf (request, response);
 }
 /**
  * ปรับเปลี่ยนข้อมูลติดต่อบัญชีดังกล่าวด้วย `id` ที่กำหนดไว้

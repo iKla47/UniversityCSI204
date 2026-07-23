@@ -1,4 +1,4 @@
-import { defaultDialog, defaultPreview, useDialog, usePreview } from "#context/common.ui.ts";
+import { defaultDialog, defaultDialogInput, defaultPreview, useDialog, useDialogInput, usePreview } from "#context/common.ui.ts";
 import { useState, useEffect, useRef }from "react";
 import { styled } from "styled-components";
 
@@ -116,6 +116,132 @@ export function DialogProvider ()
     </>;
 }
 
+export function DialogInput (property: DialogInput)
+{
+    const hidden = property.hidden ?? false;
+    const title = property.data?.title ?? "";
+    const text = property.data?.message ?? "";
+    const [value, setValue] = useState ("");
+
+    const primary = property.data?.primary ?? "";
+    const primaryClick = property.data?.primaryClick ?? function () { 
+      return; 
+    };
+
+    const secondary = property.data?.secondary ?? "";
+    const secondaryClick = property.data?.secondaryClick ?? function () { 
+      return; 
+    };
+
+    function pressPrimary (event: React.MouseEvent)
+    {
+        event.preventDefault ();
+        event.stopPropagation ();
+
+        primaryClick (value);
+    }
+    function pressSecondary (event: React.MouseEvent)
+    {
+        event.preventDefault ();
+        event.stopPropagation ();
+
+        secondaryClick (value);
+    }
+    function pressDismiss (event: React.MouseEvent)
+    {
+        event.preventDefault ();
+        event.stopPropagation ();
+    }
+
+    useEffect (() =>
+    {
+      setValue ("");
+    },
+    [property.hidden]);
+
+    return <StyleDialogRoot $hidden={hidden}>
+      <StyleDialogRootInner>
+        <StyleDialogBackground $hidden={hidden} onClick={pressDismiss}/>
+        <StyleDialogFrontground $hidden={hidden}>
+          <StyleDialogTitle>{title}</StyleDialogTitle>
+          <StyleDialogText>{text}</StyleDialogText>
+          <div style={{ margin: '16px 24px' }}>
+            <input type="text" value={value} onChange={(e) => { setValue (e.target.value); }} style={{
+              width: '100%'
+            }}/>
+          </div>
+          <StyleDialogButtonList>
+            { (primary.length === 0) ? 
+              (<></>) :
+              (<StyleDialogButton onClick={pressPrimary}>
+                {primary}
+              </StyleDialogButton>)}
+            { (secondary.length === 0) ? 
+              (<></>) :
+              (<StyleDialogButton onClick={pressSecondary}>
+                {secondary}
+               </StyleDialogButton>)}
+          </StyleDialogButtonList>
+        </StyleDialogFrontground>
+      </StyleDialogRootInner>
+    </StyleDialogRoot>;
+}
+export function DialogInputProvider ()
+{
+    const [hidden, setHidden] = useState (true);
+    const [data, setData] = useState<DialogInputData | undefined> (undefined);
+    const [, setContext] = useDialogInput ();
+    const temp = useRef<DialogInputData | undefined> (undefined);
+
+    useEffect (() =>
+    {
+        setContext ({
+          setVisible: (value) => { setHidden (!value); },
+          setTitle: (value) => 
+          { 
+            temp.current = { ... temp.current, title: value };
+            setData (temp.current); 
+          },
+          setMessage: (value) => 
+          {
+            temp.current = { ... temp.current, message: value };
+            setData (temp.current); 
+          },
+          setPrimary: (text, callback) => 
+          { 
+            temp.current = { 
+              ... temp.current, 
+              primary: text, primaryClick: callback 
+            };
+            setData (temp.current); 
+          },
+          setSecondary: (text, callback) => 
+          { 
+            temp.current = { 
+              ... temp.current, 
+              secondary: text, secondaryClick: callback 
+            };
+            setData (temp.current); 
+          },
+          reset: () => 
+          {
+            temp.current = undefined;
+            setData (undefined);
+          },
+        });
+
+        return () =>
+        {
+          setContext (defaultDialogInput ());
+        }
+    },
+    [data, setContext]);
+
+    return <>
+      <DialogInput hidden={hidden} data={data}/>
+    </>;
+}
+
 export function Preview (property: Preview)
 {
     const src = property.data?.source ?? undefined;
@@ -212,7 +338,7 @@ const StyleDialogFrontground = styled.div<{ $hidden: boolean }>`
     opacity: 0.0;
     margin: auto;
     width: 100%;
-    height: 256px;
+    height: 284px;
 
     max-width: 768px;
     max-height: 324px;
@@ -310,6 +436,22 @@ export interface DialogData
 
     readonly secondary ?: string;
     readonly secondaryClick ?: () => void;
+}
+export interface DialogInput
+{
+    hidden ?: boolean;
+    data ?: DialogInputData;
+}
+export interface DialogInputData
+{
+    readonly title ?: string;
+    readonly message ?: string;
+
+    readonly primary ?: string;
+    readonly primaryClick ?: (value: string) => void;
+
+    readonly secondary ?: string;
+    readonly secondaryClick ?: (value: string) => void;
 }
 
 export interface ContextMenu

@@ -205,6 +205,13 @@ export function useDialog ()
 {
     return useContext (CtxDialog);
 }
+/**
+ * เรียกใช้งานบริบท: การแจ้งเตือนขนาดใหญ่
+*/
+export function useDialogInput ()
+{
+    return useContext (CtxDialogInput);
+}
 export function usePreview ()
 {
     return useContext (CtxPreview);

@@ -48,6 +48,7 @@ content.Root = function CartRoot(prop: PropRoot)
           onClose={prop.onClose}/>
         <PageCheckout 
           open={window === 2}
+          promotionCode={code}
           onClose={() => { setWindow (1); }}
           onConfirm={(payload) => {
             if (!cart.data) {

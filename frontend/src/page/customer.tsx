@@ -21,7 +21,7 @@ import
   ShoppingBasket, Truck, SquareChevronRight
 } 
 from "lucide-react";
-import { DialogProvider } from "#component/common.tsx";
+import { DialogInputProvider, DialogProvider } from "#component/common.tsx";
 import { useAuth } from "#context/common.ts";
 
 
@@ -42,6 +42,7 @@ const content = function Customer ()
       <Settings.Provider/>
       <Toast.Provider/>
       <DialogProvider/>
+      <DialogInputProvider/>
       <MenuContext.Provider/>
     </Cart.Provider>
   </>

@@ -14,8 +14,10 @@ from "#context/common.ts";
 import 
 { 
   CtxDialog,
+  CtxDialogInput,
   CtxMenuContext, CtxSettings, CtxToast, 
   defaultDialog, 
+  defaultDialogInput, 
   defaultMenuContext, defaultSettings, defaultToast 
 } 
 from "#context/common.ui.ts";
@@ -35,6 +37,7 @@ const content = function InitSystemContext (prop: ComponentProperty)
   const settings = useRef (defaultSettings ());
   const toast = useRef (defaultToast ());
   const dialog = useRef (defaultDialog ());
+  const dialogInput = useRef (defaultDialogInput ());
 
 
   const onInitAuth = useCallback (() =>
@@ -84,15 +87,20 @@ const content = function InitSystemContext (prop: ComponentProperty)
             dialog.current,
             (v) => { dialog.current = v; }
           ]}>
-          <CtxMenuContext.Provider value={menuContext.current}>
-            <CtxToast value={toast.current}>
-              <CtxSettings value={settings.current}>
-                <QueryClientProvider client={query}>
-                  {prop.children}
-                </QueryClientProvider>
-              </CtxSettings>
-            </CtxToast>
-          </CtxMenuContext.Provider>
+          <CtxDialogInput.Provider value={[
+            dialogInput.current,
+            (v) => { dialogInput.current = v; }
+          ]}>  
+            <CtxMenuContext.Provider value={menuContext.current}>
+              <CtxToast value={toast.current}>
+                <CtxSettings value={settings.current}>
+                  <QueryClientProvider client={query}>
+                    {prop.children}
+                  </QueryClientProvider>
+                </CtxSettings>
+              </CtxToast>
+            </CtxMenuContext.Provider>
+          </CtxDialogInput.Provider>
         </CtxDialog.Provider>
       </CtxLanguage.Provider>
     </CtxAuth.Provider>

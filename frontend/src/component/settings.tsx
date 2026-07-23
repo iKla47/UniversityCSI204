@@ -15,7 +15,7 @@ import {
   type ChangeEvent, type MouseEvent 
 } from "react";
 import { useAuth } from "#context/common.ts";
-import { useDialog, useSettings, useToast } from "#context/common.ui.ts";
+import { useDialog, useDialogInput, useSettings, useToast } from "#context/common.ui.ts";
 import { useAccountBasic, useAccountContact } from "#context/customer.ts";
 
 interface PropRoot
@@ -280,6 +280,7 @@ content.ContentGeneral = function SettingsContentGeneral
   const toast = useToast ();
   const iconInput = useRef (HTMLInputElement.prototype);
   const [dialog] = useDialog ();
+  const [dialogInput, setDialogInput] = useDialogInput ();
   const [pending, setPending] = useState (false);
 
   const queryBasic = useAccountBasic ();
@@ -341,16 +342,85 @@ content.ContentGeneral = function SettingsContentGeneral
   {
     event.preventDefault ();
     event.stopPropagation ();
+
+    dialogInput.reset ();
+    dialogInput.setTitle ("เปลี่ยนชื่อ");
+    dialogInput.setMessage ("โปรดป้อนชื่อใหม่ของคุณ");
+    dialogInput.setPrimary ("เรียบร้อย", (x) =>
+    {
+      dialogInput.setVisible (false);
+
+      void ApiAccount.updateBasic (auth.session, 
+      {
+        name: x
+      })
+      .then (() => queryBasic.refetch ()).then (() =>
+      {
+          toast.setText ("เปลี่ยนชื่อใหม่เรียบร้อย");
+          toast.setDuration (5000);
+          toast.setVisible (true);
+          setPending (false);
+      })
+      .catch (() =>
+      {
+        dialog.reset ();
+        dialog.setTitle ("เกิดข้อผิดพลาด");
+        dialog.setMessage ("เกิดข้อผิดพลาดในการเปลี่ยนชื่อของคุณ กรุณาลองใหม่อีกครั้ง");
+        dialog.setPrimary ("เข้าใจแล้ว", () =>
+        {
+          dialog.setVisible (false);
+        });
+        dialog.setVisible (true);
+        setPending (false);
+      });
+    });
+    dialogInput.setSecondary ("ยกเลิก", () =>
+    {
+      dialogInput.setVisible (false);
+    });
+    dialogInput.setVisible (true);
   }
   const onEmailChange = (event: MouseEvent) =>
   {
     event.preventDefault ();
     event.stopPropagation ();
-  }
-  const onWillSignOut = (event: MouseEvent) =>
-  {
-    event.preventDefault ();
-    event.stopPropagation ();
+
+    dialogInput.reset ();
+    dialogInput.setTitle ("เปลี่ยนอีเมล");
+    dialogInput.setMessage ("โปรดป้อนอีเมลใหม่ของคุณ");
+    dialogInput.setPrimary ("เรียบร้อย", (x) =>
+    {
+      dialogInput.setVisible (false);
+
+      void ApiAccount.updateContact (auth.session, 
+      {
+        email: x
+      })
+      .then (() => queryContact.refetch ()).then (() =>
+      {
+          toast.setText ("เปลี่ยนอีเมลเรียบร้อย");
+          toast.setDuration (5000);
+          toast.setVisible (true);
+          setPending (false);
+      })
+      .catch (() =>
+      {
+        dialog.reset ();
+        dialog.setTitle ("เกิดข้อผิดพลาด");
+        dialog.setMessage ("เกิดข้อผิดพลาดในการเปลี่ยนอีเมลของคุณ กรุณาลองใหม่อีกครั้ง");
+        dialog.setPrimary ("เข้าใจแล้ว", () =>
+        {
+          dialog.setVisible (false);
+        });
+        dialog.setVisible (true);
+        setPending (false);
+      });
+    });
+    dialogInput.setSecondary ("ยกเลิก", () =>
+    {
+      dialogInput.setVisible (false);
+    });
+    dialogInput.setVisible (true);
   }
 
   const basic = queryBasic.data;
@@ -406,13 +476,13 @@ content.ContentGeneral = function SettingsContentGeneral
           </button>
         </div>
       </StyleTemplateField>
-      <StyleTemplateField>
+      {/* <StyleTemplateField>
         <div>
           <button 
             disabled={pending} 
             onClick={onWillSignOut}>ลงชื่อออก</button>
         </div>
-      </StyleTemplateField>
+      </StyleTemplateField> */}
     </react.Activity>
   );
 }
@@ -457,10 +527,135 @@ content.ContentShipping = function SettingsContentShipping
 {
   const queryContact = useAccountContact ();
   const contact = queryContact.data;
+  const auth = useAuth ();
+  const [dialog] = useDialog ();
+  const [dialogInput] = useDialogInput ();
+  const toast = useToast ();
 
   const address = contact ? contact.address : "";
-  const receiver = "";
+  const receiver = contact ? contact.name : "";
   const phone = contact ? contact.phone : "";
+
+  const onAddressChange = (event: MouseEvent) =>
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+
+    dialogInput.reset ();
+    dialogInput.setTitle ("เปลี่ยนที่อยู่");
+    dialogInput.setMessage ("โปรดป้อนที่อยู่เริ่มต้นของคุณ");
+    dialogInput.setPrimary ("เรียบร้อย", (x) =>
+    {
+      dialogInput.setVisible (false);
+
+      void ApiAccount.updateContact (auth.session, 
+      {
+        address: x
+      })
+      .then (() => queryContact.refetch ()).then (() =>
+      {
+          toast.setText ("เปลี่ยนที่อยู่เริ่มต้นใหม่เรียบร้อย");
+          toast.setDuration (5000);
+          toast.setVisible (true);
+      })
+      .catch (() =>
+      {
+        dialog.reset ();
+        dialog.setTitle ("เกิดข้อผิดพลาด");
+        dialog.setMessage ("เกิดข้อผิดพลาดในการเปลี่ยนอยู่เริ่มต้นของคุณ กรุณาลองใหม่อีกครั้ง");
+        dialog.setPrimary ("เข้าใจแล้ว", () =>
+        {
+          dialog.setVisible (false);
+        });
+        dialog.setVisible (true);
+      });
+    });
+    dialogInput.setSecondary ("ยกเลิก", () =>
+    {
+      dialogInput.setVisible (false);
+    });
+    dialogInput.setVisible (true);
+  }
+  const onNameChange = (event: MouseEvent) =>
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+
+    dialogInput.reset ();
+    dialogInput.setTitle ("เปลี่ยนชื่อผู้รับสินค้า");
+    dialogInput.setMessage ("โปรดป้อนชื่อผู้รับเริ่มต้นของคุณ");
+    dialogInput.setPrimary ("เรียบร้อย", (x) =>
+    {
+      dialogInput.setVisible (false);
+
+      void ApiAccount.updateContact (auth.session, 
+      {
+        name: x
+      })
+      .then (() => queryContact.refetch ()).then (() =>
+      {
+          toast.setText ("เปลี่ยนชื่อผู้รับเริ่มต้นเรียบร้อย");
+          toast.setDuration (5000);
+          toast.setVisible (true);
+      })
+      .catch (() =>
+      {
+        dialog.reset ();
+        dialog.setTitle ("เกิดข้อผิดพลาด");
+        dialog.setMessage ("เกิดข้อผิดพลาดในการเปลี่ยนชื่อผู้รับเริ่มต้นของคุณ กรุณาลองใหม่อีกครั้ง");
+        dialog.setPrimary ("เข้าใจแล้ว", () =>
+        {
+          dialog.setVisible (false);
+        });
+        dialog.setVisible (true);
+      });
+    });
+    dialogInput.setSecondary ("ยกเลิก", () =>
+    {
+      dialogInput.setVisible (false);
+    });
+    dialogInput.setVisible (true);
+  }
+  const onPhoneChange = (event: MouseEvent) =>
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+
+    dialogInput.reset ();
+    dialogInput.setTitle ("เปลี่ยนเบอร์โทรศัพท์");
+    dialogInput.setMessage ("โปรดป้อนเบอร์โทรศัพท์เริ่มต้นของคุณ");
+    dialogInput.setPrimary ("เรียบร้อย", (x) =>
+    {
+      dialogInput.setVisible (false);
+
+      void ApiAccount.updateContact (auth.session, 
+      {
+        phone: x
+      })
+      .then (() => queryContact.refetch ()).then (() =>
+      {
+          toast.setText ("เปลี่ยนชื่อเบอร์โทรศัพท์เริ่มต้นเรียบร้อย");
+          toast.setDuration (5000);
+          toast.setVisible (true);
+      })
+      .catch (() =>
+      {
+        dialog.reset ();
+        dialog.setTitle ("เกิดข้อผิดพลาด");
+        dialog.setMessage ("เกิดข้อผิดพลาดในการเปลี่ยนเบอร์โทรศัพท์เริ่มต้นของคุณ กรุณาลองใหม่อีกครั้ง");
+        dialog.setPrimary ("เข้าใจแล้ว", () =>
+        {
+          dialog.setVisible (false);
+        });
+        dialog.setVisible (true);
+      });
+    });
+    dialogInput.setSecondary ("ยกเลิก", () =>
+    {
+      dialogInput.setVisible (false);
+    });
+    dialogInput.setVisible (true);
+  }
 
   return (
     <react.Activity mode={prop.visible ? "visible" : "hidden"}>
@@ -480,10 +675,10 @@ content.ContentShipping = function SettingsContentShipping
         <div>
           <label>ที่อยู่เริ่มต้น</label>
           <br/>
-          <label>{address}</label>
+          <label style={{ color: '#b3e2f6' }}>{address}</label>
         </div>
         <div>
-          <button>
+          <button onClick={onAddressChange}>
             {address.length > 0 ? "แก้ไข" : "เพิ่ม"}
           </button>
         </div>
@@ -492,10 +687,10 @@ content.ContentShipping = function SettingsContentShipping
         <div>
           <label>ชื่อผู้รับ</label>
           <br/>
-          <label>{receiver}</label>
+          <label style={{ color: '#b3e2f6' }}>{receiver}</label>
         </div>
         <div>
-          <button>
+          <button onClick={onNameChange}>
             {receiver.length > 0 ? "แก้ไข" : "เพิ่ม"}
           </button>
         </div>
@@ -504,10 +699,10 @@ content.ContentShipping = function SettingsContentShipping
         <div>
           <label>เบอร์โทรศัพท์</label>
           <br/>
-          <label>{phone}</label>
+          <label style={{ color: '#b3e2f6' }}>{phone}</label>
         </div>
         <div>
-          <button>
+          <button onClick={onPhoneChange}>
             {phone.length > 0 ? "แก้ไข" : "เพิ่ม"}
           </button>
         </div>

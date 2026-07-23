@@ -1,9 +1,10 @@
-import react from "react";
+import react, { useEffect } from "react";
 import styled, { keyframes } from "styled-components";
 import {
     X, User, Phone, Mail, MapPin, Home, Building2,
     QrCode, ShieldCheck, Copy, Check, ChevronRight,
 } from "lucide-react";
+import { useAccountContact, useCartQuery, useProducts, usePromotion } from "#context/customer.ts";
 
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +15,7 @@ type Props = {
     open:      boolean;
     total?:    number;
     orderId?:  string;
+    promotionCode: string;
     onClose:   () => void;
     onConfirm?: (payload: CheckoutPayload) => void;
 };
@@ -40,12 +42,52 @@ export type CheckoutPayload = {
 */
 const content = function CheckoutModal ({
     open,
-    total    = 4230,
+    promotionCode,
     orderId  = "GS-2026-" + Math.floor(100000 + Math.random() * 900000),
     onClose,
     onConfirm,
 }: Props)
 {
+    const queryContact = useAccountContact ();
+    const contact = queryContact.data;
+
+    const queryList = useCartQuery ();
+    const queryBasics = useProducts (
+        !queryList.data ? [] : queryList.data.map((x) => x.productId)
+    );
+    const queryPromotion = usePromotion (promotionCode);
+
+    const list = queryList.data;
+    const basic = queryBasics;
+    const promotion = queryPromotion.data;
+
+    const subtotal = list
+        ? list
+            .map((x) => {
+            const prod = basic.find((y) => x.productId == y.data?.id);
+            const price = prod ? prod.data?.price ?? 0 : 0;
+            return price * x.quantity;
+            })
+            .reduce((x, y) => x + y, 0)
+        : 0;
+
+    let discount = promotion ? 
+        promotion.type === 1 ? promotion.discount :
+        promotion.type === 2 ? (subtotal * (promotion.discount / 100)) : 0 : 0;
+    // const taxRate = 0.07;
+    // const tax = Math.round(subtotal * taxRate);
+    // const total = subtotal - discount + tax;
+
+    discount -= Math.max (0, promotion ? promotion.minPrice - subtotal : 0);
+    discount = Math.min (discount, promotion ? promotion?.maxDiscount : discount);
+
+    if (promotion && promotion.minPrice > subtotal)
+    {
+        discount = 0;
+    }
+
+    const total = Math.max (0, subtotal - discount);
+
     const [step, setStep]       = react.useState<1 | 2>(1);
     const [method, setMethod]   = react.useState<"promptpay" | "bank">("promptpay");
     const [copied, setCopied]   = react.useState(false);
@@ -53,6 +95,8 @@ const content = function CheckoutModal ({
         name: "", phone: "", email: "",
         address: "", city: "", province: "", zip: "", note: "",
     });
+
+    
 
     react.useEffect(() => {
         if (!open) { setStep(1); setCopied(false); }
@@ -63,6 +107,25 @@ const content = function CheckoutModal ({
         if (open) window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
     }, [open, onClose]);
+
+
+    useEffect (() =>
+    {
+        if (open)
+        {
+            setForm ({
+                name: contact ? contact.name : "",
+                phone: contact ? contact.phone : "",
+                address: contact ? contact.address : "",
+                email: contact ? contact.email : "",
+                city: "",
+                province: "",
+                note: "",
+                zip: "",
+            })
+        }
+    },
+    [open]);
 
     if (!open) return null;
 
@@ -96,6 +159,7 @@ const content = function CheckoutModal ({
             setTimeout(() => setCopied(false), 1500);
         } catch { /* noop */ }
     }
+
 
     return (
         <Backdrop onMouseDown={onClose}>
@@ -180,7 +244,7 @@ const content = function CheckoutModal ({
                             <FieldInput required placeholder="ที่อยู่ (บ้านเลขที่ ถนน ซอย)" value={form.address} onChange={set("address")}/>
                         </Field>
 
-                        <Row>
+                        {/* <Row>
                             <Field>
                                 <FieldIcon><Building2 size={14}/></FieldIcon>
                                 <FieldInput placeholder="อำเภอ" value={form.city} onChange={set("city")}/>
@@ -193,7 +257,7 @@ const content = function CheckoutModal ({
                                 <FieldIcon><MapPin size={14}/></FieldIcon>
                                 <FieldInput placeholder="รหัสไปรษณีย์" value={form.zip} onChange={set("zip")} maxLength={5}/>
                             </Field>
-                        </Row>
+                        </Row> */}
 
                         <FieldTextArea
                             placeholder="หมายเหตุถึงร้านค้า (ถ้ามี)"
