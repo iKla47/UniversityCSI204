@@ -6,7 +6,7 @@ import MenuBar from "#component/menu.bar.tsx";
 
 import { styled } from "styled-components";
 import { useSearchParams } from "react-router";
-import { useRef, useState, type MouseEvent } from "react";
+import { useState, type MouseEvent } from "react";
 import { useAuth } from "#context/common.ts";
 import { useDialog, useToast } from "#context/common.ui.ts";
 import 
@@ -27,27 +27,39 @@ from "lucide-react";
 /**
  * ส่วนประกอบแสดงรายละเอียดสินค้าที่ผู้ใช้กำลังเลือก
 */
-const content = function Product ()
+export default function Product ()
 {
+  //
+  // ดึงข้อมูลรหัสสินค้าปัจจุบัน
+  //
   const [param] = useSearchParams ();
   const id = param.get ("id");
-  const queryBasic = useProduct (Number (id));
-  const basic = queryBasic.data;
-  const bg = basic ? apiStorage.getUrlStream (basic.background) : undefined;
 
-  return <>
-    <StyleRoot>
-      <StyleBackground src={bg} $visible={(bg != undefined && bg.length > 0)}/>
-      <content.Main/>
-      <content.Comment/>
-      <content.Cart/>
-    </StyleRoot>
-  </>;
+  //
+  // ดึงข้อมูลจากเซิร์ฟเวอร์
+  //
+  const qBasic = useProduct (Number (id));
+
+  //
+  // ประมวลตัวแปร
+  //
+  const prodBasic = qBasic.data;
+  const bg = prodBasic ? 
+    apiStorage.getUrlStream (prodBasic.background) : undefined;
+
+  return (
+    <StlRoot>
+      <StlBG src={bg} $visible={(bg != undefined && bg.length > 0)}/>
+      <ViewMain/>
+      <ViewComment/>
+      <ViewCart/>
+    </StlRoot>
+  );
 }
 /**
  * ส่วนประกอบแสดงผลไอคอนตะกร้า
 */
-content.Cart = function ProductBrowserCart ()
+function ViewCart ()
 {
   const cart = useCart ();
   const cartQuery = useCartQuery ();
@@ -75,129 +87,203 @@ content.Cart = function ProductBrowserCart ()
     </StyledCart>
   );
 }
-content.Main = function ProductMainContent ()
+function ViewMain ()
 {
+  //
+  // ดึงข้อมูลรหัสสินค้า
+  //
   const [param] = useSearchParams ();
   const id = param.get ("id");
+  //
+  // ดึงบริการระบบ
+  //
   const auth = useAuth ();
   const toast = useToast ();
-  const queryBasic = useProduct (Number (id));
-  const queryReview = useProductReviewList (Number (id));
-  const queryFavorite = useFavoriteQuery (); // SSSS
-  const queryAct = useAccountBasic ();
-  const basic = queryBasic.data;
-  const review = queryReview.data;
-  const favoriteList = queryFavorite.data; // SSSS
-
-  const favoriteItem = favoriteList?.find ((x) => x.productId === Number (id)); // SSSS
-  const isFavorite = Boolean (favoriteItem); // SSSS
-
   const [menu, setMenu] = useState (1);
   const [dialog] = useDialog ();
+  //
+  // ดึงข้อมูลจากเซิร์ฟเวอร์
+  //
+  const qProdId = Number (id);
+  const qProdBasic = useProduct (qProdId);
+  const qProdReview = useProductReviewList (Number (id));
+  const qActBasic = useAccountBasic ();
+  const qActCart = useCartQuery ();
+  const qActFavorite = useFavoriteQuery (); // SSSS
+
+  const prodBasic = qProdBasic.data;
+  const prodReview = qProdReview.data;
+  const actFavorite = qActFavorite.data; // SSSS
+
+  //
+  // ประมวลข้อมูลสำหรับการแสดงผล/อื่น ๆ
+  //
+  const prodName = prodBasic ? prodBasic.name : "";
+  const prodSub = "";
+  const prodDesc = prodBasic ? prodBasic.description : "";
+  const prodPrice = prodBasic ? prodBasic.price.toFixed (2) : "";
+  const prodCover = prodBasic ? 
+          apiStorage.getUrlStream (prodBasic.cover) : undefined;
+  const prodFavor = actFavorite ? 
+          actFavorite.find ((x) => x.productId === qProdId) : undefined;
 
   /**
    * เพิ่มสินค้านี้ลงในตะกร้าของผู้ใช้งานระบบ
   */
-  const onClickAdd = (event: MouseEvent) =>
+  function onClickAdd (event: MouseEvent)
   {
     event.preventDefault ();
     event.stopPropagation ();
 
-    if (queryAct.data !== undefined)
-    {
-      const query = queryBasic;
-      const queryData = query.data;
-      const queryId = queryData ? queryData.id : NaN;
-
-      void apiAccount.createCart (auth.session, {
-        productId: queryId,
-        quantity: 1
-      })
-      .then (() =>
-      {
-        toast.setDuration (5000);
-        toast.setText (`เพิ่ม ${basic ? basic.name : ""} ลงในตะกร้าเรียบร้อย`);
-        toast.setVisible (true);
-      })
-      .catch (() =>
-      {
-        toast.setDuration (5000);
-        toast.setText (`เกิดข้อผิดพลาด โปรดลองใหม่อีกครั้ง`);
-        toast.setVisible (true);
-      });
-    }
-    else
+    if (qActBasic.data === undefined)
     {
       toast.setDuration (5000);
       toast.setText ("คุณจำเป็นต้องลงชื่อเข้าใช้ก่อนจึงจะสามารถเพิ่มสินค้าได้");
       toast.setVisible (true);
+      return;
     }
+
+    //
+    // ตรวจสอบจำนวนซ้ำของสินค้า
+    //
+    const duped = 
+      qActCart.data ? 
+      qActCart.data.find (x => x.productId === qProdId) : undefined;
+    
+    const dupedCount = duped ? duped.quantity + 1 : 0;
+
+    if (duped === undefined)
+    {
+      onClickAddConfirmed ();
+      return;
+    }
+    
+    dialog.reset ();
+    dialog.setTitle ("ยืนยันเพิ่มสินค้านี้ลงในตะกร้า");
+    dialog.setMessage (
+      `คุณได้เพิ่มสินค้านี้ลงในตะกร้าแล้ว การดำเนินการนี้จะเพิ่มเป็น ${String (dupedCount)} จำนวน ยืนยันหรือไหม่`
+    );
+    dialog.setVisible (true);
+    dialog.setPrimary ("ยืนยัน", () =>
+    {
+      dialog.setVisible (false);
+      onClickAddConfirmed ();
+    });
+    dialog.setSecondary ("ยกเลิก", () =>
+    {
+      dialog.setVisible (false);
+    });
+  }
+  /**
+   * ยืนยันการเพิ่มสินค้าลงในตะกร้า
+  */
+  function onClickAddConfirmed ()
+  {    
+    const id = prodBasic ? prodBasic.id : NaN;
+    const name = prodBasic ? prodBasic.name : "";
+
+    void apiAccount.createCart (auth.session, {
+      productId: id,
+      quantity: 1
+    })
+    .then (() =>
+    {
+      toast.setDuration (5000);
+      toast.setText (`เพิ่ม ${name} ลงในตะกร้าเรียบร้อย`);
+      toast.setVisible (true);
+
+      //
+      // ล้างแคชข้อมูลในตะกร้าของผู้ใช้งาน
+      //
+      void qActCart.refetch ();
+    })
+    .catch (() =>
+    {
+      dialog.reset ();
+      dialog.setTitle ("เกิดข้อผิดพลาด");
+      dialog.setMessage ("เกิดข้อผิดพลาดบางอย่าง โปรดทำการลองใหม่อีกครั้ง");
+      dialog.setPrimary ("เข้าใจแล้ว", () =>
+      {
+        dialog.setVisible (false);
+      });
+      dialog.setVisible (true);
+    });
   }
   /**
    * เพิ่มสินค้านี้ลงในรายการโปรดของผู้ใช้งานระบบ
   */
-  /**
-   * เพิ่มสินค้านี้ลงในรายการโปรดของผู้ใช้งานระบบ
-  */
   const onClickFavorite = (event: MouseEvent) =>
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+
+    if (qActBasic.data === undefined) 
     {
-      event.preventDefault ();
-      event.stopPropagation ();
-  
-      if (queryAct.data !== undefined)
-      {
-        const productId = basic ? basic.id : Number (id);
-  
-        // กรณีที่ เป็นรายการโปรดอยู่แล้ว -> ให้ลบออก
-        if (isFavorite && favoriteItem)
+      toast.setDuration (5000);
+      toast.setText (
+        "คุณจำเป็นต้องลงชื่อเข้าใช้ก่อนจึงจะสามารถจัดการรายการโปรดได้"
+      );
+      toast.setVisible (true);
+      return;
+    }
+
+    if (prodFavor)
+    {
+      //
+      // กรณีที่ เป็นรายการโปรดอยู่แล้ว -> ให้ลบออก
+      //
+      void apiAccount.deleteFavorite (auth.session, prodFavor.favoriteId)
+        .then (() =>
         {
-          void apiAccount.deleteFavorite (auth.session, favoriteItem.favoriteId)
-            .then (() =>
-            {
-              toast.setDuration (5000);
-              toast.setText (`นำ ${basic ? basic.name : "สินค้า"} ออกจากรายการโปรดแล้ว`);
-              toast.setVisible (true);
-              void queryFavorite.refetch (); // รีเฟรชข้อมูลรายการโปรด
-            })
-            .catch (() =>
-            {
-              toast.setDuration (5000);
-              toast.setText ("เกิดข้อผิดพลาดในการนำรายการโปรดออก โปรดลองใหม่อีกครั้ง");
-              toast.setVisible (true);
-            });
-        }
-        // กรณีที่ ยังไม่ได้เป็นรายการโปรด -> ให้เพิ่มใหม่
-        else
+          toast.setDuration (5000);
+          toast.setText (`นำ ${prodBasic ? prodBasic.name : "สินค้า"} ออกจากรายการโปรดแล้ว`);
+          toast.setVisible (true);
+          void qActFavorite.refetch (); // รีเฟรชข้อมูลรายการโปรด
+        })
+        .catch (() =>
         {
-          void apiAccount.createFavorite (auth.session, {
-            productId: productId
-          })
-            .then (() =>
-            {
-              toast.setDuration (5000);
-              toast.setText (`เพิ่ม ${basic ? basic.name : "สินค้า"} ลงในรายการโปรดเรียบร้อย`);
-              toast.setVisible (true);
-              void queryFavorite.refetch (); // รีเฟรชข้อมูลรายการโปรด
-            })
-            .catch (() =>
-            {
-              toast.setDuration (5000);
-              toast.setText ("เกิดข้อผิดพลาดในการเพิ่มรายการโปรด โปรดลองใหม่อีกครั้ง");
-              toast.setVisible (true);
-            });
-        }
-      }
-      else
+          dialog.reset ();
+          dialog.setTitle ("เกิดข้อผิดพลาด");
+          dialog.setMessage (
+            "เกิดข้อผิดพลาดในการนำรายการโปรดออก โปรดลองใหม่อีกครั้ง"
+          );
+          dialog.setPrimary ("เข้าใจแล้ว", () =>
+          {
+            dialog.setVisible (false);
+          });
+          dialog.setVisible (true);
+      });
+      return;
+    }
+    //
+    // กรณีที่ ยังไม่ได้เป็นรายการโปรด -> ให้เพิ่มใหม่
+    //
+    void apiAccount.createFavorite (auth.session, { productId: qProdId })
+      .then (() =>
       {
         toast.setDuration (5000);
-        toast.setText ("คุณจำเป็นต้องลงชื่อเข้าใช้ก่อนจึงจะสามารถจัดการรายการโปรดได้");
+        toast.setText (`เพิ่ม ${prodBasic ? prodBasic.name : "สินค้า"} ลงในรายการโปรดเรียบร้อย`);
         toast.setVisible (true);
-      }
-    }
+        void qActFavorite.refetch (); // รีเฟรชข้อมูลรายการโปรด
+      })
+      .catch (() =>
+      {
+        dialog.reset ();
+        dialog.setTitle ("เกิดข้อผิดพลาด");
+        dialog.setMessage (
+          "เกิดข้อผิดพลาดในการเพิ่มรายการโปรด โปรดลองใหม่อีกครั้ง"
+        );
+        dialog.setPrimary ("เข้าใจแล้ว", () =>
+        {
+          dialog.setVisible (false);
+        });
+        dialog.setVisible (true);
+      });
+  }
   /**
    * เปิดหน้าต่างแชร์สินค้า
   */
-  const onClickShare = (event: MouseEvent) =>
+  function onClickShare (event: MouseEvent)
   {
     event.preventDefault ();
     event.stopPropagation ();
@@ -221,19 +307,13 @@ content.Main = function ProductMainContent ()
     })
   }
 
-  const name = basic ? basic.name : "";
-  const sub = "";
-  const desc = basic ? basic.description : "";
-  const price = basic ? basic.price.toFixed (2) : "";
-  const icon = basic ? apiStorage.getUrlStream (basic.cover) : undefined;
-
   return (
-    <StyleMain>
-      <StyleCover src={icon}/>
-      <StyleMainView>
+    <StlMain>
+      <StlCover src={prodCover}/>
+      <StleMainView>
         <header>
-          <StyleMainTitle>{name}</StyleMainTitle>
-          <StyleMainTitleSub>{sub}</StyleMainTitleSub>
+          <StlMainTitle>{prodName}</StlMainTitle>
+          <StlMainTitleSub>{prodSub}</StlMainTitleSub>
         </header>
         <main>
           <MenuBar
@@ -243,7 +323,7 @@ content.Main = function ProductMainContent ()
             <MenuBar.Item icon={<MonitorCog/>} width="192px" text="ข้อมูลจำเพาะ" value={2}/>
             {/* <MenuBar.Item icon={<Package/>} width="192px" text="การจัดส่ง" value={3}/> */}
           </MenuBar>
-          { (menu !== 1) ? (<></>) : (<StyleMainDesc>{desc}</StyleMainDesc>) }
+          { (menu !== 1) ? (<></>) : (<StlMainDesc>{prodDesc}</StlMainDesc>) }
           { (menu !== 2) ? (<></>) : (
             <SpecTable>
               <SpecRow>
@@ -269,16 +349,16 @@ content.Main = function ProductMainContent ()
             </SpecTable>
           ) }
           { (menu !== 3) ? (<></>) : (
-            <StyleMainDesc>
+            <StlMainDesc>
               จัดส่งทั่วประเทศไทยผ่าน Kerry / Flash ภายใน 1-3 วันทำการ
               สั่งซื้อครบ 1,500 ฿ ขึ้นไป จัดส่งฟรี
               สามารถรับสินค้าที่หน้าร้านได้เช่นกัน
-            </StyleMainDesc>) 
+            </StlMainDesc>) 
           }
-          <StyleMainReview>
-            { (!review) ?
+          <StlMainReview>
+            { (!prodReview) ?
               (<></>) :
-              (review.map ((x) => {
+              (prodReview.map ((x) => {
                 if (x.mime === "text/html") {
                   return <iframe
                     key={x.reviewId} 
@@ -297,13 +377,13 @@ content.Main = function ProductMainContent ()
                 }
               }))
             }
-          </StyleMainReview>
-          <StyleMainOption>
-            <StyleMainPrice>
-              <StyleMainPriceDiscount>99%</StyleMainPriceDiscount>
-              <span>{price} ฿</span>
-            </StyleMainPrice>
-            <StyleMainAction>
+          </StlMainReview>
+          <StlMainOption>
+            <StlMainPrice>
+              {/* <StlMainPriceDiscount>99%</StlMainPriceDiscount> */}
+              <span>{prodPrice} ฿</span>
+            </StlMainPrice>
+            <StlMainAction>
               <button onClick={onClickAdd}>
                 <ShoppingCart/>
                 <span>เพิ่มลงในตะกร้า</span>
@@ -311,250 +391,279 @@ content.Main = function ProductMainContent ()
               {/* SSS */}
               <button onClick={onClickFavorite}>
           <Heart 
-            color={isFavorite ? "#ff4d4f" : "currentColor"} 
-            fill={isFavorite ? "#ff4d4f" : "none"} 
+            color={prodFavor ? "#ff4d4f" : "currentColor"} 
+            fill={prodFavor ? "#ff4d4f" : "none"} 
           />
-          <span>{isFavorite ? "นำออกจากรายการโปรด" : "เพิ่มรายการโปรด"}</span> 
+          <span>{prodFavor ? "นำออกจากรายการโปรด" : "เพิ่มรายการโปรด"}</span> 
         </button>
               {/* SSS */}
               <button onClick={onClickShare}>
                 <Share2Icon/>
                 <span>แชร์</span>
               </button>
-            </StyleMainAction>
-          </StyleMainOption>
+            </StlMainAction>
+          </StlMainOption>
         </main>
-      </StyleMainView>
-    </StyleMain>
+      </StleMainView>
+    </StlMain>
   );
 }
-content.Comment = function ProductComment ()
+/**
+ * ส่วนประกอบแสดงรายการความคิดเห็น
+*/
+function ViewComment ()
 {
+  //
+  // ดึงรหัสสินค้า
+  //
   const [param] = useSearchParams ();
   const id = param.get ("id");
+  //
+  // ใช้งานบริการระบบ
+  //
   const auth = useAuth ();
-  const queryList = useProductCommentList (Number (id));
-  const queryAct = useAccountBasic ();
-  const queryData = queryList.data;
-  const initial = useRef (false);
-
-  const [commentRating, setCommentRating] = useState (5);
-  const [comment, setComment] = useState ("");
-  const [commentShow, setCommentShow] = useState (false);
-
   const toast = useToast ();
-  const rating = (queryData ? 
-      queryData.length > 0 ?
-      queryData.reduce ((x, y) => x += y.rating, 0) / queryData.length : 0.0 : 0.0);
-    
-  const count = queryData ? queryData.length : 0;
-  const empty = queryData ? queryData.length === 0 : true;
+  //
+  // ดึงข้อมูลจากเซิร์ฟเวอร์
+  //
+  const qProdComment = useProductCommentList (Number (id));
+  const qActBasic = useAccountBasic ();
+  //
+  // สถานะ UI
+  //
+  const [edit, setEdit] = useState (false);
+  const [editText, setEditText] = useState ("");
+  const [editRating, setEditRating] = useState (5);
 
-  const onClickComment = (event: MouseEvent) =>
+  const prodComment = qProdComment.data;
+
+  //
+  // คำนวณข้อมูลสำหรับการแสดงผล
+  //
+  const rating = (prodComment ? 
+      prodComment.length > 0 ?
+      prodComment.reduce ((x, y) => x += y.rating, 0) / prodComment.length : 0.0 : 0.0);
+    
+  const count = prodComment ? prodComment.length : 0;
+  const empty = prodComment ? prodComment.length === 0 : true;
+
+  /**
+   * ทำงานเมื่อผู้ใช้กดปุ่มแสดงความคิดเห็น
+  */
+  function onClickComment (event: MouseEvent)
   {
     event.preventDefault ();
     event.stopPropagation ();
 
-    if (queryList.data !== undefined && queryAct.data !== undefined)
-    {
-      if (commentShow)
-      {
-        setCommentShow (false);
-
-        const selfComment = queryList.data.find (
-          (x) => x.author === queryAct.data.id
-        );
-
-        if (selfComment)
-        {
-          void apiProduct.updateComment (auth.session, {
-            commentId: selfComment.commentId,
-            title: "",
-            text: comment,
-            rating: commentRating,
-          })
-          .then (() =>
-          {
-            toast.setText ("อัพเดทความคิดเห็นของคุณแล้ว");
-            toast.setDuration (5000);
-            toast.setVisible (true);
-
-            void queryList.refetch ();
-          })
-          .catch (() =>
-          {
-            toast.setText (
-              "เกิดข้อผิดพลาดในการอัพเดทความคิดเห็น โปรดลองใหม่อีกครั้ง"
-            );
-            toast.setDuration (5000);
-            toast.setVisible (true);
-          });
-          return;
-        }    
-
-        void apiProduct.createComment (auth.session, {
-          productId: Number (id),
-          title: "",
-          text: comment,
-          rating: commentRating,
-        })
-        .then (() =>
-        {
-          toast.setText ("เพิ่มความคิดเห็นของคุณแล้ว");
-          toast.setDuration (5000);
-          toast.setVisible (true);
-
-          void queryList.refetch ();
-        })
-        .catch (() =>
-        {
-          toast.setText (
-            "เกิดข้อผิดพลาดในการแสดงความคิดเห็น โปรดลองใหม่อีกครั้ง"
-          );
-          toast.setDuration (5000);
-          toast.setVisible (true);
-        });
-        return;
-      }
-      else
-      {
-        const selfComment = queryList.data.find (
-          (x) => x.author === queryAct.data.id
-        );
-      
-        if (selfComment)
-        {
-          setCommentRating (selfComment.rating);
-          setComment (selfComment.text);
-          initial.current = true;
-        }
-        
-        setCommentShow (true);
-        return;
-      }
-    }
-    else
+    if (!qActBasic.data) 
     {
       toast.setDuration (5000);
-      toast.setText ("คุณจำเป็นต้องลงชื่อเข้าใช้ก่อนจึงจะสามารถแสดงความคิดเห็นได้");
+      toast.setText (
+        "คุณจำเป็นต้องลงชื่อเข้าใช้ก่อนจึงจะสามารถแสดงความคิดเห็นได้"
+      );
       toast.setVisible (true);
+      return;
     }
+    if (!qProdComment.data) 
+    {
+      //
+      // รอให้ระบบโหลดเสร็จก่อน
+      //
+      return;
+    }
+
+    const previous = qProdComment.data.find (
+      (x) => x.author === qActBasic.data.id
+    );
+
+    if (!edit)
+    {
+      //
+      // เปิดใช้งานโหมดแก้ไข
+      //
+      setEdit (true);
+
+      if (previous !== undefined)
+      {
+        //
+        // มีข้อมูลความคิดเห็นก่อนหน้านี้
+        //
+        setEditRating (previous.rating);
+        setEditText (previous.text);
+      }
+      return;
+    }
+
+    if (previous)
+    {
+      void apiProduct.updateComment (auth.session, {
+        commentId: previous.commentId,
+        title: "",
+        text: editText,
+        rating: editRating,
+      })
+      .then (() =>
+      {
+        toast.setText ("อัพเดทความคิดเห็นของคุณแล้ว");
+        toast.setDuration (5000);
+        toast.setVisible (true);
+
+        void qProdComment.refetch ();
+      })
+      .catch (() =>
+      {
+        toast.setText (
+          "เกิดข้อผิดพลาดในการอัพเดทความคิดเห็น โปรดลองใหม่อีกครั้ง"
+        );
+        toast.setDuration (5000);
+        toast.setVisible (true);
+      });
+      return;
+    }
+    void apiProduct.createComment (auth.session, {
+      productId: Number (id),
+      title: "",
+      text: editText,
+      rating: editRating,
+    })
+    .then (() =>
+    {
+      toast.setText ("เพิ่มความคิดเห็นของคุณแล้ว");
+      toast.setDuration (5000);
+      toast.setVisible (true);
+
+      void qProdComment.refetch ();
+    })
+    .catch (() =>
+    {
+      toast.setText (
+        "เกิดข้อผิดพลาดในการแสดงความคิดเห็น โปรดลองใหม่อีกครั้ง"
+      );
+      toast.setDuration (5000);
+      toast.setVisible (true);
+    });
   } 
-  const onClickCommentBack = (event: MouseEvent) =>
+  /**
+   * ทำงานเมื่อผู้ใช้กดปุ่มย้อนกลับ 
+   */
+  function onClickCommentBack (event: MouseEvent)
   {
     event.preventDefault ();
     event.stopPropagation ();
 
-    setCommentShow (false);
+    setEdit (false);
   }
 
   return (
-    <StyleComment>
-      <StyleCommentTitle>ความคิดเห็น</StyleCommentTitle>
-      <StyleCommentSummary>
-        <StyleCommentStar>
-          { (commentShow ? commentRating >= 1 : rating >= 1) ?
+    <StlComment>
+      <StlCommentTitle>ความคิดเห็น</StlCommentTitle>
+      <StlCommentSummary>
+        <StlCommentStar>
+          { (edit ? editRating >= 1 : rating >= 1) ?
             (<StarIcon color="#f5ec00" absoluteStrokeWidth />) :
             (<StarIcon/>)
           }
-          { (commentShow ? commentRating >= 2 : rating >= 2) ?
+          { (edit ? editRating >= 2 : rating >= 2) ?
             (<StarIcon color="#f5ec00" absoluteStrokeWidth />) :
             (<StarIcon/>)
           }
-          { (commentShow ? commentRating >= 3 : rating >= 3) ?
+          { (edit ? editRating >= 3 : rating >= 3) ?
             (<StarIcon color="#f5ec00" absoluteStrokeWidth onClick={() => {
-              setCommentRating (3);
+              setEditRating (3);
             }}/>) :
             (<StarIcon onClick={() => {
-              setCommentRating (3);
+              setEditRating (3);
             }}/>)
           }
-          { (commentShow ? commentRating >= 4 : rating >= 4) ?
+          { (edit ? editRating >= 4 : rating >= 4) ?
             (<StarIcon color="#f5ec00" absoluteStrokeWidth onClick={() => {
-              setCommentRating (4);
+              setEditRating (4);
             }}/>) :
             (<StarIcon onClick={() => {
-              setCommentRating (4);
+              setEditRating (4);
             }}/>)
           }
-          { (commentShow ? commentRating >= 5 : rating >= 5) ?
+          { (edit ? editRating >= 5 : rating >= 5) ?
             (<StarIcon color="#f5ec00" absoluteStrokeWidth onClick={() => {
-              setCommentRating (5);
+              setEditRating (5);
             }}/>) :
             (<StarIcon onClick={() => {
-              setCommentRating (5);
+              setEditRating (5);
             }}/>)
           }
 
-        </StyleCommentStar>
-        { (commentShow) ?
+        </StlCommentStar>
+        { (edit) ?
           (<></>) :
           (<p>{rating.toFixed (2)} / 5.0 จากทั้งหมด {count} คน</p>)
         }
-        { (!commentShow) ?
+        { (!edit) ?
           (<></>) :
           (
           <StyleCommentContainer 
-            value={comment}
-            onChange={(e) => { setComment (e.target.value); }}>
+            value={editText}
+            onChange={(e) => { setEditText (e.target.value); }}>
             </StyleCommentContainer>
           )
         }
         <div style={{ display: 'flex', gap: '8px' }}>
-          <StyleCommentAdd onClick={onClickComment}>
+          <StlCommentAdd onClick={onClickComment}>
             <MessageSquare size={24}/>
             <span>ให้คะแนนเลย</span>
-          </StyleCommentAdd>
-          <StyleCommentAdd onClick={onClickCommentBack} 
-            style={{ display: commentShow ? "block" : "none"}}>
+          </StlCommentAdd>
+          <StlCommentAdd onClick={onClickCommentBack} 
+            style={{ display: edit ? "block" : "none"}}>
             <ArrowLeftIcon size={24}/>
             <span>ย้อนกลับ</span>
-          </StyleCommentAdd>
+          </StlCommentAdd>
         </div>
-      </StyleCommentSummary>
-      <StyleCommentBody>
+      </StlCommentSummary>
+      <StlCommentBody>
         { (empty) ?
           <p>สินค้ายังไม่ใครรีวิวเลย เป็นคนแรกที่รีวิวเลย</p> : <></>
         }
-        { (queryData) ? 
-          (queryData.map ((x) => <content.CommentItem
+        { (prodComment) ? 
+          (prodComment.map ((x) => <ViewCommentItem
             key={x.commentId}
             id={x.commentId}/>)) : <></>
         }
-      </StyleCommentBody>
-    </StyleComment>
+      </StlCommentBody>
+    </StlComment>
   );
 }
-content.CommentItem = function ProductCommentItem ({id}: {id: number;})
+/**
+ * ส่วนประกอบแสดงองค์ประกอบความเห็น
+*/
+function ViewCommentItem ({id}: {id: number;})
 {
-  const queryComment = useProductComment (id);
-  const queryAccount = useAccountBasicOf (
-    queryComment.data ? queryComment.data.author : 0);
+  const qComment = useProductComment (id);
+  const qAuthor = useAccountBasicOf (
+    qComment.data ? qComment.data.author : 0);
 
-  const comment = queryComment.data;
-  const account = queryAccount.data;
+  const comment = qComment.data;
+  const author = qAuthor.data;
 
-  const icon = account ? account.icon : "";
-  const name = account ? account.name : "";
+  const icon = author ? author.icon : "";
+  const name = author ? author.name : "";
   const text = comment ? comment.text : "";
 
   return (
-    <StyleCommentItem>
+    <StlCommentItem>
       { (icon.length > 0) ?
-        (<StyleCommentItemIcon src={apiStorage.getUrlStream (icon)}/>) :
+        (<StlCommentItemIcon src={apiStorage.getUrlStream (icon)}/>) :
         (<CircleUser/>)
       }
-      <StyleCommentItemTitle>{name}</StyleCommentItemTitle>
-      <StyleCommentItemText>{text}</StyleCommentItemText>
-    </StyleCommentItem>
+      <StlCommentItemTitle>{name}</StlCommentItemTitle>
+      <StlCommentItemText>{text}</StlCommentItemText>
+    </StlCommentItem>
   );
 }
 
-const StyleRoot = styled.div`
+const StlRoot = styled.div`
   margin: 96px 0px 64px 0px;
   display: block;
 `;
-const StyleBackground = styled.img<{ $visible: boolean; }>`
+const StlBG = styled.img<{ $visible: boolean; }>`
   display: ${prop => prop.$visible ? "block" : "none"};
   position: fixed;
   inset: 0px;
@@ -564,7 +673,7 @@ const StyleBackground = styled.img<{ $visible: boolean; }>`
   opacity: 0.5;
   z-index: -1;
 `;
-const StyleMain = styled.div`
+const StlMain = styled.div`
   width: 100%;
   height: 100%;
   display: flex;
@@ -583,7 +692,7 @@ const StyleMain = styled.div`
   }
 `;
 
-const StyleCover = styled.img`
+const StlCover = styled.img`
   display: block;
   width: 550px;
   height: 100%;
@@ -601,7 +710,7 @@ const StyleCover = styled.img`
     height: 50%;
   }
 `;
-const StyleMainView = styled.div`
+const StleMainView = styled.div`
   display: block;
   width: 40%;
   height: 100%;
@@ -622,22 +731,22 @@ const StyleMainView = styled.div`
     padding: 0px 16px;
   }
 `;
-const StyleMainTitle = styled.h1`
+const StlMainTitle = styled.h1`
   font-size: 2.5rem;
   font-weight: normal;
 `;
-const StyleMainTitleSub = styled.h2`
+const StlMainTitleSub = styled.h2`
   font-size: 1.25rem;
   font-weight: normal;
   margin-bottom: 32px;
 `;
-const StyleMainDesc = styled.p`
+const StlMainDesc = styled.p`
   font-size: 1rem;
   font-weight: normal;
   margin-bottom: 32px;
   min-height: 256px;
 `;
-const StyleMainReview = styled.div`
+const StlMainReview = styled.div`
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
@@ -671,7 +780,7 @@ const StyleMainReview = styled.div`
 `;
 
 
-const StyleMainOption = styled.div`
+const StlMainOption = styled.div`
   display: inline-flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -685,21 +794,21 @@ const StyleMainOption = styled.div`
     flex-direction: column;
   }
 `;
-const StyleMainPrice = styled.label`
+const StlMainPrice = styled.label`
   display: block;
   position: relative;
   font-size: 1.5rem;
   width: 128px;
 `;
-const StyleMainPriceDiscount = styled.label`
-  font-size: 1.25rem;
-  position: absolute;
-  inset: auto 16px -32px auto;
-  background-color: #FF7373;
-  border-radius: 16px;
-  padding: 0px 16px;
-`;
-const StyleMainAction = styled.div`
+// const StlMainPriceDiscount = styled.label`
+//   font-size: 1.25rem;
+//   position: absolute;
+//   inset: auto 16px -32px auto;
+//   background-color: #FF7373;
+//   border-radius: 16px;
+//   padding: 0px 16px;
+// `;
+const StlMainAction = styled.div`
   display: inline-flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -725,7 +834,7 @@ const StyleMainAction = styled.div`
   }
 `;
 
-const StyleComment = styled.div`
+const StlComment = styled.div`
   width: 100%;
   min-height: 256px;
   padding: 32px 580px;
@@ -755,13 +864,13 @@ const StyleComment = styled.div`
     padding: 32px 16px;
   }
 `;
-const StyleCommentTitle = styled.label`
+const StlCommentTitle = styled.label`
   display: block;
   font-size: 2rem;
   font-weight: normal;
   color: var(--text-primary);
 `;
-const StyleCommentSummary = styled.div`
+const StlCommentSummary = styled.div`
   width: 100%;
   height: 324px;
 
@@ -772,14 +881,14 @@ const StyleCommentSummary = styled.div`
   align-items: center;
   justify-content: center;
 `;
-const StyleCommentBody = styled.div`
+const StlCommentBody = styled.div`
   margin: 8px 0px;
   display: flex;
   flex-direction: column;
   flex-wrap: nowrap;
   gap: 8px;
 `;
-const StyleCommentStar = styled.div`
+const StlCommentStar = styled.div`
   display: inline-block;
   color: var(--text-primary);
   margin: 4px 0px;
@@ -792,7 +901,7 @@ const StyleCommentStar = styled.div`
     margin: 0px 8px;
   }
 `;
-const StyleCommentAdd = styled.button`
+const StlCommentAdd = styled.button`
   & > img, & > svg
   {
     display: inline-block;
@@ -803,7 +912,7 @@ const StyleCommentAdd = styled.button`
   }
 `;
 
-const StyleCommentItem = styled.div`
+const StlCommentItem = styled.div`
   width: 100%;
   height: 100%;
   min-height: 64px;
@@ -823,7 +932,7 @@ const StyleCommentItem = styled.div`
     color: var(--text-primary);
   }
 `;
-const StyleCommentItemIcon = styled.img`
+const StlCommentItemIcon = styled.img`
   display: block;
   position: absolute;
   background-color: var(--bg-secondary);
@@ -832,7 +941,7 @@ const StyleCommentItemIcon = styled.img`
   width: 32px;
   height: 32px;
 `;
-const StyleCommentItemTitle = styled.label`
+const StlCommentItemTitle = styled.label`
   display: block;
   position: absolute;
   inset: 20px auto auto 64px;
@@ -841,7 +950,7 @@ const StyleCommentItemTitle = styled.label`
   font-size: 1rem;
   font-weight: normal
 `;
-const StyleCommentItemText = styled.p `
+const StlCommentItemText = styled.p `
   padding: 48px 0px 16px 64px;
   width: 100%;
   height: 100%;
@@ -919,7 +1028,3 @@ const StyleCommentContainer = styled.textarea`
   border: 0px black solid;
   border-radius: 12px;
 `;
-/**
- * ส่งออกตัวแปร
-*/
-export default content;

@@ -391,7 +391,7 @@ content.updateComment = (info: CommentUpdate) =>
     .join (", ")
     .concat (" ")
     .concat ("WHERE CommentId = ?");
-
+    
     const value = [
         info.title,
         info.text,
