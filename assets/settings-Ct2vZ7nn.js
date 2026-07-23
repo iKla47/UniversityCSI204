@@ -1,0 +1,1 @@
+import{t as e}from"./index-CdWMyIIp.js";import{t}from"./settings-DlvE0Q9_.js";var n=e(),r=()=>(0,n.jsx)(t,{visible:!0,transparent:!0});export{r as default};

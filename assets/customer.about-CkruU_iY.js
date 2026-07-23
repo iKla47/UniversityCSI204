@@ -1,0 +1,1 @@
+import{t as e}from"./index-CdWMyIIp.js";var t=e(),n=function(){return(0,t.jsx)(t.Fragment,{})};Object.freeze(n);export{n as default};

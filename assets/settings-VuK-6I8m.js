@@ -1,1 +1,0 @@
-import{t as e}from"./index--_WW-fWS.js";import{t}from"./settings-zh7mflCL.js";var n=e(),r=()=>(0,n.jsx)(t,{visible:!0,transparent:!0});export{r as default};
