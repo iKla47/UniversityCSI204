@@ -26,12 +26,15 @@ const content = function ProductBrowser ()
     <content.Cart/>
   </>);
 }
-content.List = function ProductBrowserList ({ filter }: { filter: FilterState; })
+content.List = function ProductBrowserList ({ filter }: { filter: FilterState | undefined; })
 {  
   const [serachParam] = useSearchParams ();
   const search = serachParam.get ("search");
   const queryList = useProductList ({
-    search: search ?? ""
+    search: search ?? "",
+    category: filter ? [] : undefined,
+    minPrice: filter ? filter.price.min : undefined,
+    maxPrice: filter ? filter.price.max : undefined,
   });
   
   const showQuery = queryList;
