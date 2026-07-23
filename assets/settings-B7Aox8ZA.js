@@ -1,1 +1,0 @@
-import{t as e}from"./index-CSK43tSM.js";import{t}from"./settings-C0KkXeFJ.js";var n=e(),r=()=>(0,n.jsx)(t,{visible:!0,transparent:!0});export{r as default};
