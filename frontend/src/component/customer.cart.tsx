@@ -40,12 +40,12 @@ content.Root = function CartRoot(prop: PropRoot)
   return (
     <StyleView $visible={prop.visible ?? true}>
       <StyleViewInner $visible={prop.visible ?? true}>
-        <StyleViewPanel>
+        <StyleViewPanel $visible={prop.visible ?? true}>
          <PageList 
           visible={window === 1} 
-          promotion={[code, setCode]}
+          discount={[code, setCode]}
           onContinue={() => { setWindow (2); }}
-          onClose={prop.onClose}/>
+          onClose={prop.onClose ?? function () { return; }}/>
         <PageCheckout 
           open={window === 2}
           promotionCode={code}
@@ -146,7 +146,7 @@ content.Provider = function CartProvider()
    ========================================================================== */
 
 const StyleView = styled.div<{ $visible: boolean }>`
-  display: ${(prop) => (prop.$visible ? "block" : "none")};
+  //display: ${(prop) => (prop.$visible ? "block" : "none")};
   pointer-events: ${(prop) => (prop.$visible ? "all" : "none")};
   position: fixed;
   overflow: hidden;
@@ -156,6 +156,8 @@ const StyleView = styled.div<{ $visible: boolean }>`
 `;
 
 const StyleViewInner = styled.div<{ $visible: boolean }>`
+  pointer-events: ${(prop) => (prop.$visible ? "all" : "none")};
+
   width: 100%;
   height: 100%;
   background-color: ${(prop) => (prop.$visible ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0)")};
@@ -165,12 +167,17 @@ const StyleViewInner = styled.div<{ $visible: boolean }>`
   padding: 16px;
 `;
 
-const StyleViewPanel = styled.div`
+const StyleViewPanel = styled.div<{ $visible: boolean; }>`
+  pointer-events: ${(prop) => (prop.$visible ? "all" : "none")};
+
+  transform: scale(${prop => prop.$visible ? "1.0" : "0.75"});
+  opacity: ${prop => prop.$visible ? "1.0" : "0.0"};
+  transition: all 333ms cubic-bezier(0.16, 1, 0.3, 1);
+
   max-width: 1268px;
   max-height: 768px;
   width: 100%;
   height: 100%;
-  pointer-events: all;
   background-color: var(--bg-primary);
   border: 2px solid var(--bg-primary-border);
   border-radius: 4px;

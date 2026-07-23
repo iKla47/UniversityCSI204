@@ -2,7 +2,7 @@ import apiAccount from "#util/api.account.ts";
 import apiPromotion from "#util/api.promotion.ts";
 import apiStorage from "#util/api.storage.ts";
 
-import { useState, type MouseEvent } from "react";
+import { useState, type ChangeEvent, type Dispatch, type MouseEvent, type SetStateAction, type SubmitEvent } from "react";
 import { styled } from "styled-components";
 import { useAuth } from "#context/common.ts";
 import { useToast } from "#context/common.ui.ts";
@@ -16,66 +16,76 @@ import
 } 
 from "lucide-react";
 
-const content = function CustomerCartList (prop: PropRoot)
+export default function CustomerCartList (
+  { visible, discount, onContinue, onClose }: 
+  { 
+    readonly visible: boolean;
+    readonly discount: [string, Dispatch<SetStateAction<string>>];
+    readonly onContinue: () => void;
+    readonly onClose: () => void;
+  }
+)
 {
-  const onClickClose = (event: MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (prop.onClose) {
-      prop.onClose();
-    }
-  };
-  const onClickContinue = (event: MouseEvent) =>
+  /**
+   * ทำงานเมื่อผู้ใช้ต้องการกดปิดหน้าตะกร้า
+  */
+  function onClickClose (event: MouseEvent)
   {
     event.preventDefault();
     event.stopPropagation();
 
-    if (prop.onContinue) {
-      prop.onContinue();
-    }
+    onClose ();
+  }
+  /**
+   * ทำงานเมื่อผู้ใช้ต้องการกดดำเนินการต่อ
+  */
+  function onClickContinue (event: MouseEvent)
+  {
+    event.preventDefault();
+    event.stopPropagation();
+
+    onContinue ();
   };
 
-  const queryList = useCartQuery ();
 
-  return (
-    <>
-     <StyleHeader style={{ display: prop.visible ? "block" : "none" }}>
-        <StyleHeaderText>ตะกร้าสินค้าของคุณ</StyleHeaderText>
-        <StyleHeaderClose onClick={onClickClose} aria-label="ปิดตะกร้าสินค้า">
-          <XIcon />
-        </StyleHeaderClose>
-      </StyleHeader>
-
-      <StyleMain style={{ display: prop.visible ? "flex" : "none" }}>
-        {/* ฝั่งซ้าย: รายการเกมในตะกร้า */}
-        <StyleMainContent>
-          <content.List />
-        </StyleMainContent>
-
-        {/* ฝั่งขวา: รายการสินค้าแบบยืดยาว + สรุปคำสั่งซื้อ และส่วนลด */}
-        <StyleMainSidebar>
-          <content.Receipt />
-          <content.PromoCode callback={prop.promotion} />
-          <content.Summary promotionCode={prop.promotion[0]} />
-          <StyleCheckoutBtn 
-            onClick={onClickContinue}
-            disabled={queryList.data ? queryList.data.length === 0 : true}>
-            <span>สั่งซื้อสินค้า</span>
-            <ArrowRightIcon size={18} />
-          </StyleCheckoutBtn>
-        </StyleMainSidebar>
-      </StyleMain>
-    </>
-  )
+  return (<>
+    <StyleHeader>
+      <StyleHeaderText>ตะกร้าสินค้าของคุณ</StyleHeaderText>
+      <StyleHeaderClose onClick={onClickClose} aria-label="ปิดตะกร้าสินค้า">
+        <XIcon/>
+      </StyleHeaderClose>
+    </StyleHeader>
+    <StyleMain>
+    {/* ฝั่งซ้าย: รายการเกมในตะกร้า */}
+    <StyleMainContent>
+      <SubItemList/>
+    </StyleMainContent>
+    {/* ฝั่งขวา: รายการสินค้าแบบยืดยาว + สรุปคำสั่งซื้อ และส่วนลด */}
+    <StyleMainSidebar>
+      <SubReceipt/>
+      <SubDiscount st={discount}/>
+      <SubSummary st={discount} />
+      <StlCheckout 
+        onClick={onClickContinue}
+        disabled={false}>
+        <span>สั่งซื้อสินค้า</span>
+        <ArrowRightIcon size={18} />
+      </StlCheckout>
+    </StyleMainSidebar>
+  </StyleMain>
+  </>);
 }
 
-content.List = function CartList() 
+/**
+ * ส่วนประกอบแสดงรายการสินค้าในตะกร้า
+*/
+function SubItemList ()
 {
-  const queryList = useCartQuery();
-  const queryData = queryList.data;
+  const qList = useCartQuery();
+  const qData = qList.data;
 
-  if (!queryData || queryData.length === 0) {
+  if (!qData || qData.length === 0) 
+  {
     return (
       <StyleEmptyState>
         <p>ไม่มีสินค้าในตะกร้าของคุณ</p>
@@ -85,79 +95,112 @@ content.List = function CartList()
 
   return (
     <StyleItemContainer>
-      {queryData.map((x) => (
-        <content.ListItem key={x.itemId} uid={x.itemId} pid={x.productId} />
+      {qData.map((x) => (
+        <SubItemChild 
+          key={x.itemId} 
+          uid={x.itemId} 
+          pid={x.productId}/>
       ))}
     </StyleItemContainer>
   );
-};
-
-content.ListItem = function CartListItem({ uid, pid }: 
-  { uid: number; pid: number }) 
+}
+/**
+ * ส่วนประกอบแสดงชิ้นสินค้าในรายการ
+*/
+function SubItemChild ({ uid, pid}: { uid: number; pid: number; })
 {
+  //
+  // ใช้งานบริการระบบ
+  //
   const auth = useAuth ();
   const toast = useToast ();
-  const queryList = useCartQuery ();
-  const queryItem = useProduct (pid);
+
+  //
+  // ดึงข้อมูลจากเซิร์ฟเวอร์
+  //
+  const qCart = useCartQuery ();
+  const qProdBasic = useProduct (pid);
   
-  const list = queryList.data;
-  const item = queryItem.data;
+  const cart = qCart.data;
+  const prodBasic = qProdBasic.data;
   
-  const cover = item ? apiStorage.getUrlStream(item.cover) : undefined;
-  const name = item ? item.name : "กำลังโหลด...";
+  //
+  // คำนวณข้อมูลสำหรับการแสดงผล
+  //
+  const cover = prodBasic ? 
+      apiStorage.getUrlStream(prodBasic.cover) : undefined;
+  const name = prodBasic ? 
+      prodBasic.name : "กำลังโหลด...";
   const developer = "";
   const tags = ["Action", "RPG"];
 
-  const quantityFind = list ? list.find((x) => x.itemId === uid) : undefined;
+  const quantityFind = cart ? cart.find((x) => x.itemId === uid) : undefined;
   const quantity = quantityFind ? quantityFind.quantity : 1;
-  const pending = queryList.isLoading;
+  const pending = qCart.isLoading;
 
-  const onDecrement = (event: MouseEvent) => 
+  /**
+   * ลดจำนวนสินค้า
+  */
+  function onDecrement (event: MouseEvent)
   {
+    //
+    // ป้องกันการกดโดนการ์ด
+    //
     event.preventDefault ();
-    event.stopPropagation(); // ป้องกันการกดโดนการ์ด
+    event.stopPropagation ();
 
     if (quantity === 1)
     {
+      //
+      // ลบสินค้าดังกล่าวออกจากตะกร้า
+      //
       void apiAccount
         .deleteCart(auth.session, uid)
-        .then(() => queryList.refetch())
+        .then(() => qCart.refetch())
         .then(() => {
           toast.setText(`ลบ ${name} ออกจากตะกร้าเรียบร้อย`);
           toast.setDuration(4000);
           toast.setVisible(true);
         });
+      return;
     }
-    else
-    {
-      void apiAccount
-        .updateCart(auth.session, {
-          itemId: uid,
-          quantity: quantity - 1,
-        })
-        .then(() => queryList.refetch());
-    }
+    void apiAccount
+      .updateCart(auth.session, {
+        itemId: uid,
+        quantity: quantity - 1,
+      })
+      .then(() => qCart.refetch());
   };
-  const onIncrement = (event: MouseEvent) => 
+  /**
+   * เพิ่มจำนวนสินค้า
+  */
+  function onIncrement (event: MouseEvent)
   {
+    //
+    // ป้องกันการกดโดนการ์ด
+    //
     event.preventDefault ();
-    event.stopPropagation(); // ป้องกันการกดโดนการ์ด
+    event.stopPropagation ();
 
     void apiAccount
         .updateCart(auth.session, {
           itemId: uid,
           quantity: quantity + 1,
         })
-        .then(() => queryList.refetch());
+        .then(() => qCart.refetch());
+  }
+  /**
+   * นำทางไปยังหน้ารายละเอียดสินค้าเมื่อคลิกการ์ด
+  */
+  function onClick (event: MouseEvent) 
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
   }
 
-  const handleCardClick = () => {
-    // ใส่ Logic นำทางไปยังหน้ารายละเอียดสินค้าเมื่อคลิกการ์ด (ถ้ามี)
-  };
-
   return (
-    <StyleItemCard onClick={handleCardClick}>
-      <StyleItemImgWrapper>
+    <StyleItemCard>
+      <StyleItemImgWrapper onClick={onClick}>
         <StyleItemImg src={cover} alt={name} />
       </StyleItemImgWrapper>
 
@@ -183,7 +226,7 @@ content.ListItem = function CartListItem({ uid, pid }:
               disabled={pending}
               aria-label="ลดจำนวน"
             >
-              <MinusIcon size={14} />
+              <MinusIcon size={16} />
             </StyleQtyBtn>
             <StyleQtyDisplay>{quantity}</StyleQtyDisplay>
             <StyleQtyBtn
@@ -191,51 +234,55 @@ content.ListItem = function CartListItem({ uid, pid }:
               disabled={pending}
               aria-label="เพิ่มจำนวน"
             >
-              <PlusIcon size={14} />
+              <PlusIcon size={16} />
             </StyleQtyBtn>
           </StyleQuantityControl>
 
           <StyleRemoveBtn onClick={onDecrement} disabled={pending}>
-            <Trash2Icon size={15} />
+            <Trash2Icon size={16} />
             <span>นำออก</span>
           </StyleRemoveBtn>
         </StyleItemActionsRow>
       </StyleItemDetails>
     </StyleItemCard>
   );
-};
-
-content.Receipt = function CartReceipt() 
+}
+/**
+ * ส่วนประกอบแสดงรายการสินค้าในตะกร้า
+*/
+function SubReceipt () 
 {
-  const queryList = useCartQuery ();
-  const queryData = queryList.data;
+  const qList = useCartQuery ();
+  const qData = qList.data;
 
   return (
     <StyleReceipt>
       <StyleReceiptLabel>รายการสินค้า</StyleReceiptLabel>
       <StyleReceiptBody>
-        {queryData && queryData.length > 0 ? (
-          queryData.map((x) => <content.ReceiptItem key={x.itemId} uid={x.itemId} pid={x.productId} />)
+        {qData && qData.length > 0 ? (
+          qData.map((x) => <SubReceiptItem key={x.itemId} uid={x.itemId} pid={x.productId} />)
         ) : (
           <StyleReceiptEmpty>ไม่มีรายการ</StyleReceiptEmpty>
         )}
       </StyleReceiptBody>
     </StyleReceipt>
   );
-};
-
-content.ReceiptItem = function CartReceiptItem({ 
-  uid, pid 
-}: 
-{ 
-  uid: number; 
-  pid: number;
-}) 
+}
+/**
+ * ส่วนประกอบแสดงชิ้นสินค้าบนรายการ
+*/
+function SubReceiptItem ({ uid, pid }: { uid: number; pid: number; }) 
 {
-  const queryList = useCartQuery();
-  const queryItem = useProduct(pid);
-  const list = queryList.data;
-  const item = queryItem.data;
+  //
+  // ดึงข้อมูลจากเซิร์ฟเวอร์
+  //
+  const qList = useCartQuery ();
+  const qProdBasic = useProduct (pid);
+  //
+  // คำนวณข้อมูลสำหรับการแสดงผล
+  //
+  const list = qList.data;
+  const item = qProdBasic.data;
   
   const name = item ? item.name : "กำลังโหลด...";
   const price = item ? item.price : 0;
@@ -252,65 +299,104 @@ content.ReceiptItem = function CartReceiptItem({
     </StyleReceiptRow>
   );
 };
-
-content.PromoCode = function CartPromoCode({ callback }: { callback: [string, (value: string) => void]; }) 
+/**
+ * ส่วนประกอบการใช้งานส่วนลด
+*/
+function SubDiscount ({st}: { st: [string, Dispatch<SetStateAction<string>>]}) 
 {
+  //
+  // ใช้งานบริการระบบ
+  //
   const auth = useAuth();
   const toast = useToast();
-  const [code, setCode] = useState ("");
-
-  const queryList = useCartQuery ();
-  const queryBasics = useProducts (
-    !queryList.data ? [] : queryList.data.map((x) => x.productId)
+  //
+  // ดึงข้อมูลจากเซิร์ฟเวอร์
+  //
+  const qCart = useCartQuery ();
+  const qProdBasic = useProducts (
+    !qCart.data ? [] : qCart.data.map((x) => x.productId)
   );
 
-  const list = queryList.data;
-  const basic = queryBasics;
-  
-  const onClick = () =>
-  {
-    void apiPromotion.getBasic (auth.session, code).then ((promotion) =>
-    {
-      const subtotal = list
-      ? list
-          .map((x) => {
-            const prod = basic.find((y) => x.productId == y.data?.id);
-            const price = prod ? prod.data?.price ?? 0 : 0;
-            return price * x.quantity;
-          })
-          .reduce((x, y) => x + y, 0)
-      : 0;
+  const [input, setInput] = useState ("");
+  const [output, setOutput] = st;
+  //
+  // คำนวณข้อมูลสำหรับการแสดงผล
+  //
+  const list = qCart.data;
+  const basic = qProdBasic;
 
+  function onChange (event: ChangeEvent<HTMLInputElement>)
+  {
+    setInput (event.target.value);
+  }
+  /**
+   * ทำงานเมื่อผู้ใช้เริ่มกดใช้งานโค็ดส่วนลด
+  */
+  function onSubmit (event: SubmitEvent)
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+
+    onActive ();
+  }
+  /**
+   * ทำงานเมื่อผู้ใช้เริ่มกดใช้งานโค็ดส่วนลด
+  */
+  function onClick (event: MouseEvent)
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+
+    onActive ();
+
+  }
+  function onActive ()
+  {
+    void apiPromotion.getBasic (auth.session, output).then ((promotion) =>
+    {
+      const subtotal = list ? list.map((x) => 
+      {
+        const prod = basic.find((y) => x.productId == y.data?.id);
+        const price = prod ? prod.data?.price ?? 0 : 0;
+
+        return price * x.quantity;
+      })
+      .reduce((x, y) => x + y, 0) : 0;
+  
       if (promotion.minPrice > subtotal)
       {
-        toast.setText ("ไม่สามารถใช้งานโค้ดส่วนลดนี้ได้ เนื่องจากยอดรวมสินค้าไม่ถึงขั้นต่ำที่กำหนด");
+        toast.setText (
+          "ไม่สามารถใช้งานโค้ดส่วนลดนี้ได้ เนื่องจากยอดรวมสินค้าไม่ถึงขั้นต่ำที่กำหนด"
+        );
         toast.setDuration (5000);
         toast.setVisible (true);
-
-        callback[1] ("");
+  
+        setOutput ("");
         return;
       }
       if (promotion.used)
       {
-        toast.setText ("ไม่สามารถใช้งานโค้ดส่วนลดนี้ได้ เนื่องจากคุณได้ใช้งานโค็ดนี้ไปแล้ว");
+        toast.setText (
+          "ไม่สามารถใช้งานโค้ดส่วนลดนี้ได้ เนื่องจากคุณได้ใช้งานโค็ดนี้ไปแล้ว"
+        );
         toast.setDuration (5000);
         toast.setVisible (true);
         return;
       }
-
+  
       toast.setText ("ใช้งานโค้ดส่วนลดเรียบร้อย");
       toast.setDuration (5000);
       toast.setVisible (true);
-
-      callback[1] (code);
+  
+      setOutput (input);
     })
     .catch (() =>
     {
       toast.setText ("โค้ดส่วนลดไม่ถูกต้อง");
       toast.setDuration (5000);
       toast.setVisible (true);
-
-      callback[1] ("");
+  
+      setOutput ("");
     });
   }
 
@@ -324,8 +410,8 @@ content.PromoCode = function CartPromoCode({ callback }: { callback: [string, (v
         <StylePromoInput
           type="text"
           placeholder="ใส่โค้ดส่วนลดที่นี่"
-          onChange={(event) => { setCode(event.target.value); }}
-          onSubmit={onClick}
+          onChange={onChange}
+          onSubmit={onSubmit}
         />
         <StylePromoApplyBtn 
           onClick={onClick} 
@@ -337,27 +423,29 @@ content.PromoCode = function CartPromoCode({ callback }: { callback: [string, (v
   );
 };
 
-content.Summary = function CartSummary({ 
-  promotionCode 
-}: 
-{ 
-  promotionCode: string 
-}) 
+function SubSummary ({st}: { st: [string, Dispatch<SetStateAction<string>>]}) 
 {
-  const queryList = useCartQuery ();
-  const queryBasics = useProducts (
-    !queryList.data ? [] : queryList.data.map((x) => x.productId)
+  const [code] = st;
+  //
+  // ดึงข้อมูลจากเซิร์ฟเวอร์
+  //
+  const qCart = useCartQuery ();
+  const qProd = useProducts (
+    !qCart.data ? [] : qCart.data.map((x) => x.productId)
   );
-  const queryPromotion = usePromotion (promotionCode);
+  const qDiscount = usePromotion (code);
 
-  const list = queryList.data;
-  const basic = queryBasics;
-  const promotion = queryPromotion.data;
+  //
+  // คำนวณข้อมูลสำหรับการแสดงผล
+  //
+  const cart = qCart.data;
+  const basic = qProd;
+  const promotion = qDiscount.data;
 
-  const totalItems = list ? list.reduce((x, y) => (x += y.quantity), 0) : 0;
+  const totalItems = cart ? cart.reduce((x, y) => (x += y.quantity), 0) : 0;
 
-  const subtotal = list
-    ? list
+  const subtotal = cart
+    ? cart
         .map((x) => {
           const prod = basic.find((y) => x.productId == y.data?.id);
           const price = prod ? prod.data?.price ?? 0 : 0;
@@ -388,7 +476,7 @@ content.Summary = function CartSummary({
       </StyleSummaryRow>
       <StyleSummaryRow>
         <span>ส่วนลด</span>
-        <StyleDiscountText $on={promotionCode.length > 0}>-฿{discount.toLocaleString()}</StyleDiscountText>
+        <StyleDiscountText $on={code.length > 0}>-฿{discount.toLocaleString()}</StyleDiscountText>
       </StyleSummaryRow>
       {/* <StyleSummaryRow> 
         <span>ภาษีมูลค่าเพิ่ม (7%)</span>
@@ -397,7 +485,7 @@ content.Summary = function CartSummary({
       <StyleDivider />
       <StyleTotalRow>
         <span>ยอดชำระสุทธิ</span>
-        <StyleTotalAmount>฿{total.toLocaleString()}</StyleTotalAmount>
+        <StlSummaryTotal>฿{total.toLocaleString()}</StlSummaryTotal>
       </StyleTotalRow>
     </StyleSummaryBox>
   );
@@ -497,7 +585,7 @@ const StyleEmptyState = styled.div`
   color: var(--text-secondary, #a1a1aa);
 `;
 
-const StyleItemCard = styled.button`
+const StyleItemCard = styled.div`
   display: flex;
   gap: 16px;
   width: 100%;
@@ -798,12 +886,12 @@ const StyleTotalRow = styled.div`
   color: var(--text-primary, #ffffff);
 `;
 
-const StyleTotalAmount = styled.span`
+const StlSummaryTotal = styled.span`
   font-size: 1.2rem;
   color: var(--accent-color, #61e1fd);
 `;
 
-const StyleCheckoutBtn = styled.button`
+const StlCheckout = styled.button`
   width: 100%;
   height: 44px;
   background: var(--accent-gradient, linear-gradient(135deg, #6366f1 0%, #4f46e5 100%));
@@ -827,13 +915,3 @@ const StyleCheckoutBtn = styled.button`
     transform: scale(0.98);
   }
 `;
-
-
-interface PropRoot {
-  visible?: boolean;
-  promotion: [string, (value: string) => void];
-  onClose?: () => void;
-  onContinue?: () => void;
-}
-
-export default content;
