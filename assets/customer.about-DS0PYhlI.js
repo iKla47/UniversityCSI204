@@ -1,1 +1,0 @@
-import{t as e}from"./index-Bt-SOZ_r.js";var t=e(),n=function(){return(0,t.jsx)(t.Fragment,{})};Object.freeze(n);export{n as default};
