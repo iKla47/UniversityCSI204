@@ -49,6 +49,19 @@ export interface Dialog
     reset: () => void;
 }
 /**
+ * โครงสร้างข้อมูลบริบทแสดงกล่องข้อความหรือหน้าต่างป๊อปอัป
+ * ที่ปรากฏขึ้นบนหน้าจอเพื่อแจ้งเตือน, ขอข้อมูล, หรือให้ผู้ใช้งานตัดสินใจ
+*/
+export interface DialogInput
+{
+    setVisible: (value: boolean) => void;
+    setTitle: (value: string) => void;
+    setMessage: (value: string) => void;
+    setPrimary: (text: string, callback: (value: string) => void) => void;
+    setSecondary: (text: string, callback: (value: string) => void) => void;
+    reset: () => void;
+}
+/**
  * โครงสร้างข้อมูลบริบทการแสดงเนื้อหาตัวอย่าง
 */
 export interface Preview
@@ -118,6 +131,17 @@ export function defaultToast () : Toast
     }
 }
 export function defaultDialog () : Dialog
+{
+    return {
+        setVisible: () => { return; },
+        setTitle: () => { return; },
+        setMessage: () => { return; },
+        setPrimary: () => { return; },
+        setSecondary: () => { return; },
+        reset: () => { return; },
+    }
+}
+export function defaultDialogInput () : Dialog
 {
     return {
         setVisible: () => { return; },
