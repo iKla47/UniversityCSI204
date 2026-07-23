@@ -50,16 +50,6 @@
         "Category": []
     },
     {
-        "Name": "Icom",
-        "Description": "icom.",
-        "Price": 888,
-        "PriceCode": 1,
-        "Platform": 1,
-        "Background": "",
-        "Cover": "./icom.cover.png",
-        "Category": []
-    },
-    {
         "Name": "The Witcher 3: Wild Hunt",
         "Description": "The Witcher 3: Wild Hunt is a 2015 action role-playing game developed and published by CD Projekt. It is the sequel to the 2011 game The Witcher 2: Assassins of Kings and the third game in The Witcher video game series, played in an open world with a third-person perspective. The games follow the Witcher series of fantasy novels by Polish author Andrzej Sapkowski.",
         "Price": 1039.99,

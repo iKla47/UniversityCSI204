@@ -433,31 +433,31 @@ content.postCart = (request: Request, response: Response) =>
 // เพิ่มสินค้าที่ชอบเข้าบัญชีตัวเอง
 //
 content.postFavorite = (request: Request, response: Response) =>
+{
+    const authenticate = auth.validateResult (response);
+    const accountId = authenticate.id;
+    let create: FavoriteCreate;
+
+    try
     {
-        const authenticate = auth.validateResult (response);
-        const accountId = authenticate.id;
-        let create: FavoriteCreate;
-    
-        try
-        {
-           create = content.inputPostFavorite (request, accountId);
-        }
-        catch
-        {
-            response.status (http.STATUS_BAD_REQUEST);
-            response.end ();
-            return;
-        }
-    
-        void model.createFavorite (create).then ((x) =>
-        {
-            content.outputPostFavorite (response, x);
-        })
-        .catch ((e: unknown) =>
-        {
-            content.errorPostFavorite (response, e);
-        });
+        create = content.inputPostFavorite (request, accountId);
     }
+    catch
+    {
+        response.status (http.STATUS_BAD_REQUEST);
+        response.end ();
+        return;
+    }
+
+    void model.createFavorite (create).then ((x) =>
+    {
+        content.outputPostFavorite (response, x);
+    })
+    .catch ((e: unknown) =>
+    {
+        content.errorPostFavorite (response, e);
+    });
+}
 /**
  * ลบข้อมูลบัญชีของตนเอง
 */
@@ -639,14 +639,14 @@ content.inputPostCart = (request: Request, accountId: number) : CartCreate =>
     return result;
 }
 content.inputPostFavorite = (request: Request, accountId: number) : FavoriteCreate =>
-    {
-        const reader = objectReader (request.body);
-        const result = {
-            accountId: accountId,
-            productId: reader.requireInteger ("ProductId")
-        };
-        return result;
-    }
+{
+    const reader = objectReader (request.body);
+    const result = {
+        accountId: accountId,
+        productId: reader.requireInteger ("ProductId")
+    };
+    return result;
+}
 
 content.outputGetBasic = (r: Response, x: BasicFetch) =>
 {

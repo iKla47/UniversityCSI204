@@ -61,6 +61,16 @@ content.getContact = async (session: string, id ?: BasicId) =>
 
     return result;
 }
+content.getFavorite = async (session: string) =>
+{
+    const url = content.NET_URL_FAVORITE;
+    const reader = await common.getJson (session, url);
+    const result = reader.requireArrayRecord ("Item").map ((x) =>
+    {
+        return content.outputGetFavorite (objectReader (x));
+    });
+    return result;
+}
 content.getOrder = async (session: string) =>
 {
     const url = content.NET_URL_ORDER;
@@ -161,6 +171,20 @@ content.createCart = async (session: string, data: CartCreate) =>
     return result;
 }
 /**
+ * เพิ่มสินค้าลงในรายการโปรดของตนเอง
+*/
+content.createFavorite = async (session: string, data: FavoriteCreate) =>
+{
+    const url = content.NET_URL_FAVORITE;
+    const response = await common.postJson (session, url, {
+        "ProductId": data.productId
+    });
+    const json = await common.toJson (response);
+    const result = content.outputPostFavorite (json);
+
+    return result;
+}
+/**
  * สร้างคำสั่งซื้อไปยังระบบ
 */
 content.createOrder = async (session: string, data: OrderCreate) =>
@@ -205,6 +229,15 @@ content.deleteCart = async (session: string, id: CartId) =>
     const endpoint = `${content.NET_URL_CART}/${key}`;
     await common.delete (session, endpoint);
 }
+/**
+ * ลบไอเท็มดังกล่าวออกจากรายการโปรดของบัญชีตนเอง
+*/
+content.deleteFavorite = async (session: string, id: CartId) =>
+{
+    const key = String (id);
+    const endpoint = `${content.NET_URL_FAVORITE}/${key}`;
+    await common.delete (session, endpoint);
+}
 
 /**
  * (ฟังก์ชั่นภายใน)
@@ -241,6 +274,16 @@ content.outputGetContact = (reader: ObjectReader) : ContactFetch =>
         phone: reader.requireString ("Phone"),
         address: reader.requireString ("Address"),
         name: reader.requireString ("Name"),
+    }
+}
+/**
+ * (ฟังก์ชั่นภายใน)
+*/
+content.outputGetFavorite = (reader: ObjectReader) : FavoriteFetch =>
+{
+    return {
+        favoriteId: reader.requireInteger ("FavoriteId"),
+        productId: reader.requireInteger ("ProductId"),
     }
 }
 /**
@@ -286,14 +329,23 @@ content.outputPostBasic = (reader: ObjectReader) : BasicCreateResult =>
 /**
  * (ฟังก์ชั่นภายใน)
 */
-content.outputPostCart = (reader: ObjectReader) : BasicCreateResult =>
+content.outputPostCart = (reader: ObjectReader) : CartCreateResult =>
 {
     return {
         id: reader.requireInteger ("Id"),
         created: reader.requireDate ("Created")
     }
 }
-
+/**
+ * (ฟังก์ชั่นภายใน)
+*/
+content.outputPostFavorite = (reader: ObjectReader) : FavoriteCreateResult =>
+{
+    return {
+        id: reader.requireInteger ("Id"),
+        created: reader.requireDate ("Created")
+    }
+}
 /**
  * โปรโตอลที่ใช้ในการสื่อสารระหว่างเซิร์ฟเวอร์
 */
@@ -319,6 +371,10 @@ content.NET_PREFIX_CART = "/account-cart";
 */
 content.NET_PREFIX_CONTACT = "/account-contact";
 /**
+ * เส้นทางนำหน้าหลังจากที่อยู่ของเซิร์ฟเวอร์ สำหรับข้อมูลรายการโปรด
+*/
+content.NET_PREFIX_FAVORITE = "/account-favorite";
+/**
  * เส้นทางนำหน้าหลังจากที่อยู่ของเซิร์ฟเวอร์ สำหรับข้อมูลคำสั่งซื้อ
 */
 content.NET_PREFIX_ORDER = "/account-order";
@@ -338,6 +394,10 @@ content.NET_URL_CART = `${content.NET_PROTOCOL}://${content.NET_ADDRESS}:${Strin
  * ลิงค์เต็มของที่อยู่เซิร์ฟเวอร์ สำหรับข้อมูลติดต่อ
 */
 content.NET_URL_CONTACT = `${content.NET_PROTOCOL}://${content.NET_ADDRESS}:${String (content.NET_PORT)}${content.NET_PREFIX_CONTACT}`;
+/**
+ * ลิงค์เต็มของที่อยู่เซิร์ฟเวอร์ สำหรับรายการโปรด
+*/
+content.NET_URL_FAVORITE = `${content.NET_PROTOCOL}://${content.NET_ADDRESS}:${String (content.NET_PORT)}${content.NET_PREFIX_FAVORITE}`;
 /**
  * ลิงค์เต็มของที่อยู่เซิร์ฟเวอร์ สำหรับระบบคำสั่งซื้อ
 */
@@ -496,6 +556,18 @@ export interface CartCreate
     */
     quantity: number;
 }
+export interface CartCreateResult
+{
+    /**
+     * รหัสบัญชี
+    */
+    id: number;
+    /**
+     * เวลาที่สร้างบัญชี (อาจคลาดเคลื่อน)
+    */
+    created: Date;
+}
+
 
 export interface ContactFetch
 {
@@ -543,6 +615,28 @@ export interface ContactUpdate
     */
     name ?: string | undefined;
 }
+
+export interface FavoriteFetch
+{
+    favoriteId: number;
+    productId: number;
+}
+export interface FavoriteCreate
+{
+    productId: number;
+}
+export interface FavoriteCreateResult
+{
+    /**
+     * รหัสบัญชี
+    */
+    id: number;
+    /**
+     * เวลาที่สร้างบัญชี (อาจคลาดเคลื่อน)
+    */
+    created: Date;
+}
+
 
 export interface OrderFetch
 {
@@ -655,6 +749,10 @@ export type BasicId = number;
  * รหัสของชุดรหัสข้อมูล (หรือเรียกอีกอย่างว่า PRIMARY KEY)
 */
 export type CartId = number;
+/**
+ * รหัสของชุดรหัสข้อมูล (หรือเรียกอีกอย่างว่า PRIMARY KEY)
+*/
+export type FavoriteId = number;
 /**
  * ส่งออกตัวแปร
 */

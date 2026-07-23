@@ -481,7 +481,7 @@ const StyleItemTitle = styled.h3`
   margin: 0;
 `;
 
-const StyleToggleButton = styled.div`
+const StyleToggleButton = styled.button`
   display: flex;
   align-items: center;
   gap: 4px;
