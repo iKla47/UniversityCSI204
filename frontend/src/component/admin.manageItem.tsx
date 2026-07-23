@@ -1,180 +1,218 @@
-import apiStorage from "#util/api.storage.ts";
-import { useState } from 'react';
-import { useProductList } from '#context/customer.js';
-import { type SubmitEvent } from 'react';
-import 
-{ 
-  Disc, Plus, Search, Filter, Trash2, X, AlertTriangle, Edit3 
-} 
-from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import productApi from '../util/api.product';
+import type { BasicFetch, BasicCreate, BasicUpdate } from '../util/api.product';
+import { useAuth } from '#context/common.js';
+import { 
+  Disc, Plus, Search, Trash2, X, AlertTriangle, Edit3, Loader2 
+} from 'lucide-react';
 
+// Interface รวมข้อมูลสินค้า + สต็อก เพื่อใช้งานใน UI
 interface GameItem {
-  id: string;
-  title: string;
-  platform: 'PS5' | 'Switch' | 'Xbox' | 'PS4';
-  genre: string;
+  id: number;
+  name: string;
+  platform: string;
   price: number;
   stock: number;
-  coverUrl: string;
+  description?: string;
 }
 
 export const ManageItemsPage: React.FC = () => {
-  // Mock Data รายการสินค้า
-  const productQuery = useProductList ({});
-  const games = !productQuery.data ? [] : productQuery.data.map ((x) =>
-  {
-    const result: GameItem = {
-      id: `GAME-${x.id.toString ().padStart (3, "0")}`,
-      title: x.name,
-      price: x.price,
-      stock: 0,
-      coverUrl: apiStorage.getUrlStream (x.cover),
-      genre: "",
-      platform: "PS5"
-    };
-    return result;
-  });
-  // const [games, setGames] = useState<GameItem[]>([
-  //   {
-  //     id: 'GAME-001',
-  //     title: 'Elden Ring: Shadow of the Erdtree',
-  //     platform: 'PS5',
-  //     genre: 'Action RPG',
-  //     price: 1990,
-  //     stock: 15,
-  //     coverUrl: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=300&q=80',
-  //   },
-  //   {
-  //     id: 'GAME-002',
-  //     title: 'The Legend of Zelda: Tears of the Kingdom',
-  //     platform: 'Switch',
-  //     genre: 'Adventure',
-  //     price: 1790,
-  //     stock: 3,
-  //     coverUrl: 'https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?auto=format&fit=crop&w=300&q=80',
-  //   },
-  //   {
-  //     id: 'GAME-003',
-  //     title: 'Monster Hunter Wilds',
-  //     platform: 'PS5',
-  //     genre: 'Action RPG',
-  //     price: 2290,
-  //     stock: 25,
-  //     coverUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=300&q=80',
-  //   }
-  // ]);
+  const auth = useAuth();
+  
+  // State หลัก
+  const [products, setProducts] = useState<GameItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // State สำหรับค้นหาและกรอง
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPlatform, setSelectedPlatform] = useState<string>('All');
-
-  // State สำหรับ Modal เพิ่มเกมใหม่
+  // Modal สเตตัส และ ฟอร์มสำหรับ "เพิ่มสินค้าใหม่"
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newGame, setNewGame] = useState<Omit<GameItem, 'id'>>({
-    title: '',
-    platform: 'PS5',
-    genre: 'Action RPG',
+  const [newGame, setNewGame] = useState({
+    name: '',
+    platform: 10, // Default เป็น ID Platform เช่น 10
     price: 0,
-    stock: 10,
-    coverUrl: '',
+    stock: 0,
+    description: '',
   });
 
-  // 🔴 State สำหรับ Modal แก้ไขเกม
-  const [isChangeModalOpen, setIsChangeModalOpen] = useState(false);
+  // Modal สเตตัส และ ฟอร์มสำหรับ "แก้ไขสินค้า"
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingGame, setEditingGame] = useState<GameItem | null>(null);
 
-  // ฟังก์ชันเพิ่มเกมใหม่
-  const handleAddGame = (e: SubmitEvent) => 
-  {
-    e.preventDefault();
-    e.stopPropagation ();
+  // 📡 1. โหลดข้อมูลสินค้า + สต็อก (อ้างอิง Logic แบบเดียวกับหน้า Staff)
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      // 1. ดึงรายการสินค้าทั้งหมด
+      const productList: BasicFetch[] = await productApi.getBasicList(auth.session);
 
-    if (!newGame.title || newGame.price <= 0) {
-      alert('กรุณากรอกชื่อเกมและราคาให้ถูกต้อง');
+      // 2. ดึงข้อมูลสต็อกของแต่ละสินค้าขนานกัน (Promise.all)
+      const combinedData: GameItem[] = await Promise.all(
+        productList.map(async (item) => {
+          let stockQty = 0;
+          try {
+            const stockData = await productApi.getStock(auth.session, item.id);
+            stockQty = stockData.quantity;
+          } catch {
+            stockQty = 0;
+          }
+
+          return {
+            id: item.id,
+            name: item.name,
+            platform: String(item.platform ?? 'N/A'),
+            price: item.price,
+            stock: stockQty,
+            description: item.description,
+          };
+        })
+      );
+
+      setProducts(combinedData);
+    } catch (err) {
+      console.error("Failed to load products or stocks:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadData();
+  }, []);
+
+  // ➕ 2. เพิ่มสินค้าใหม่ (createBasic + updateStock)
+  const handleAddGame = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGame.name || newGame.price <= 0) {
+      alert('กรุณากรอกข้อมูลสินค้าให้ถูกต้อง');
       return;
     }
 
-    // const createdGame: GameItem = 
-    // {
-    //   ...newGame,
-    //   id: `GAME-${String(games.length + 1).padStart(3, '0')}`,
-    //   coverUrl: newGame.coverUrl || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=300&q=80',
-    // };
+    try {
+      setIsSubmitting(true);
+      
+      const payload: BasicCreate = {
+        name: newGame.name,
+        description: newGame.description,
+        price: newGame.price,
+        priceCode: 1,
+        platform: Number(newGame.platform),
+        cover: undefined,        // 👈 เติมเพื่อป้องกัน TypeScript แจ้ง Error
+        background: undefined,
+      };
 
-    setIsAddModalOpen(false); // ปิด Modal
-    setNewGame ({
-      title: '',
-      platform: 'PS5',
-      genre: 'Action RPG',
-      price: 0,
-      stock: 10,
-      coverUrl: '',
-    });
+      // 1. สร้างสินค้า
+      const createRes = await productApi.createBasic(auth.session, payload);
+
+      // 2. อัปเดตสต็อกแรกเริ่ม (ถ้ามี ID คืนกลับมา)
+      if (createRes && createRes.id) {
+        await productApi.updateStock(auth.session, {
+          productId: createRes.id,
+          quantity: newGame.stock,
+        });
+      }
+
+      alert('เพิ่มสินค้าเรียบร้อยแล้ว!');
+      setIsAddModalOpen(false);
+      
+      // Reset Form
+      setNewGame({
+        name: '',
+        platform: 10,
+        price: 0,
+        stock: 0,
+        description: '',
+      });
+
+      await loadData(); // รีโหลดข้อมูล
+    } catch (err) {
+      console.error('Failed to add product:', err);
+      alert('เกิดข้อผิดพลาดในการเพิ่มสินค้า');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  //
-  // 🔴 ฟังก์ชันเปิด Modal แก้ไขข้อมูล (ดึงข้อมูลเกมแถวนั้นเข้า State)
-  //
-  const handleOpenEditModal = (game: GameItem) => {
-    setEditingGame(game);
-    setIsChangeModalOpen(true);
-  };
-
-  //
-  // 🔴 ฟังก์ชันบันทึกการแก้ไขเกม
-  //
-  const handleEditGame = (e: SubmitEvent) => 
-  {
-    e.preventDefault ();
-    e.stopPropagation ();
-
-    if (!editingGame?.title || editingGame.price <= 0) 
-    {
+  // ✏️ 3. แก้ไขข้อมูลสินค้า (updateBasic + updateStock)
+  const handleEditGame = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingGame || !editingGame.name || editingGame.price <= 0) {
       alert('กรุณากรอกข้อมูลให้ถูกต้อง');
       return;
     }
 
-    // setGames(games.map(g => g.id === editingGame.id ? editingGame : g));
-    setIsChangeModalOpen(false);
-    setEditingGame(null);
-  };
+    try {
+      setIsSubmitting(true);
 
-  //
-  // ฟังก์ชันลบเกม
-  //
-  const handleDeleteGame = (id: string) => 
-  {
-    void id;
-    if (confirm('คุณต้องการลบรายการเกมนี้ใช่หรือไม่?')) {
-      // setGames(games.filter(g => g.id !== id));
+      const updatePayload: BasicUpdate = {
+        id: editingGame.id,
+        name: editingGame.name,
+        description: editingGame.description ?? '',
+        price: editingGame.price,
+        priceCode: 1,
+        platform: Number(editingGame.platform),
+      };
+
+      // 1. อัปเดตข้อมูลพื้นฐาน
+      await productApi.updateBasic(auth.session, updatePayload);
+
+      // 2. อัปเดตสต็อกสินค้า
+      await productApi.updateStock(auth.session, {
+        productId: editingGame.id,
+        quantity: editingGame.stock,
+      });
+
+      alert('แก้ไขข้อมูลเรียบร้อยแล้ว!');
+      setIsEditModalOpen(false);
+      setEditingGame(null);
+
+      await loadData(); // รีโหลดข้อมูล
+    } catch (err) {
+      console.error('Failed to update product:', err);
+      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Filter รายการเกม
-  const filteredGames = games.filter(game => {
-    const matchesSearch = game.title.toLowerCase().includes(searchQuery.toLowerCase()) || game.id.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPlatform = selectedPlatform === 'All' || game.platform === selectedPlatform;
-    return matchesSearch && matchesPlatform;
-  });
+  // 🗑️ 4. ลบสินค้า (deleteBasic)
+  const handleDeleteGame = async (game: GameItem) => {
+    if (!confirm(`คุณต้องการลบรายการ "${game.name}" (ID: ${game.id}) ใช่หรือไม่?`)) return;
+
+    try {
+      setIsSubmitting(true);
+      await productApi.deleteBasic(auth.session, game.id);
+      alert('ลบสินค้าเรียบร้อยแล้ว');
+      await loadData(); // รีโหลดข้อมูล
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+      alert('เกิดข้อผิดพลาดในการลบสินค้า');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // กรองสินค้าตามคำค้นหา
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    String(product.id).includes(searchQuery)
+  );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-6 animate-in fade-in duration-200 p-6 bg-[#0b1220] text-white min-h-screen">
       
       {/* Header และ ปุ่มเพิ่มเกม */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-100 tracking-wide flex items-center gap-2">
             <Disc className="text-indigo-400" />
-            จัดการแผ่นและตลับเกม
+            จัดการแผ่นและตลับเกม (Staff/Admin)
           </h1>
-          <p className="text-sm text-slate-400 mt-1">คลังสินค้าเกม เพิ่ม แก้ไข ลบ รายการแผ่น/ตลับ และปรับจำนวนสต็อก</p>
+          <p className="text-sm text-slate-400 mt-1">คลังสินค้าเกม เพิ่ม แก้ไข ลบ รายการสินค้าและปรับจำนวนสต็อก</p>
         </div>
 
-        {/* ปุ่มเปิด Modal เพิ่มเกม */}
         <button
-          onClick={() => {
-            setIsAddModalOpen(true); 
-          }}
+          onClick={() => setIsAddModalOpen(true)}
           className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 shrink-0 active:scale-95"
         >
           <Plus size={18} />
@@ -182,268 +220,174 @@ export const ManageItemsPage: React.FC = () => {
         </button>
       </div>
 
-      {/* แถบ ค้นหา และ ตัวกรอง */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="sm:col-span-2 relative">
-          <Search className="absolute left-3 top-2.5 text-slate-500" size={18} />
-          <input 
-            type="text" 
-            placeholder="ค้นหาชื่อเกม หรือ ID..." 
-            value={searchQuery}
-            onChange={(e) => { 
-              setSearchQuery(e.target.value); 
-            }}
-            className="w-full bg-[#16223f]/40 border border-slate-800/80 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-500"
-          />
-        </div>
-        <div className="relative">
-          <Filter className="absolute left-3 top-2.5 text-slate-500" size={16} />
-          <select
-            value={selectedPlatform}
-            onChange={(e) => {
-              setSelectedPlatform(e.target.value);
-            }}
-            className="w-full bg-[#16223f]/40 border border-slate-800/80 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 appearance-none cursor-pointer"
-          >
-            <option value="All">ทุกแพลตฟอร์ม (All Platforms)</option>
-            <option value="PS5">PlayStation 5</option>
-            <option value="Switch">Nintendo Switch</option>
-            <option value="Xbox">Xbox Series X</option>
-            <option value="PS4">PlayStation 4</option>
-          </select>
-        </div>
+      {/* แถบค้นหา */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-2.5 text-slate-500" size={18} />
+        <input 
+          type="text" 
+          placeholder="ค้นหาด้วยชื่อสินค้า หรือ ID..." 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full bg-[#16223f]/40 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 placeholder-slate-500"
+        />
       </div>
 
       {/* ตารางแสดงรายการสินค้า */}
-      <div className="bg-[#16223f]/20 border border-slate-800/60 rounded-2xl overflow-hidden shadow-xl">
+      <div className="bg-[#111827] border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="bg-[#111a36]/50 border-b border-slate-800 text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                <th className="py-3.5 px-4">สินค้า</th>
-                <th className="py-3.5 px-4 text-center">แพลตฟอร์ม</th>
-                <th className="py-3.5 px-4">แนวเกม</th>
+              <tr className="bg-[#0f172a] border-b border-slate-800 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                <th className="py-3.5 px-4">ID</th>
+                <th className="py-3.5 px-4">ชื่อสินค้า</th>
+                <th className="py-3.5 px-4">แพลตฟอร์ม</th>
+                <th className="py-3.5 px-4 text-center">คงเหลือ (Stock)</th>
                 <th className="py-3.5 px-4 text-right">ราคา</th>
-                <th className="py-3.5 px-4 text-center">คงเหลือ</th>
                 <th className="py-3.5 px-4 text-center">จัดการ</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/40 text-slate-300">
-              {filteredGames.map((game) => (
-                <tr key={game.id} className="hover:bg-slate-800/10 transition-colors">
-                  <td className="py-3 px-4 flex items-center gap-3">
-                    <img 
-                      src={game.coverUrl} 
-                      alt={game.title} 
-                      className="w-10 h-12 rounded-lg object-cover bg-slate-800 shrink-0 border border-slate-700/50" 
-                    />
-                    <div>
-                      <div className="font-bold text-slate-100">{game.title}</div>
-                      <div className="text-[11px] font-mono text-indigo-400">{game.id}</div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${
-                      game.platform === 'PS5' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                      game.platform === 'Switch' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
-                      'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                    }`}>
-                      {game.platform}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-xs text-slate-400">{game.genre}</td>
-                  <td className="py-3 px-4 text-right font-bold text-slate-100">฿{game.price.toLocaleString()}</td>
-                  <td className="py-3 px-4 text-center">
-                    {game.stock <= 5 ? (
-                      <span className="text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md text-xs font-bold inline-flex items-center gap-1">
-                        <AlertTriangle size={12} /> {game.stock} (ใกล้หมด)
-                      </span>
-                    ) : (
-                      <span className="text-slate-300 font-medium">{game.stock} ชิ้น</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      {/* 🔴 แก้ไขปุ่ม onClick แก้ไขเกม */}
-                      <button
-                        onClick={() =>  {
-                          handleOpenEditModal(game); 
-                        }}  
-                        className="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-indigo-200 rounded-md border border-slate-700 flex items-center gap-1 transition-colors"
-                      >
-                        <Edit3 size={13} />
-                      </button>
-                      <button 
-                        onClick={() => {
-                          handleDeleteGame(game.id);
-                        }}
-                        className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                        title="ลบเกม"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+            <tbody className="divide-y divide-slate-800/60 text-slate-300">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-slate-400">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-indigo-400 mb-2" />
+                    กำลังโหลดข้อมูลสินค้า...
                   </td>
                 </tr>
-              ))}
+              ) : filteredProducts.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-slate-500">
+                    ไม่พบรายการสินค้า
+                  </td>
+                </tr>
+              ) : (
+                filteredProducts.map((product) => (
+                  <tr key={product.id} className="hover:bg-slate-800/30 transition-colors">
+                    <td className="py-3.5 px-4 font-mono text-indigo-400 font-bold">#{product.id}</td>
+                    <td className="py-3.5 px-4 font-semibold text-slate-100">{product.name}</td>
+                    <td className="py-3.5 px-4 text-slate-400">{product.platform}</td>
+                    <td className="py-3.5 px-4 text-center">
+                      {product.stock === 0 ? (
+                        <span className="text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-md text-xs font-bold inline-flex items-center gap-1">
+                          <AlertTriangle size={12} /> Out of Stock
+                        </span>
+                      ) : product.stock <= 5 ? (
+                        <span className="text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-md text-xs font-bold">
+                          {product.stock} ชิ้น (ใกล้หมด)
+                        </span>
+                      ) : (
+                        <span className="text-slate-200 font-medium">{product.stock} ชิ้น</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 text-right font-bold text-slate-100">฿{product.price.toLocaleString()}</td>
+                    <td className="py-3.5 px-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingGame(product);
+                            setIsEditModalOpen(true);
+                          }}  
+                          className="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-lg border border-slate-700 transition-colors"
+                          title="แก้ไขสินค้า"
+                          disabled={isSubmitting}
+                        >
+                          <Edit3 size={15} />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteGame(product)}
+                          className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                          title="ลบสินค้า"
+                          disabled={isSubmitting}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* 🟢 MODAL ฟอร์มเพิ่มเกมใหม่ */}
+      {/* 🟢 MODAL เพิ่มสินค้าใหม่ */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-[#0f162c] border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-5">
-            
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-[#0f172a] border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
                 <Plus className="text-indigo-400" size={20} />
-                เพิ่มแผ่น/ตลับเกมใหม่
+                เพิ่มสินค้าใหม่
               </h2>
-              <button 
-                onClick={() => { 
-                  setIsAddModalOpen(false); 
-                }}
-                className="text-slate-500 hover:text-slate-300 p-1 rounded-lg"
-              >
+              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-500 hover:text-slate-300">
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleAddGame} className="space-y-4 text-xs">
-              
-              {/* ชื่อเกม */}
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">ชื่อเกม (Title)</label>
+                <label className="block text-slate-400 mb-1 font-medium">ชื่อสินค้า (Name)</label>
                 <input 
                   type="text" 
                   required
-                  placeholder="เช่น Final Fantasy XVI"
-                  value={newGame.title}
-                  onChange={(e) => {
-                    setNewGame({ ...newGame, title: e.target.value }); 
-                  }}
-                  className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                  value={newGame.name}
+                  onChange={(e) => setNewGame({ ...newGame, name: e.target.value })}
+                  className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-medium">แพลตฟอร์ม</label>
-                  <select
-                    value={newGame.platform}
-                    onChange={(e) => {
-                      setNewGame({ ...newGame, platform: e.target.value as "PS5"});
-                    }}
-                    className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500"
-                  >
-                    <option value="PS5">PlayStation 5</option>
-                    <option value="Switch">Nintendo Switch</option>
-                    <option value="Xbox">Xbox Series X</option>
-                    <option value="PS4">PlayStation 4</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 mb-1 font-medium">แนวเกม (Genre)</label>
-                  <select
-                    value={newGame.genre}
-                    onChange={(e) => {
-                      setNewGame({ ...newGame, genre: e.target.value });
-                    }}
-                    className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500"
-                  >
-                    <option value="Action RPG">Action RPG</option>
-                    <option value="Adventure">Adventure</option>
-                    <option value="Turn-Based RPG">Turn-Based RPG</option>
-                    <option value="Fighting">Fighting</option>
-                    <option value="Open World">Open World</option>
-                    <option value="Sports">Sports</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-400 mb-1 font-medium">ราคา (บาท)</label>
+                  <label className="block text-slate-400 mb-1 font-medium">ราคา (Price)</label>
                   <input 
                     type="number" 
                     required
                     min="1"
-                    placeholder="1990"
                     value={newGame.price || ''}
-                    onChange={(e) => {
-                      setNewGame({ ...newGame, price: Number(e.target.value) });
-                    }}
-                    className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                    onChange={(e) => setNewGame({ ...newGame, price: Number(e.target.value) })}
+                    className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1 font-medium">จำนวนสต็อก (ชิ้น)</label>
+                  <label className="block text-slate-400 mb-1 font-medium">จำนวนสต็อก (Stock)</label>
                   <input 
                     type="number" 
                     required
                     min="0"
-                    placeholder="10"
                     value={newGame.stock}
-                    onChange={(e) => {
-                      setNewGame({ ...newGame, stock: Number(e.target.value) });
-                    }}
-                    className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                    onChange={(e) => setNewGame({ ...newGame, stock: Number(e.target.value) })}
+                    className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">รูปภาพปกเกม</label>
-                <input 
-                  type="url" 
-                  placeholder="https://example.com/cover.jpg"
-                  value={newGame.coverUrl}
-                  onChange={(e) => {
-                    setNewGame({ ...newGame, coverUrl: e.target.value }); 
-                  }}
-                  className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-400 mb-1 font-medium">รูปภาพพื้นหลัง</label>
-                <input 
-                  type="url" 
-                  placeholder="https://example.com/background.jpg"
-                  
-                  className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-400 mb-1 font-medium">ข้อมูลเกม</label>
-                <input 
-                  type="text" 
-                  placeholder="ใส่รายละเอียดเกม"
-                  
-                  className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                <label className="block text-slate-400 mb-1 font-medium">รายละเอียด (Description)</label>
+                <textarea 
+                  rows={3}
+                  value={newGame.description}
+                  onChange={(e) => setNewGame({ ...newGame, description: e.target.value })}
+                  className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
               <div className="flex gap-2 pt-2">
                 <button 
                   type="button" 
-                  onClick={() => {
-                    setIsAddModalOpen(false);
-                  }}
-                  className="w-1/2 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold"
+                  disabled={isSubmitting}
                 >
                   ยกเลิก
                 </button>
                 <button 
                   type="submit" 
-                  className="w-1/2 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20"
+                  disabled={isSubmitting}
+                  className="w-1/2 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold flex items-center justify-center gap-2"
                 >
-                  บันทึกสินค้า
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'บันทึกสินค้า'}
                 </button>
               </div>
             </form>
@@ -451,150 +395,85 @@ export const ManageItemsPage: React.FC = () => {
         </div>
       )}
 
-      {/* 🔵 MODAL แก้ไขข้อมูลเกม */}
-      {isChangeModalOpen && editingGame && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-[#0f162c] border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-5">
-            
+      {/* 🔵 MODAL แก้ไขสินค้า */}
+      {isEditModalOpen && editingGame && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-[#0f172a] border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
                 <Edit3 className="text-indigo-400" size={20} />
-                แก้ไขข้อมูลเกม ({editingGame.id})
+                แก้ไขสินค้า (ID: #{editingGame.id})
               </h2>
-              <button 
-                onClick={() => { 
-                  setIsChangeModalOpen(false); 
-                }}
-                className="text-slate-500 hover:text-slate-300 p-1 rounded-lg"
-              >
+              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-500 hover:text-slate-300">
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleEditGame} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">ชื่อเกม (Title)</label>
+                <label className="block text-slate-400 mb-1 font-medium">ชื่อสินค้า (Name)</label>
                 <input 
                   type="text" 
                   required
-                  value={editingGame.title}
-                  onChange={(e) => {
-                    setEditingGame({ ...editingGame, title: e.target.value }); 
-                  }}
-                  className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                  value={editingGame.name}
+                  onChange={(e) => setEditingGame({ ...editingGame, name: e.target.value })}
+                  className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-medium">แพลตฟอร์ม</label>
-                  <select
-                    value={editingGame.platform}
-                    onChange={(e) => {
-                      setEditingGame({ 
-                        ...editingGame, platform: e.target.value as "PS5" });
-                    }}
-                    className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500"
-                  >
-                    <option value="PS5">PlayStation 5</option>
-                    <option value="Switch">Nintendo Switch</option>
-                    <option value="Xbox">Xbox Series X</option>
-                    <option value="PS4">PlayStation 4</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 mb-1 font-medium">แนวเกม (Genre)</label>
-                  <select
-                    value={editingGame.genre}
-                    onChange={(e) => {
-                      setEditingGame({ ...editingGame, genre: e.target.value });
-                    }}
-                    className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500"
-                  >
-                    <option value="Action RPG">Action RPG</option>
-                    <option value="Adventure">Adventure</option>
-                    <option value="Turn-Based RPG">Turn-Based RPG</option>
-                    <option value="Fighting">Fighting</option>
-                    <option value="Open World">Open World</option>
-                    <option value="Sports">Sports</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-400 mb-1 font-medium">ราคา (บาท)</label>
+                  <label className="block text-slate-400 mb-1 font-medium">ราคา (Price)</label>
                   <input 
                     type="number" 
                     required
                     min="1"
                     value={editingGame.price}
-                    onChange={(e) => {
-                      setEditingGame({ ...editingGame, price: Number(e.target.value) });
-                    }}
-                    className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                    onChange={(e) => setEditingGame({ ...editingGame, price: Number(e.target.value) })}
+                    className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1 font-medium">จำนวนสต็อก (ชิ้น)</label>
+                  <label className="block text-slate-400 mb-1 font-medium">จำนวนสต็อก (Stock)</label>
                   <input 
                     type="number" 
                     required
                     min="0"
                     value={editingGame.stock}
-                    onChange={(e) => { setEditingGame({ ...editingGame, stock: Number(e.target.value) });
-                    }}
-                    className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                    onChange={(e) => setEditingGame({ ...editingGame, stock: Number(e.target.value) })}
+                    className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">รูปภาพปกเกม</label>
-                <input 
-                  type="url" 
-                  value={editingGame.coverUrl}
-                  onChange={(e) => {
-                    setEditingGame({ ...editingGame, coverUrl: e.target.value });
-                  }}
-                  className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-400 mb-1 font-medium">รูปภาพปกเกม</label>
-                <input 
-                  type="url" 
-                  placeholder="ใส่ลิงค์ปกเกม"
-                  className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-400 mb-1 font-medium">ข้อมูลเกม</label>
-                <input 
-                  type="text"
-                  placeholder="ใส่ข้อมูลเกม"
-                  className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                <label className="block text-slate-400 mb-1 font-medium">รายละเอียด (Description)</label>
+                <textarea 
+                  rows={3}
+                  value={editingGame.description || ''}
+                  onChange={(e) => setEditingGame({ ...editingGame, description: e.target.value })}
+                  className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
               <div className="flex gap-2 pt-2">
                 <button 
                   type="button" 
-                  onClick={() => { setIsChangeModalOpen (false); }}
-                  className="w-1/2 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold"
+                  disabled={isSubmitting}
                 >
                   ยกเลิก
                 </button>
                 <button 
                   type="submit" 
-                  className="w-1/2 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20"
+                  disabled={isSubmitting}
+                  className="w-1/2 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold flex items-center justify-center gap-2"
                 >
-                  บันทึกการแก้ไข
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'บันทึกการแก้ไข'}
                 </button>
               </div>
-
             </form>
           </div>
         </div>

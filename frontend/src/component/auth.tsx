@@ -1,38 +1,41 @@
 import bg from "#asset/image/auth.bg.jpg";
 
-import { styled } from "styled-components";
-import { useState, useRef, lazy } from "react";
-import { type Session } from "#util/api.auth.ts";
+import { styled, keyframes } from "styled-components";
+import { useState, useRef, lazy, useEffect } from "react";
+import apiAuth, { type Session } from "#util/api.auth.ts";
 import { 
   type MouseEvent, 
   type ReactNode, 
   type ReactElement 
-
-} 
-from "react";
+} from "react";
 
 import { ArrowLeft, ShieldAlert } from "lucide-react";
-import { keyframes } from "styled-components";
 
-const SignIn = lazy (() => import ("#component/auth.signin.tsx"));
-const SignUp = lazy (() => import ("#component/auth.signup.tsx"));
+const SignIn = lazy(() => import("#component/auth.signin.tsx"));
+const SignUp = lazy(() => import("#component/auth.signup.tsx"));
 
 /**
  * ส่วนประกอบแสดงผลแบบหน้าต่าง
 */
-const content = function Auth (prop: PropContent)
-{
-  const page = useState (content.PAGE_SIGN_IN_ID);
-  const pending = useState (false);
-  const feedback = useState (content.createEmptyFeedback ());
-  const session = useRef (content.createEmptySession ());
-  const id = useRef ("");
+const content = function Auth(prop: PropContent) {
+  const page = useState(content.PAGE_SIGN_IN_ID);
+  const pending = useState(false);
+  const feedback = useState(content.createEmptyFeedback());
+  const session = useRef(content.createEmptySession());
+  const id = useRef("");
+
+  // 🔒 ความปลอดภัย: เมื่อเข้ามาที่หน้า Auth ให้ทำการเคลียร์ Session เก่าทิ้งทันที
+  // ป้องกันปัญหากดย้อนกลับ (Back Button) มาแล้วยังถือ Auth สิทธิ์เดิมอยู่
+  useEffect(() => {
+    apiAuth.saveSetPrefered(-1);
+    apiAuth.saveWrite();
+  }, []);
 
   return (
     <content.View>
-      <content.ViewBackground/>
+      <content.ViewBackground />
       <content.ViewForm transparent={prop.transparent ?? false}>
-        <content.FormHome/>
+        <content.FormHome />
         <SignIn
           staPage={page}
           staPending={pending}
@@ -41,7 +44,8 @@ const content = function Auth (prop: PropContent)
           refId={id}
           title={prop.title}
           description={prop.description}
-          onComplete={prop.onSignedIn}/>
+          onComplete={prop.onSignedIn}
+        />
         <SignUp
           staPage={page}
           staPending={pending}
@@ -49,12 +53,14 @@ const content = function Auth (prop: PropContent)
           refSession={session}
           refId={id}
           title={prop.title}
-          description={prop.description}/>
-        <content.ViewPending visible={pending [0]}/>
+          description={prop.description}
+        />
+        <content.ViewPending visible={pending[0]} />
       </content.ViewForm>
     </content.View>
   );
-}
+};
+
 /**
  * โหมดแสดงผล: ไม่ทราบ
 */
@@ -66,7 +72,8 @@ content.VISIBLE_HIDDEN = 1;
 /**
  * โหมดแสดงผล: แสดงทันที
 */
-content.VISIBLE_SHOWN = 101;
+content.VISIBLE_SHOWN = 2;
+
 /**
  * ไม่มีการใช้งานแอนิเมชั่นใด ๆ
 */
@@ -77,6 +84,7 @@ content.ANIM_SCALE_DOWN = 3;
 content.ANIM_SCALE_DOWN_UP = 4;
 content.ANIM_SLIDE_LEFT_TO_RIGHT = 5;
 content.ANIM_SLIDE_RIGHT_TO_LEFT = 6;
+
 /**
  * การแสดงผล: ไม่ทราบ
 */
@@ -97,9 +105,8 @@ content.PAGE_SIGN_IN_PWD = 3;
  * การแสดงผล: หน้าใส่รหัส TOTP
 */
 content.PAGE_SIGN_IN_TOTP = 4;
-
 /**
- * การแสดงผล: หน้าใส่รหัส TOTP
+ * การแสดงผล: บัญชีถูกระงับ
 */
 content.PAGE_SUSPENDED = 11;
 /**
@@ -120,23 +127,22 @@ content.FEEDBACK_WARNING = 1;
 */
 content.FEEDBACK_ERROR = 2;
 
-content.createEmptyFeedback = () : PropTemplateFeedback =>
-{
+content.createEmptyFeedback = (): PropTemplateFeedback => {
   return {
     type: content.FEEDBACK_UNDEFINED,
     text: ""
-  }
-}
-content.createEmptySession = () : Session =>
-{
+  };
+};
+
+content.createEmptySession = (): Session => {
   return {
     secret: "",
-    issued: Date.prototype,
-    expire: Date.prototype
-  }
-}
-content.View = function AuthView (prop: PropView)
-{
+    issued: new Date(),
+    expire: new Date()
+  };
+};
+
+content.View = function AuthView(prop: PropView) {
   return (
     <StyleView>
       <StyleViewInner>
@@ -144,127 +150,127 @@ content.View = function AuthView (prop: PropView)
       </StyleViewInner>
     </StyleView>
   );
-}
-content.ViewBackground = function AuthViewBackground ()
-{
-  return (<StyleViewBackground src={bg}/>)
-}
-content.ViewForm = function AuthViewForm (prop: PropViewForm)
-{
+};
+
+content.ViewBackground = function AuthViewBackground() {
+  return (<StyleViewBackground src={bg} />);
+};
+
+content.ViewForm = function AuthViewForm(prop: PropViewForm) {
   return (
     <StyleForm $transparent={prop.transparent}>
       {prop.children}
     </StyleForm>
   );
-}
-content.ViewPending = function AuthViewPending (prop: PropViewFormPending)
-{
+};
+
+content.ViewPending = function AuthViewPending(prop: PropViewFormPending) {
   return (
-    <StyleFormPending $visible={prop.visible ?? false}/>
+    <StyleFormPending $visible={prop.visible ?? false} />
   );
-}
-content.FormHome = function AuthFormHome ()
-{
+};
+
+content.FormHome = function AuthFormHome() {
   return (<></>);
-}
-content.TemplateDiv = function AuthTempDiv (prop: PropTemplateDiv)
-{
+};
+
+content.TemplateDiv = function AuthTempDiv(prop: PropTemplateDiv) {
   return (
     <StyleTempDiv $visible={prop.visible ?? true}>
       {prop.children}
     </StyleTempDiv>
   );
-}
-content.TemplateHeader = function AuthTempHeader (prop: PropTemplateHeader)
-{
-  const onBack = (event: MouseEvent) =>
-  {
-    event.preventDefault ();
-    event.stopPropagation ();
+};
+
+content.TemplateHeader = function AuthTempHeader(prop: PropTemplateHeader) {
+  const onBack = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
 
     if (prop.onBack) {
-      prop.onBack ();
+      prop.onBack();
     }
-  }
+  };
 
   return (
     <StyleTempHeader>
       <StyleTempHeaderTitle>{prop.title ?? ""}</StyleTempHeaderTitle>
       <StyleTempHeaderDesc>{prop.description ?? ""}</StyleTempHeaderDesc>
-      {prop.onBack ?
-      <StyleTempHeaderBack onClick={onBack}>
-        <ArrowLeft/>
-        <span>ย้อนกลับ</span>
-      </StyleTempHeaderBack> : <></>}
+      {prop.onBack ? (
+        <StyleTempHeaderBack onClick={onBack}>
+          <ArrowLeft />
+          <span>ย้อนกลับ</span>
+        </StyleTempHeaderBack>
+      ) : <></>}
     </StyleTempHeader>
   );
-}
-content.TemplateMain = function AuthTempMain (prop: PropTemplateMain)
-{
+};
+
+content.TemplateMain = function AuthTempMain(prop: PropTemplateMain) {
   return (
     <StyleTempMain>
       {prop.children}
     </StyleTempMain>
   );
-}
-content.TemplateFooter = function AuthTempFooter (prop: PropTemplateFooter)
-{
+};
+
+content.TemplateFooter = function AuthTempFooter(prop: PropTemplateFooter) {
   return (
     <StyleTempFooter>
       {prop.children}
     </StyleTempFooter>
   );
-}
-content.TemplateOption = function AuthTempOption (prop: PropTemplateOption)
-{
-  const onClick = (event: MouseEvent) =>
-  {
-    event.preventDefault ();
-    event.stopPropagation ();
+};
+
+content.TemplateOption = function AuthTempOption(prop: PropTemplateOption) {
+  const onClick = (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
 
     if (prop.onClick) {
-      prop.onClick ();
+      prop.onClick();
     }
-  }
+  };
 
   return (
     <StyleTempOption disabled={prop.disabled ?? false} onClick={onClick}>
-      {
-        typeof prop.icon === "string" ? 
-          <img src={prop.icon}/> 
-          : 
-          prop.icon
-      }
+      {typeof prop.icon === "string" ? (
+        <img src={prop.icon} alt="Option Icon" />
+      ) : (
+        prop.icon
+      )}
       <span>{prop.text}</span>
     </StyleTempOption>
   );
-}
-content.TemplateFeedback = function AuthTempFeedback (
-  prop: PropTemplateFeedback
-)
-{
+};
+
+content.TemplateFeedback = function AuthTempFeedback(prop: PropTemplateFeedback) {
   return (
     <StyleTempFeedback $color={prop.type ?? content.FEEDBACK_UNDEFINED}>
       {prop.text}
     </StyleTempFeedback>
   );
-}
-content.TemplatePrivacyNotice = function AuthTempPrivacyText ()
-{
+};
+
+content.TemplatePrivacyNotice = function AuthTempPrivacyText() {
   return (
     <StyleTempPrivacyNotice>
-      <ShieldAlert size={24}/>
+      <ShieldAlert size={24} />
       หากนี้ไม่ใช่อุปกรณ์ของคุณ 
       <span>ให้ใช้งานโหมดไม่ระบุตัวตนของเบราว์เซอร์</span>
       <span>เพื่อเลี่ยงความเสี่ยงการรั่วไหลของข้อมูลของคุณ</span>
     </StyleTempPrivacyNotice>
   );
-}
+};
 
+/* ==========================================================================
+   Styled Components
+   ========================================================================== */
 const StyleView = styled.div`
   position: fixed;
   inset: 0px;
 `;
+
 const StyleViewInner = styled.div`
   position: relative;
   width: 100%;
@@ -276,6 +282,7 @@ const StyleViewInner = styled.div`
   justify-content: center;
   align-items: center;
 `;
+
 const StyleViewBackground = styled.img`
   position: absolute;
   object-fit: cover;
@@ -283,36 +290,26 @@ const StyleViewBackground = styled.img`
   height: 100%;
   transition: opacity 250ms cubic-bezier(0.16, 1, 0.3, 1);
 
-  @media (max-width: 512px)
-  {
+  @media (max-width: 512px) {
     opacity: 0.0;
   }
 `;
 
 const AnimFormOpen = keyframes`
-  from { scale: 1.25;}
+  from { scale: 1.25; }
   to { scale: 1.0; }
 `;
 
 const AnimFormPending = keyframes`
-  /* 0% { background-position: 0% 50%; }
-  50% { background-position:100% 50%; }
-  100% { background-position:0% 50%; } */
-
   0% { background-position: 100% 100%; }
   100% { background-position: 0% 100%; }
 `;
 
-const StyleForm = styled.form<{ $transparent ?: boolean; }>`
-
+const StyleForm = styled.form<{ $transparent?: boolean }>`
   width: 512px;
   height: 572px;
-  background-color: ${
-    prop => prop.$transparent ? 'transparent' : 'var(--bg-primary)'
-  };
-  outline: 2px solid ${
-    prop => prop.$transparent ? 'transparent' : 'var(--bg-primary-border)'
-  };
+  background-color: ${prop => prop.$transparent ? 'transparent' : 'var(--bg-primary)'};
+  outline: 2px solid ${prop => prop.$transparent ? 'transparent' : 'var(--bg-primary-border)'};
   border-radius: 8px;
   transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
   animation-name: ${AnimFormOpen};
@@ -322,8 +319,7 @@ const StyleForm = styled.form<{ $transparent ?: boolean; }>`
   position: relative;
   overflow: hidden;
 
-  @media (max-width: 512px)
-  {
+  @media (max-width: 512px) {
     outline-width: 0px;
     width: 100%;
     height: 100%;
@@ -331,7 +327,8 @@ const StyleForm = styled.form<{ $transparent ?: boolean; }>`
     border-radius: 0px;
   }
 `;
-const StyleFormPending = styled.div<{ $visible: boolean; }>`
+
+const StyleFormPending = styled.div<{ $visible: boolean }>`
   pointer-events: none;
   position: absolute;
   inset: 0px 0px auto 0px;
@@ -354,15 +351,10 @@ const StyleFormPending = styled.div<{ $visible: boolean; }>`
   background-size: 400% 400%;
   transition: opacity 250ms cubic-bezier(0.16, 1, 0.3, 1);
 
-  -webkit-animation: ${AnimFormPending} 1000ms 
-    cubic-bezier(0.85, 0, 0.15, 1) infinite;
-  -moz-animation: ${AnimFormPending} 1000ms 
-    cubic-bezier(0.85, 0, 0.15, 1) infinite;
-  animation: ${AnimFormPending} 1000ms 
-    cubic-bezier(0.85, 0, 0.15, 1) infinite;
+  animation: ${AnimFormPending} 1000ms cubic-bezier(0.85, 0, 0.15, 1) infinite;
 `;
-const StyleTempDiv = styled.div<{ $visible: boolean; }>`
 
+const StyleTempDiv = styled.div<{ $visible: boolean }>`
   pointer-events: ${prop => prop.$visible ? "all" : "none"};
   position: absolute;
   inset: 0px;
@@ -373,11 +365,13 @@ const StyleTempDiv = styled.div<{ $visible: boolean; }>`
   opacity: ${prop => prop.$visible ? "1.0" : "0.0"};
   transition: opacity 500ms cubic-bezier(0.16, 1, 0.3, 1);
 `;
+
 const StyleTempHeader = styled.header`
   width: 100%;
   height: 128px;
   padding: 16px 16px 0px 16px;
 `;
+
 const StyleTempHeaderBack = styled.button`
   width: 144px;
   font-size: 1rem;
@@ -387,23 +381,25 @@ const StyleTempHeaderBack = styled.button`
   margin: 16px 0px;
 
   & > img,
-  & > svg
-  {
+  & > svg {
     display: inline-block;
     margin-right: 16px;
     vertical-align: middle;
   }
 `;
+
 const StyleTempHeaderTitle = styled.h1`
   width: 100%;
   font-size: 2rem;
   font-weight: normal;
 `;
+
 const StyleTempHeaderDesc = styled.p`
   width: 100%;
   font-size: 1rem;
   font-weight: normal;
 `;
+
 const StyleTempMain = styled.main`
   width: 100%;
   height: 100%;
@@ -426,20 +422,19 @@ const StyleTempPrivacyNotice = styled.p`
   font-size: 1rem;
   margin: 0px 16px 16px 16px;
 
-  @media (max-width: 512px)
-  {
+  @media (max-width: 512px) {
     background-color: var(--bg-primary);
     border-radius: 4px;
     padding: 8px;
   }
   & > img,
-  & > svg
-  {
+  & > svg {
     display: inline-block;
     vertical-align: middle;
     margin-right: 8px;
   }
 `;
+
 const StyleTempOption = styled.button`
   background-color: transparent;
   border: transparent;
@@ -448,8 +443,7 @@ const StyleTempOption = styled.button`
   text-align: start;
 
   & > img,
-  & > svg
-  {
+  & > svg {
     display: inline-block;
     width: 24px;
     height: 24px;
@@ -457,7 +451,8 @@ const StyleTempOption = styled.button`
     margin-right: 16px;
   }
 `;
-const StyleTempFeedback = styled.p<{ $color: number; }>`
+
+const StyleTempFeedback = styled.p<{ $color: number }>`
   font-size: 1rem;
   font-weight: normal;
   width: 100%;
@@ -466,115 +461,67 @@ const StyleTempFeedback = styled.p<{ $color: number; }>`
     prop.$color === content.FEEDBACK_WARNING ? "var(--text-warning)" :
     prop.$color === content.FEEDBACK_ERROR ? "var(--text-error)" :
     "var(--text-primary)"
-  }
+  };
 `;
 
+/* ==========================================================================
+   Interfaces
+   ========================================================================== */
+export interface PropContent {
+  visible?: boolean;
+  page?: number;
+  transparent?: boolean;
+  title?: string;
+  description?: string;
+  onSignedIn?: () => void;
+  onSignedUp?: () => void;
+  onCancel?: () => void;
+}
 
-/**
- * โครงสร้างคุณสมบัติของส่วนประกอบหลัก
-*/
-export interface PropContent
-{
-  /**
-   * ระบุสถานะการแสดงผล (แสดง/ซ่อน)
-  */
-  visible ?: boolean;
-  /**
-   * ระบุหน้าเริ่มต้น
-  */
-  page ?: number;
-  /**
-   * ระบุว่าพื้นหลังควรโปร่งใส่หรือไม่
-  */
-  transparent ?: boolean;
-  /**
-   * ข้อความหัวเรื่อง
-  */
-  title ?: string;
-  /**
-   * ข้อความอธิบาย
-  */
-  description ?: string;
-  /**
-   * ทำงานเมื่อผู้ใช้ทำการลงชื่อเข้าใช้สำเร็จ
-  */
-  onSignedIn ?: () => void;
-  /**
-   * ทำงานเมื่อผู้ใช้ทำการสร้างบัญชีสำเร็จ
-  */
-  onSignedUp ?: () => void;
-  /**
-   * ทำงานเมื่อผู้ใช้ทำการกดปุ่มยกเลิกการทำงาน
-  */
-  onCancel ?: () => void;
+export interface PropView {
+  children?: ReactNode;
 }
-export interface PropView
-{
-  /**
-   * องค์ประกอบย่อยที่อยู่ในภายแท็กดังกล่าว (ถ้ามี)
-  */
-  children ?: ReactNode;
+
+export interface PropViewForm {
+  transparent?: boolean;
+  children?: ReactNode;
 }
-export interface PropViewForm
-{
-  transparent ?: boolean;
-  /**
-   * องค์ประกอบย่อยที่อยู่ในภายแท็กดังกล่าว (ถ้ามี)
-  */
-  children ?: ReactNode;
+
+export interface PropViewFormPending {
+  visible?: boolean;
 }
-export interface PropViewFormPending
-{
-  /**
-   * ระบุสถานะการแสดงผล (แสดง/ซ่อน)
-  */
-  visible ?: boolean;
+
+export interface PropTemplateDiv {
+  visible?: boolean;
+  children?: ReactNode;
 }
-export interface PropTemplateDiv
-{
-  /**
-   * ระบุสถานะการแสดงผล (แสดง/ซ่อน)
-  */
-  visible ?: boolean;
-  /**
-   * องค์ประกอบย่อยที่อยู่ในภายแท็กดังกล่าว (ถ้ามี)
-  */
-  children ?: ReactNode;
+
+export interface PropTemplateHeader {
+  title?: string;
+  description?: string;
+  onBack?: () => void;
 }
-export interface PropTemplateHeader
-{
-  title ?: string;
-  description ?: string;
-  onBack ?: () => void;
+
+export interface PropTemplateMain {
+  children?: ReactNode;
 }
-export interface PropTemplateMain
-{
-  /**
-   * องค์ประกอบย่อยที่อยู่ในภายแท็กดังกล่าว (ถ้ามี)
-  */
-  children ?: ReactNode;
+
+export interface PropTemplateFooter {
+  children?: ReactNode;
 }
-export interface PropTemplateFooter
-{
-  /**
-   * องค์ประกอบย่อยที่อยู่ในภายแท็กดังกล่าว (ถ้ามี)
-  */
-  children ?: ReactNode;
+
+export interface PropTemplateOption {
+  icon?: string | ReactElement;
+  text?: string;
+  disabled?: boolean;
+  onClick?: () => void;
 }
-export interface PropTemplateOption
-{
-  icon ?: string | ReactElement;
-  text ?: string;
-  disabled ?: boolean;
-  onClick ?: () => void;
+
+export interface PropTemplateFeedback {
+  type?: number;
+  text?: string;
 }
-export interface PropTemplateFeedback
-{
-  type ?: number;
-  text ?: string;
-}
+
 export type ActivityMode = "visible" | "hidden" | undefined;
-/**
- * ส่งออกตัวแปร
-*/
+
 export default content;
