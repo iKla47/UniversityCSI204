@@ -7,6 +7,11 @@ import apiAccount from "#util/api.account.ts";
 import apiProduct from "#util/api.product.ts";
 import apiPromotion from "#util/api.promotion.ts";
 
+import
+{
+    type BasicId as AccountId
+}
+from "#util/api.account.ts";
 import 
 { 
     type BasicId as ProductId,
@@ -61,6 +66,20 @@ export function useAccountBasic ()
     return useQuery ({
         queryKey: ["Account", "Basic"],
         queryFn: () => apiAccount.getBasic (auth.session),
+        enabled: apiAuth.checkSession ({
+            secret: auth.session,
+            issued: auth.sessionIssued,
+            expire: auth.sessionExpire
+        }),
+        throwOnError: false
+    });
+}
+export function useAccountBasicOf (id: AccountId)
+{
+    const auth = useAuth ();
+    return useQuery ({
+        queryKey: ["Account", "Basic", id],
+        queryFn: () => apiAccount.getBasic (auth.session, id),
         enabled: apiAuth.checkSession ({
             secret: auth.session,
             issued: auth.sessionIssued,

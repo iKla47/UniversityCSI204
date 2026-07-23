@@ -192,7 +192,7 @@ content.updateCategory = async (session: string, data: CategoryUpdate) =>
 */
 content.updateComment = async (session: string, data: CommentUpdate) =>
 {
-    const id = String (data.productId);
+    const id = String (data.commentId);
     const endpoint = `${content.NET_URL_COMMENT}/${id}`;
 
     await common.putJson (session, endpoint, {
@@ -843,7 +843,7 @@ export interface CommentUpdate
     /**
      * รหัสสินค้าที่เกี่ยวข้อง
     */
-    productId: BasicId;
+    commentId: BasicId;
     /**
      * หัวเรื่อง
     */

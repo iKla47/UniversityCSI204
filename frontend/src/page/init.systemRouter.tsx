@@ -77,7 +77,7 @@ content.Outlet = function InitOutlet ()
   {
     return <>
       <Outlet/>
-      <InitDebug/>
+      {/* <InitDebug/> */}
     </>;
   }
   return <Outlet/>

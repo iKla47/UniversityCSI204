@@ -1,23 +1,26 @@
 import apiAccount from "#util/api.account.ts";
+import apiProduct from "#util/api.product.ts";
 import apiStorage from "#util/api.storage.ts";
 
 import MenuBar from "#component/menu.bar.tsx";
 
 import { styled } from "styled-components";
 import { useSearchParams } from "react-router";
-import { useState, type MouseEvent } from "react";
+import { useRef, useState, type MouseEvent } from "react";
 import { useAuth } from "#context/common.ts";
 import { useDialog, useToast } from "#context/common.ui.ts";
 import 
 { 
-  useAccountBasic, useCart, useCartQuery, useProduct, useProductComment, 
+  useAccountBasic, useAccountBasicOf, useCart, useCartQuery, useProduct, useProductComment, 
   useProductCommentList, useProductReviewList 
 } 
 from "#context/customer.ts";
 import 
 { 
   ShoppingCart, Share2Icon, Heart, StarIcon, 
-  MessageSquare, TextAlignStart, MonitorCog, ShoppingBasket 
+  MessageSquare, TextAlignStart, MonitorCog, ShoppingBasket, 
+  ArrowLeftIcon,
+  CircleUser
 } 
 from "lucide-react";
 
@@ -277,14 +280,20 @@ content.Comment = function ProductComment ()
 {
   const [param] = useSearchParams ();
   const id = param.get ("id");
+  const auth = useAuth ();
   const queryList = useProductCommentList (Number (id));
   const queryAct = useAccountBasic ();
   const queryData = queryList.data;
+  const initial = useRef (false);
+
+  const [commentRating, setCommentRating] = useState (5);
+  const [comment, setComment] = useState ("");
+  const [commentShow, setCommentShow] = useState (false);
 
   const toast = useToast ();
   const rating = (queryData ? 
       queryData.length > 0 ?
-      queryData.reduce ((x, y) => x += y.rating, 0) / queryData.length : 0.0 : 0.0).toFixed (1);
+      queryData.reduce ((x, y) => x += y.rating, 0) / queryData.length : 0.0 : 0.0);
     
   const count = queryData ? queryData.length : 0;
   const empty = queryData ? queryData.length === 0 : true;
@@ -294,9 +303,83 @@ content.Comment = function ProductComment ()
     event.preventDefault ();
     event.stopPropagation ();
 
-    if (queryAct.data !== undefined)
+    if (queryList.data !== undefined && queryAct.data !== undefined)
     {
-      return;
+      if (commentShow)
+      {
+        setCommentShow (false);
+
+        const selfComment = queryList.data.find (
+          (x) => x.author === queryAct.data.id
+        );
+
+        if (selfComment)
+        {
+          void apiProduct.updateComment (auth.session, {
+            commentId: selfComment.commentId,
+            title: "",
+            text: comment,
+            rating: commentRating,
+          })
+          .then (() =>
+          {
+            toast.setText ("อัพเดทความคิดเห็นของคุณแล้ว");
+            toast.setDuration (5000);
+            toast.setVisible (true);
+
+            void queryList.refetch ();
+          })
+          .catch (() =>
+          {
+            toast.setText (
+              "เกิดข้อผิดพลาดในการอัพเดทความคิดเห็น โปรดลองใหม่อีกครั้ง"
+            );
+            toast.setDuration (5000);
+            toast.setVisible (true);
+          });
+          return;
+        }    
+
+        void apiProduct.createComment (auth.session, {
+          productId: Number (id),
+          title: "",
+          text: comment,
+          rating: commentRating,
+        })
+        .then (() =>
+        {
+          toast.setText ("เพิ่มความคิดเห็นของคุณแล้ว");
+          toast.setDuration (5000);
+          toast.setVisible (true);
+
+          void queryList.refetch ();
+        })
+        .catch (() =>
+        {
+          toast.setText (
+            "เกิดข้อผิดพลาดในการแสดงความคิดเห็น โปรดลองใหม่อีกครั้ง"
+          );
+          toast.setDuration (5000);
+          toast.setVisible (true);
+        });
+        return;
+      }
+      else
+      {
+        const selfComment = queryList.data.find (
+          (x) => x.author === queryAct.data.id
+        );
+      
+        if (selfComment)
+        {
+          setCommentRating (selfComment.rating);
+          setComment (selfComment.text);
+          initial.current = true;
+        }
+        
+        setCommentShow (true);
+        return;
+      }
     }
     else
     {
@@ -305,23 +388,77 @@ content.Comment = function ProductComment ()
       toast.setVisible (true);
     }
   } 
+  const onClickCommentBack = (event: MouseEvent) =>
+  {
+    event.preventDefault ();
+    event.stopPropagation ();
+
+    setCommentShow (false);
+  }
 
   return (
     <StyleComment>
       <StyleCommentTitle>ความคิดเห็น</StyleCommentTitle>
       <StyleCommentSummary>
         <StyleCommentStar>
-          <StarIcon/>
-          <StarIcon/>
-          <StarIcon/>
-          <StarIcon/>
-          <StarIcon/>
+          { (commentShow ? commentRating >= 1 : rating >= 1) ?
+            (<StarIcon color="#f5ec00" absoluteStrokeWidth />) :
+            (<StarIcon/>)
+          }
+          { (commentShow ? commentRating >= 2 : rating >= 2) ?
+            (<StarIcon color="#f5ec00" absoluteStrokeWidth />) :
+            (<StarIcon/>)
+          }
+          { (commentShow ? commentRating >= 3 : rating >= 3) ?
+            (<StarIcon color="#f5ec00" absoluteStrokeWidth onClick={() => {
+              setCommentRating (3);
+            }}/>) :
+            (<StarIcon onClick={() => {
+              setCommentRating (3);
+            }}/>)
+          }
+          { (commentShow ? commentRating >= 4 : rating >= 4) ?
+            (<StarIcon color="#f5ec00" absoluteStrokeWidth onClick={() => {
+              setCommentRating (4);
+            }}/>) :
+            (<StarIcon onClick={() => {
+              setCommentRating (4);
+            }}/>)
+          }
+          { (commentShow ? commentRating >= 5 : rating >= 5) ?
+            (<StarIcon color="#f5ec00" absoluteStrokeWidth onClick={() => {
+              setCommentRating (5);
+            }}/>) :
+            (<StarIcon onClick={() => {
+              setCommentRating (5);
+            }}/>)
+          }
+
         </StyleCommentStar>
-        <p>{rating} / 5.0 จากทั้งหมด {count} คน</p>
-        <StyleCommentAdd onClick={onClickComment}>
-          <MessageSquare size={24}/>
-          <span>ให้คะแนนเลย</span>
-        </StyleCommentAdd>
+        { (commentShow) ?
+          (<></>) :
+          (<p>{rating.toFixed (2)} / 5.0 จากทั้งหมด {count} คน</p>)
+        }
+        { (!commentShow) ?
+          (<></>) :
+          (
+          <StyleCommentContainer 
+            value={comment}
+            onChange={(e) => { setComment (e.target.value); }}>
+            </StyleCommentContainer>
+          )
+        }
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <StyleCommentAdd onClick={onClickComment}>
+            <MessageSquare size={24}/>
+            <span>ให้คะแนนเลย</span>
+          </StyleCommentAdd>
+          <StyleCommentAdd onClick={onClickCommentBack} 
+            style={{ display: commentShow ? "block" : "none"}}>
+            <ArrowLeftIcon size={24}/>
+            <span>ย้อนกลับ</span>
+          </StyleCommentAdd>
+        </div>
       </StyleCommentSummary>
       <StyleCommentBody>
         { (empty) ?
@@ -339,7 +476,8 @@ content.Comment = function ProductComment ()
 content.CommentItem = function ProductCommentItem ({id}: {id: number;})
 {
   const queryComment = useProductComment (id);
-  const queryAccount = useAccountBasic ();
+  const queryAccount = useAccountBasicOf (
+    queryComment.data ? queryComment.data.author : 0);
 
   const comment = queryComment.data;
   const account = queryAccount.data;
@@ -350,7 +488,10 @@ content.CommentItem = function ProductCommentItem ({id}: {id: number;})
 
   return (
     <StyleCommentItem>
-      <StyleCommentItemIcon src={apiStorage.getUrlStream (icon)}/>
+      { (icon.length > 0) ?
+        (<StyleCommentItemIcon src={apiStorage.getUrlStream (icon)}/>) :
+        (<CircleUser/>)
+      }
       <StyleCommentItemTitle>{name}</StyleCommentItemTitle>
       <StyleCommentItemText>{text}</StyleCommentItemText>
     </StyleCommentItem>
@@ -570,7 +711,7 @@ const StyleCommentTitle = styled.label`
 `;
 const StyleCommentSummary = styled.div`
   width: 100%;
-  height: 256px;
+  height: 324px;
 
   display: flex;
   flex-direction: column;
@@ -617,6 +758,18 @@ const StyleCommentItem = styled.div`
   background-color: var(--bg-primary);
   border-radius: 4px;
   position: relative;
+
+  & > svg
+  {
+    display: block;
+    position: absolute;
+    background-color: var(--bg-secondary);
+    border-radius: 100%;
+    inset: 16px auto auto 16px;
+    width: 32px;
+    height: 32px;
+    color: var(--text-primary);
+  }
 `;
 const StyleCommentItemIcon = styled.img`
   display: block;
@@ -704,6 +857,15 @@ const StyledCartLabel = styled.label`
 
   background-color: #FF7373;
   border-radius: 4px;
+`;
+const StyleCommentContainer = styled.textarea`
+  background-color: var(--input-primary);
+  color: var(--text-primary);
+  width: 100%;
+  height: 50%;
+  padding: 12px;
+  border: 0px black solid;
+  border-radius: 12px;
 `;
 /**
  * ส่งออกตัวแปร

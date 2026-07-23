@@ -13,8 +13,8 @@ export default function Stock() {
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [adjustAmount, setAdjustAmount] = useState<number>(0);
-  const auth = useAuth(); 
-  
+  const auth = useAuth();
+
   // ดึงรายการสินค้าพร้อมสต็อก
   const loadData = async () => {
     try {
