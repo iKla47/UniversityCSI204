@@ -528,10 +528,6 @@ sequenceDiagram
     Backend-->>Frontend: Display favorite confirmation
 ```
 
-### Wireframe
+### Wireframe / Prototype
 
-<!-- ![Wireframe](./asset/dev-diagram-class.drawio.svg) -->
-
-### Prototype
-
-<!-- ![Prototype](./asset/dev-diagram-class.drawio.svg) -->
+https://www.figma.com/design/4axEENmLrWcVgOkUc0Uxis/Untitled?node-id=0-1&t=HhGGfBS68qEH2CRZ-1
