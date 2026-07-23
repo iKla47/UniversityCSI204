@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { Disc, Plus, Search, Filter, Trash2, X, AlertTriangle } from 'lucide-react';
+import { Disc, Plus, Search, Filter, Trash2, X, AlertTriangle, Edit3 } from 'lucide-react';
+import productApi from "../util/api.product";
+import type { BasicFetch } from '#util/api.product';
+import { useAuth } from "#context/common.js";
 
 interface GameItem {
   id: string;
@@ -29,7 +32,7 @@ export const ManageItemsPage: React.FC = () => {
       platform: 'Switch',
       genre: 'Adventure',
       price: 1790,
-      stock: 3, // สต็อกต่ำ
+      stock: 3,
       coverUrl: 'https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?auto=format&fit=crop&w=300&q=80',
     },
     {
@@ -58,6 +61,10 @@ export const ManageItemsPage: React.FC = () => {
     coverUrl: '',
   });
 
+  // 🔴 State สำหรับ Modal แก้ไขเกม
+  const [isChangeModalOpen, setIsChangeModalOpen] = useState(false);
+  const [editingGame, setEditingGame] = useState<GameItem | null>(null);
+
   // ฟังก์ชันเพิ่มเกมใหม่
   const handleAddGame = (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,6 +90,25 @@ export const ManageItemsPage: React.FC = () => {
       stock: 10,
       coverUrl: '',
     });
+  };
+
+  // 🔴 ฟังก์ชันเปิด Modal แก้ไขข้อมูล (ดึงข้อมูลเกมแถวนั้นเข้า State)
+  const handleOpenEditModal = (game: GameItem) => {
+    setEditingGame(game);
+    setIsChangeModalOpen(true);
+  };
+
+  // 🔴 ฟังก์ชันบันทึกการแก้ไขเกม
+  const handleEditGame = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingGame || !editingGame.title || editingGame.price <= 0) {
+      alert('กรุณากรอกข้อมูลให้ถูกต้อง');
+      return;
+    }
+
+    setGames(games.map(g => g.id === editingGame.id ? editingGame : g));
+    setIsChangeModalOpen(false);
+    setEditingGame(null);
   };
 
   // ฟังก์ชันลบเกม
@@ -200,6 +226,13 @@ export const ManageItemsPage: React.FC = () => {
                   </td>
                   <td className="py-3 px-4 text-center">
                     <div className="flex items-center justify-center gap-2">
+                      {/* 🔴 แก้ไขปุ่ม onClick แก้ไขเกม */}
+                      <button
+                        onClick={() => handleOpenEditModal(game)}  
+                        className="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-indigo-200 rounded-md border border-slate-700 flex items-center gap-1 transition-colors"
+                      >
+                        <Edit3 size={13} />
+                      </button>
                       <button 
                         onClick={() => handleDeleteGame(game.id)}
                         className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
@@ -249,7 +282,6 @@ export const ManageItemsPage: React.FC = () => {
                 />
               </div>
 
-              {/* แพลตฟอร์ม และ แนวเกม */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-400 mb-1 font-medium">แพลตฟอร์ม</label>
@@ -262,7 +294,6 @@ export const ManageItemsPage: React.FC = () => {
                     <option value="Switch">Nintendo Switch</option>
                     <option value="Xbox">Xbox Series X</option>
                     <option value="PS4">PlayStation 4</option>
-                    <option value="1">PC</option>
                   </select>
                 </div>
 
@@ -283,7 +314,6 @@ export const ManageItemsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* ราคา และ จำนวนสต็อก */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-400 mb-1 font-medium">ราคา (บาท)</label>
@@ -312,9 +342,8 @@ export const ManageItemsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* URL รูปปกเกม */}
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">URL รูปภาพปกเกม (ถ้ามี)</label>
+                <label className="block text-slate-400 mb-1 font-medium">รูปภาพปกเกม</label>
                 <input 
                   type="url" 
                   placeholder="https://example.com/cover.jpg"
@@ -324,7 +353,26 @@ export const ManageItemsPage: React.FC = () => {
                 />
               </div>
 
-              {/* ปุ่มบันทึก */}
+              <div>
+                <label className="block text-slate-400 mb-1 font-medium">รูปภาพพื้นหลัง</label>
+                <input 
+                  type="url" 
+                  placeholder="https://example.com/background.jpg"
+                  
+                  className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1 font-medium">ข้อมูลเกม</label>
+                <input 
+                  type="text" 
+                  placeholder="ใส่รายละเอียดเกม"
+                  
+                  className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
               <div className="flex gap-2 pt-2">
                 <button 
                   type="button" 
@@ -338,6 +386,140 @@ export const ManageItemsPage: React.FC = () => {
                   className="w-1/2 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20"
                 >
                   บันทึกสินค้า
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 🔵 MODAL แก้ไขข้อมูลเกม */}
+      {isChangeModalOpen && editingGame && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-[#0f162c] border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-5">
+            
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                <Edit3 className="text-indigo-400" size={20} />
+                แก้ไขข้อมูลเกม ({editingGame.id})
+              </h2>
+              <button 
+                onClick={() => setIsChangeModalOpen(false)}
+                className="text-slate-500 hover:text-slate-300 p-1 rounded-lg"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditGame} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-400 mb-1 font-medium">ชื่อเกม (Title)</label>
+                <input 
+                  type="text" 
+                  required
+                  value={editingGame.title}
+                  onChange={(e) => setEditingGame({ ...editingGame, title: e.target.value })}
+                  className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1 font-medium">แพลตฟอร์ม</label>
+                  <select
+                    value={editingGame.platform}
+                    onChange={(e) => setEditingGame({ ...editingGame, platform: e.target.value as any })}
+                    className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="PS5">PlayStation 5</option>
+                    <option value="Switch">Nintendo Switch</option>
+                    <option value="Xbox">Xbox Series X</option>
+                    <option value="PS4">PlayStation 4</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1 font-medium">แนวเกม (Genre)</label>
+                  <select
+                    value={editingGame.genre}
+                    onChange={(e) => setEditingGame({ ...editingGame, genre: e.target.value })}
+                    className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="Action RPG">Action RPG</option>
+                    <option value="Adventure">Adventure</option>
+                    <option value="Turn-Based RPG">Turn-Based RPG</option>
+                    <option value="Fighting">Fighting</option>
+                    <option value="Open World">Open World</option>
+                    <option value="Sports">Sports</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 mb-1 font-medium">ราคา (บาท)</label>
+                  <input 
+                    type="number" 
+                    required
+                    min="1"
+                    value={editingGame.price}
+                    onChange={(e) => setEditingGame({ ...editingGame, price: Number(e.target.value) })}
+                    className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1 font-medium">จำนวนสต็อก (ชิ้น)</label>
+                  <input 
+                    type="number" 
+                    required
+                    min="0"
+                    value={editingGame.stock}
+                    onChange={(e) => setEditingGame({ ...editingGame, stock: Number(e.target.value) })}
+                    className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1 font-medium">รูปภาพปกเกม</label>
+                <input 
+                  type="url" 
+                  value={editingGame.coverUrl}
+                  onChange={(e) => setEditingGame({ ...editingGame, coverUrl: e.target.value })}
+                  className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1 font-medium">รูปภาพปกเกม</label>
+                <input 
+                  type="url" 
+                  placeholder="ใส่ลิงค์ปกเกม"
+                  className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1 font-medium">ข้อมูลเกม</label>
+                <input 
+                  type="text"
+                  placeholder="ใส่ข้อมูลเกม"
+                  className="w-full bg-[#16223f]/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setIsChangeModalOpen(false)}
+                  className="w-1/2 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold"
+                >
+                  ยกเลิก
+                </button>
+                <button 
+                  type="submit" 
+                  className="w-1/2 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20"
+                >
+                  บันทึกการแก้ไข
                 </button>
               </div>
 

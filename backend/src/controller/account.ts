@@ -69,17 +69,17 @@ content.getBasic = (request: Request, response: Response) =>
 */
 content.getBasicOf = (request: Request, response: Response) =>
 {
-    const authenticate = auth.validateResult (response);
-    const authId = authenticate.id;
+    // const authenticate = auth.validateResult (response);
+    // const authId = authenticate.id;
     const queryId = Number (request.params ["id"]);
 
-    if ((authId !== queryId) && 
-        (authenticate.role !== model.ROLE_MANAGER))
-    {
-        response.status (http.STATUS_FORBIDDEN);
-        response.end ();
-        return;    
-    }
+    // if ((authId !== queryId) && 
+    //     (authenticate.role !== model.ROLE_MANAGER))
+    // {
+    //     response.status (http.STATUS_FORBIDDEN);
+    //     response.end ();
+    //     return;    
+    // }
     void model.getBasic (queryId).then ((x) =>
     {
         content.outputGetBasic (response, x);
