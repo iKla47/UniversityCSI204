@@ -1,0 +1,1 @@
+import{t as e}from"./index-Ck9etSGg.js";import{t}from"./settings-Bgr_GFa_.js";var n=e(),r=()=>(0,n.jsx)(t,{visible:!0,transparent:!0});export{r as default};
