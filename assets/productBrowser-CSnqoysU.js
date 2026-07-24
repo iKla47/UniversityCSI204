@@ -1,0 +1,1 @@
+import{t as e}from"./index-CgijNJ2O.js";import{t}from"./common.preset-CN6tzlqp.js";var n=e(),r=function(){return(0,n.jsx)(n.Fragment,{children:(0,n.jsx)(t.NavBar,{})})};export{r as default};
