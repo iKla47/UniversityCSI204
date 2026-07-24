@@ -111,6 +111,7 @@ CREATE TABLE IF NOT EXISTS `project`.`Product`
     `Platform`  INT NOT NULL DEFAULT 0 COMMENT 'แพลตฟอร์ม' ,
     `Background` CHAR(255) NOT NULL DEFAULT "" COMMENT 'รูปพื้นหลัง' ,
     `Cover`     CHAR(255) NOT NULL DEFAULT "" COMMENT 'รูปสินค้า' ,
+    `Status`    INT NOT NULL DEFAULT "" COMMENT 'สถานะสินค้า'
 
     CONSTRAINT  PK_Product_Id PRIMARY KEY (`Id`),
     CONSTRAINT  UK_Product_Id UNIQUE (`Id`)
