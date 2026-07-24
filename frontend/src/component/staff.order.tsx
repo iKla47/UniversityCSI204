@@ -19,6 +19,10 @@ interface OrderItem {
   deliveryDate: Date | null;
   status: number;
   items: OrderProduct[];
+  shipName: string;
+  shipAddress: string;
+  shipPhone: string;
+  shipEmail: string;
 }
 
 export default function Order() {
@@ -32,7 +36,6 @@ export default function Order() {
 
   const auth = useAuth();
 
-  // กำหนด mapping ตามเงื่อนไขที่คุณแจ้งไว้
   const getStatusText = (status: number): string => {
     switch (status) {
       case 1: return "รอดำเนินการ";
@@ -41,16 +44,6 @@ export default function Order() {
       default: return "กำลังจัดส่ง";
     }
   };
-
-  const getStatusNumber = (statusText: string): number => {
-  switch (statusText) {
-    case "รอดำเนินการ": return 1;
-    case "จัดส่งแล้ว": return 2;
-    case "ยกเลิก": return 0;
-    case "กำลังจัดส่ง": return 3;
-    default: return 1;
-  }
-};
 
   const statusOptions = ["รอดำเนินการ", "กำลังจัดส่ง", "จัดส่งแล้ว", "ยกเลิก"];
   const filterStatusList = ["All", ...statusOptions];
@@ -92,6 +85,10 @@ export default function Order() {
             deliveryDate: ord.delivered ? new Date(ord.delivered) : null,
             status: ord.status,
             items: itemsWithDetails,
+            shipName: ord.shipName,
+            shipAddress: ord.shipAddress,
+            shipPhone: ord.shipPhone,
+            shipEmail: ord.shipEmail,
           };
         })
       );
@@ -119,7 +116,8 @@ export default function Order() {
       orderIdStr.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.items.some((item) =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      ) ||
+      order.shipName.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus = selectedStatus === "All" || statusText === selectedStatus;
     return matchesSearch && matchesStatus;
@@ -136,13 +134,13 @@ export default function Order() {
       const session = auth.session;
       const now = new Date();
       const newDeliveryDate = newStatusNum === 2 ? now : null;
-  
+
       await orderApi.updateBasic(session, {
         orderId: orderId,
         status: newStatusNum,
-        delivered: newDeliveryDate, 
+        delivered: newDeliveryDate,
       });
-  
+
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           order.id === orderId
@@ -150,7 +148,6 @@ export default function Order() {
             : order
         )
       );
-  
     } catch (err: any) {
       console.error("Failed to update status:", err);
       alert(err.message || "เกิดข้อผิดพลาดในการอัปเดตสถานะ");
@@ -184,7 +181,7 @@ export default function Order() {
             <SearchInput
               id="search-input"
               type="text"
-              placeholder="ค้นหา ID หรือ ชื่อสินค้า..."
+              placeholder="ค้นหา ID, ชื่อผู้รับ หรือ ชื่อสินค้า..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -273,6 +270,26 @@ export default function Order() {
                   <strong>ORD{String(activeOrder.id).padStart(3, "0")}</strong>
                 </span>
               </DetailRow>
+
+              <ShippingInfoContainer>
+                <div className="section-title">ข้อมูลการจัดส่ง</div>
+                <div className="info-row">
+                  <span className="info-label">ชื่อผู้รับ:</span>
+                  <span className="info-value">{activeOrder.shipName || "-"}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">ที่อยู่:</span>
+                  <span className="info-value">{activeOrder.shipAddress || "-"}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">เบอร์โทรศัพท์:</span>
+                  <span className="info-value">{activeOrder.shipPhone || "-"}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">อีเมล:</span>
+                  <span className="info-value">{activeOrder.shipEmail || "-"}</span>
+                </div>
+              </ShippingInfoContainer>
 
               <DetailRow>
                 <span className="label">จำนวนสินค้าทั้งหมด:</span>
@@ -489,6 +506,8 @@ const ModalOverlay = styled.div`
 const ModalContent = styled.div`
   width: 100%;
   max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
   background: #111827;
   border: 1px solid #334155;
   border-radius: 16px;
@@ -570,6 +589,44 @@ const DetailRow = styled.div`
     border: 1px solid #334155;
     border-radius: 10px;
     padding: 12px 14px;
+  }
+`;
+
+const ShippingInfoContainer = styled.div`
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .section-title {
+    color: #3b82f6;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .info-label {
+    color: #94a3b8;
+    font-size: 13px;
+    min-width: 90px;
+  }
+
+  .info-value {
+    color: #e2e8f0;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: right;
+    word-break: break-word;
   }
 `;
 
@@ -663,4 +720,4 @@ const CloseModalButton = styled.button`
   &:hover {
     opacity: 0.9;
   }
-`;  
+`;
